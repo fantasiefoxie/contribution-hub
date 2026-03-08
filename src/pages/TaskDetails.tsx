@@ -165,6 +165,9 @@ export default function TaskDetails() {
           </div>
         )}
 
+        {/* Social Signals */}
+        <SocialSignals volunteersJoined={42} tasksInProgress={7} />
+
         {/* Status */}
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center justify-between">
