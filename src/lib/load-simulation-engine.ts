@@ -52,7 +52,7 @@ export const DEFAULT_INFRA: InfraParams = {
   api_servers: 4,
   bg_workers: 10,
   validators: 2_000,
-  events_per_worker_per_second: 8,
+  events_per_worker_per_second: 100,
   base_latency: 50,
   cache_efficiency: 0.92,
 };
@@ -60,7 +60,7 @@ export const DEFAULT_INFRA: InfraParams = {
 // ── Preset Scenarios ──
 export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: ScenarioConfig }> = {
   small_ngo: {
-    infra: { api_servers: 2, bg_workers: 3, validators: 50, base_latency: 60, cache_efficiency: 0.88 },
+    infra: { api_servers: 2, bg_workers: 3, validators: 50, events_per_worker_per_second: 80, base_latency: 60, cache_efficiency: 0.88 },
     scenario: {
       name: "Small NGO Campaign",
       peak_users: 800,
@@ -73,7 +73,7 @@ export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: Sc
     },
   },
   city_survey: {
-    infra: { api_servers: 4, bg_workers: 10, validators: 2_000, base_latency: 50, cache_efficiency: 0.92 },
+    infra: { api_servers: 4, bg_workers: 10, validators: 2_000, events_per_worker_per_second: 100, base_latency: 50, cache_efficiency: 0.92 },
     scenario: {
       name: "City Survey (50K)",
       peak_users: 20_000,
@@ -86,7 +86,7 @@ export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: Sc
     },
   },
   disaster_response: {
-    infra: { api_servers: 6, bg_workers: 20, validators: 500, base_latency: 70, cache_efficiency: 0.85 },
+    infra: { api_servers: 6, bg_workers: 20, validators: 500, events_per_worker_per_second: 120, base_latency: 70, cache_efficiency: 0.85 },
     scenario: {
       name: "Disaster Response Surge",
       peak_users: 40_000,
@@ -99,7 +99,7 @@ export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: Sc
     },
   },
   national: {
-    infra: { api_servers: 8, bg_workers: 25, validators: 5_000, base_latency: 55, cache_efficiency: 0.95 },
+    infra: { api_servers: 8, bg_workers: 25, validators: 5_000, events_per_worker_per_second: 150, base_latency: 55, cache_efficiency: 0.95 },
     scenario: {
       name: "National Campaign (200K)",
       peak_users: 80_000,

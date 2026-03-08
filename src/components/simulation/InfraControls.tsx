@@ -117,10 +117,10 @@ export default function InfraControls({
           <Param label="API Servers" value={infra.api_servers} unit="nodes" min={2} max={20} step={1} onChange={set("api_servers")} />
           <Param label="Background Workers" value={infra.bg_workers} unit="workers" min={2} max={50} step={1} onChange={set("bg_workers")} />
           <Param label="Validators" value={infra.validators} unit="people" min={50} max={5000} step={50} onChange={set("validators")} />
-          <Param label="Events / Worker / Sec" value={infra.events_per_worker_per_second} unit="evt/s" min={2} max={30} step={1} onChange={set("events_per_worker_per_second")} />
+          <Param label="Events / Worker / Sec" value={infra.events_per_worker_per_second} unit="evt/s" min={50} max={500} step={10} onChange={set("events_per_worker_per_second")} />
           <Param
             label="Base Latency" value={infra.base_latency} unit="ms"
-            min={20} max={200} step={5} onChange={set("base_latency")}
+            min={50} max={200} step={5} onChange={set("base_latency")}
           />
           <Param
             label="Cache Efficiency" value={infra.cache_efficiency}
