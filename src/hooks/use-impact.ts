@@ -1,18 +1,41 @@
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "@/hooks/use-session";
 import { impactApi } from "@/lib/impact-api";
+
+const defaultImpact = {
+  tasks_completed: 0,
+  total_score: 0,
+  impact_metrics: {},
+  initiatives_participated: 0,
+  contributions: [],
+};
 
 export function useCommunityFeed(limit?: number) {
   return useQuery({
     queryKey: ["community-feed", limit],
-    queryFn: () => impactApi.communityFeed(limit),
+    queryFn: async () => {
+      try {
+        return await impactApi.communityFeed(limit);
+      } catch {
+        return { feed: [] };
+      }
+    },
     refetchInterval: 30000,
   });
 }
 
 export function useMyImpact() {
+  const userId = useSession();
   return useQuery({
-    queryKey: ["my-impact"],
-    queryFn: () => impactApi.myImpact(),
+    queryKey: ["my-impact", userId],
+    queryFn: async () => {
+      try {
+        return await impactApi.myImpact();
+      } catch {
+        return defaultImpact;
+      }
+    },
+    enabled: !!userId,
     retry: false,
     meta: { suppressError: true },
   });
@@ -29,9 +52,16 @@ export function useInitiativeProgress(id: string) {
 }
 
 export function useNextMission(currentTaskId?: string) {
+  const userId = useSession();
   return useQuery({
     queryKey: ["next-mission", currentTaskId],
-    queryFn: () => impactApi.nextMission(currentTaskId),
-    enabled: true,
+    queryFn: async () => {
+      try {
+        return await impactApi.nextMission(currentTaskId);
+      } catch {
+        return { next_mission: null };
+      }
+    },
+    enabled: !!userId,
   });
 }
