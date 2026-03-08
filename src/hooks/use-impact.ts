@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "@/hooks/use-session";
+import { useAuth } from "@/contexts/AuthContext";
 import { impactApi } from "@/lib/impact-api";
 
 const defaultImpact = {
@@ -25,9 +25,9 @@ export function useCommunityFeed(limit?: number) {
 }
 
 export function useMyImpact() {
-  const userId = useSession();
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["my-impact", userId],
+    queryKey: ["my-impact", user?.id],
     queryFn: async () => {
       try {
         return await impactApi.myImpact();
@@ -35,7 +35,7 @@ export function useMyImpact() {
         return defaultImpact;
       }
     },
-    enabled: !!userId,
+    enabled: !!user,
     retry: false,
     meta: { suppressError: true },
   });
@@ -52,7 +52,7 @@ export function useInitiativeProgress(id: string) {
 }
 
 export function useNextMission(currentTaskId?: string) {
-  const userId = useSession();
+  const { user } = useAuth();
   return useQuery({
     queryKey: ["next-mission", currentTaskId],
     queryFn: async () => {
@@ -62,6 +62,6 @@ export function useNextMission(currentTaskId?: string) {
         return { next_mission: null };
       }
     },
-    enabled: !!userId,
+    enabled: !!user,
   });
 }

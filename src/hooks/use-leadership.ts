@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { leadershipApi } from "@/lib/leadership-api";
-import { useSession } from "@/hooks/use-session";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useMyProgression() {
-  const userId = useSession();
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["my-progression", userId],
+    queryKey: ["my-progression", user?.id],
     queryFn: () => leadershipApi.myProgression(),
-    enabled: !!userId,
+    enabled: !!user,
     retry: (failureCount, error) => {
       if (error?.message?.includes("Unauthorized") || error?.message?.includes("401")) return false;
       return failureCount < 2;
