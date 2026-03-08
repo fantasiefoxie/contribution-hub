@@ -608,6 +608,7 @@ export type Database = {
           id: string
           initiative_id: string | null
           is_priority: boolean
+          is_team: boolean
           latitude: number | null
           lock_duration_mins: number
           locked_by: string | null
@@ -619,6 +620,7 @@ export type Database = {
           reserved_until: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[] | null
+          team_target: number | null
           title: string
           updated_at: string
           visibility: Database["public"]["Enums"]["task_visibility"]
@@ -632,6 +634,7 @@ export type Database = {
           id?: string
           initiative_id?: string | null
           is_priority?: boolean
+          is_team?: boolean
           latitude?: number | null
           lock_duration_mins?: number
           locked_by?: string | null
@@ -643,6 +646,7 @@ export type Database = {
           reserved_until?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[] | null
+          team_target?: number | null
           title: string
           updated_at?: string
           visibility?: Database["public"]["Enums"]["task_visibility"]
@@ -656,6 +660,7 @@ export type Database = {
           id?: string
           initiative_id?: string | null
           is_priority?: boolean
+          is_team?: boolean
           latitude?: number | null
           lock_duration_mins?: number
           locked_by?: string | null
@@ -667,6 +672,7 @@ export type Database = {
           reserved_until?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[] | null
+          team_target?: number | null
           title?: string
           updated_at?: string
           visibility?: Database["public"]["Enums"]["task_visibility"]
@@ -691,6 +697,38 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          invite_code: string | null
+          joined_at: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invite_code?: string | null
+          joined_at?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invite_code?: string | null
+          joined_at?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
