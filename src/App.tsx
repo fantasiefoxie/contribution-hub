@@ -28,6 +28,8 @@ const App = () => (
           <Route path="/contributions" element={<Contributions />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/validate" element={<ValidationQueue />} />
+          <Route path="/validate/:id" element={<SubmissionReview />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -52,6 +52,21 @@ export interface TaskSubmissionInput {
   attachments?: unknown[];
 }
 
+export interface ValidationActionInput {
+  feedback?: string;
+}
+
+export interface AppealInput {
+  submission_id: string;
+  validation_id: string;
+  reason: string;
+}
+
+export interface AppealResolveInput {
+  decision: "upheld" | "overridden";
+  resolution?: string;
+}
+
 export const taskApi = {
   list: (params?: { status?: string; visibility?: string; limit?: number; offset?: number }) => {
     const query = new URLSearchParams();
@@ -64,18 +79,24 @@ export const taskApi = {
   },
 
   get: (taskId: string) => invoke(`/${taskId}`, "GET"),
-
   create: (input: CreateTaskInput) => invoke("", "POST", input),
-
   reserve: (taskId: string) => invoke(`/${taskId}/reserve`, "POST"),
-
   confirmClaim: (taskId: string) => invoke(`/${taskId}/confirm-claim`, "POST"),
-
-  addUpdate: (taskId: string, input: TaskUpdateInput) =>
-    invoke(`/${taskId}/updates`, "POST", input),
-
-  submit: (taskId: string, input: TaskSubmissionInput) =>
-    invoke(`/${taskId}/submit`, "POST", input),
-
+  addUpdate: (taskId: string, input: TaskUpdateInput) => invoke(`/${taskId}/updates`, "POST", input),
+  submit: (taskId: string, input: TaskSubmissionInput) => invoke(`/${taskId}/submit`, "POST", input),
   getSubmissions: (taskId: string) => invoke(`/${taskId}/submissions`, "GET"),
+
+  // Validation
+  getPendingValidations: () => invoke("/validations/pending", "GET"),
+  approveSubmission: (submissionId: string, input?: ValidationActionInput) =>
+    invoke(`/submissions/${submissionId}/approve`, "POST", input || {}),
+  rejectSubmission: (submissionId: string, input: ValidationActionInput) =>
+    invoke(`/submissions/${submissionId}/reject`, "POST", input),
+  requestClarification: (submissionId: string, input: ValidationActionInput) =>
+    invoke(`/submissions/${submissionId}/request-clarification`, "POST", input),
+
+  // Appeals
+  createAppeal: (input: AppealInput) => invoke("/appeals", "POST", input),
+  resolveAppeal: (appealId: string, input: AppealResolveInput) =>
+    invoke(`/appeals/${appealId}/resolve`, "POST", input),
 };
