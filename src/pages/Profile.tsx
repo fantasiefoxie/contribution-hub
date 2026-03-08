@@ -23,6 +23,7 @@ const menuItems = [
 ];
 
 export default function Profile() {
+  const navigate = useNavigate();
   return (
     <AppShell>
       <div className="px-4 pt-6 pb-3">
