@@ -99,7 +99,7 @@ export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: Sc
     },
   },
   national: {
-    infra: { api_servers: 8, bg_workers: 25, validators: 5_000, base_latency: 55, cache_efficiency: 0.95 },
+    infra: { api_servers: 8, bg_workers: 25, validators: 5_000, events_per_worker_per_second: 150, base_latency: 55, cache_efficiency: 0.95 },
     scenario: {
       name: "National Campaign (200K)",
       peak_users: 80_000,
