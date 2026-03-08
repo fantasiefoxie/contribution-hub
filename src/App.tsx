@@ -26,6 +26,9 @@ import TransparencyPage from "./pages/TransparencyPage";
 import DeveloperPortal from "./pages/DeveloperPortal";
 import LoadSimulation from "./pages/LoadSimulation";
 import Documentation from "./pages/Documentation";
+import SavedTasks from "./pages/SavedTasks";
+import Organizations from "./pages/Organizations";
+import InitiativeDetail from "./pages/InitiativeDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
