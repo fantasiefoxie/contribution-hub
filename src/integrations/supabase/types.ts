@@ -173,6 +173,35 @@ export type Database = {
         }
         Relationships: []
       }
+      initiative_milestones: {
+        Row: {
+          id: string
+          initiative_id: string
+          percentage: number
+          reached_at: string
+        }
+        Insert: {
+          id?: string
+          initiative_id: string
+          percentage: number
+          reached_at?: string
+        }
+        Update: {
+          id?: string
+          initiative_id?: string
+          percentage?: number
+          reached_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "initiative_milestones_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       initiative_orgs: {
         Row: {
           id: string
@@ -217,6 +246,7 @@ export type Database = {
           start_date: string | null
           status: Database["public"]["Enums"]["initiative_status"]
           success_metrics: Json | null
+          target_metrics: Json | null
           title: string
           updated_at: string
         }
@@ -230,6 +260,7 @@ export type Database = {
           start_date?: string | null
           status?: Database["public"]["Enums"]["initiative_status"]
           success_metrics?: Json | null
+          target_metrics?: Json | null
           title: string
           updated_at?: string
         }
@@ -243,8 +274,42 @@ export type Database = {
           start_date?: string | null
           status?: Database["public"]["Enums"]["initiative_status"]
           success_metrics?: Json | null
+          target_metrics?: Json | null
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          data: Json | null
+          id: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          id?: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          data?: Json | null
+          id?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
