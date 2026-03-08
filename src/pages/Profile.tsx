@@ -188,7 +188,7 @@ export default function Profile() {
       </div>
 
       {/* Sign out */}
-      <div className="mx-4 mt-4 pb-44">
+      <div className="mx-4 mt-4 pb-24">
         <Button
           variant="outline"
           onClick={() => {
