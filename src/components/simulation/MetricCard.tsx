@@ -6,15 +6,14 @@ interface MetricCardProps {
   label: string;
   value: string | number;
   sub?: string;
-  color?: string;
 }
 
-export default function MetricCard({ icon: Icon, label, value, sub, color = "primary" }: MetricCardProps) {
+export default function MetricCard({ icon: Icon, label, value, sub }: MetricCardProps) {
   return (
     <Card className="border-border/60">
       <CardContent className="p-4 flex items-start gap-3">
-        <div className={`p-2 rounded-lg bg-${color}/10`}>
-          <Icon className={`h-5 w-5 text-${color}`} />
+        <div className="p-2 rounded-lg bg-primary/10">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground font-medium">{label}</p>

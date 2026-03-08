@@ -56,11 +56,27 @@ export default function LoadSimulation() {
   };
 
   const visiblePoints = timeline.filter((p) => p.minute <= elapsed);
-  const peak = timeline.reduce((max, p) => (p.apiRps > (max?.apiRps ?? 0) ? p : max), timeline[0]);
-  const totalApiRequests = timeline.reduce((s, p) => s + p.apiRps * 5 * 60, 0);
-  const peakBacklog = Math.max(...timeline.map((p) => p.eventQueueBacklog));
-  const peakWorkerUtil = Math.max(...timeline.map((p) => p.workerUtil));
-  const peakError = Math.max(...timeline.map((p) => p.errorRate));
+
+  const peak = useMemo(
+    () => timeline.length > 0 ? timeline.reduce((max, p) => (p.apiRps > max.apiRps ? p : max), timeline[0]) : null,
+    [timeline]
+  );
+  const totalApiRequests = useMemo(
+    () => timeline.reduce((s, p) => s + p.apiRps * 5 * 60, 0),
+    [timeline]
+  );
+  const peakBacklog = useMemo(
+    () => timeline.length > 0 ? Math.max(...timeline.map((p) => p.eventQueueBacklog)) : 0,
+    [timeline]
+  );
+  const peakWorkerUtil = useMemo(
+    () => timeline.length > 0 ? Math.max(...timeline.map((p) => p.workerUtil)) : 0,
+    [timeline]
+  );
+  const peakError = useMemo(
+    () => timeline.length > 0 ? Math.max(...timeline.map((p) => p.errorRate)) : 0,
+    [timeline]
+  );
 
   const bottlenecks = useMemo(() => {
     const items: { severity: "critical" | "warning" | "info"; title: string; description: string; recommendation: string }[] = [];
