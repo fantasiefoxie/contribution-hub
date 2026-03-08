@@ -427,7 +427,6 @@ async function transparency() {
     db.from("contributions").select("score, impact_metrics").limit(1000),
   ]);
 
-  // Aggregate impact metrics
   const aggregated: Record<string, number> = {};
   let totalScore = 0;
   for (const c of recentContribs ?? []) {
@@ -446,6 +445,67 @@ async function transparency() {
     total_validations: totalValidations ?? 0,
     total_score: totalScore,
     impact_metrics: aggregated,
+  });
+}
+
+// ── GET /ai-metrics — AI usage observability ──
+async function aiMetrics() {
+  const db = getServiceDb();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayISO = todayStart.toISOString();
+
+  const [
+    { count: totalSuggestions },
+    { count: todaySuggestions },
+    { count: acceptedSuggestions },
+    { count: rejectedSuggestions },
+    { count: pendingSuggestions },
+    { data: todayUsage },
+    { data: recentSuggestions },
+  ] = await Promise.all([
+    db.from("ai_suggestions").select("*", { count: "exact", head: true }),
+    db.from("ai_suggestions").select("*", { count: "exact", head: true }).gte("created_at", todayISO),
+    db.from("ai_suggestions").select("*", { count: "exact", head: true }).eq("status", "accepted"),
+    db.from("ai_suggestions").select("*", { count: "exact", head: true }).eq("status", "rejected"),
+    db.from("ai_suggestions").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    db.from("ai_usage_logs").select("model_id, input_tokens, output_tokens, estimated_cost_usd, latency_ms").gte("created_at", todayISO),
+    db.from("ai_suggestions").select("id, suggestion_type, status, confidence_score, model_id, created_at").order("created_at", { ascending: false }).limit(20),
+  ]);
+
+  // Aggregate usage by model
+  const byModel: Record<string, { requests: number; tokens: number; cost: number; avgLatency: number }> = {};
+  let totalCostToday = 0;
+  let totalRequestsToday = 0;
+  for (const log of todayUsage ?? []) {
+    const m = log.model_id || "unknown";
+    if (!byModel[m]) byModel[m] = { requests: 0, tokens: 0, cost: 0, avgLatency: 0 };
+    byModel[m].requests += 1;
+    byModel[m].tokens += (log.input_tokens || 0) + (log.output_tokens || 0);
+    byModel[m].cost += log.estimated_cost_usd || 0;
+    byModel[m].avgLatency += log.latency_ms || 0;
+    totalCostToday += log.estimated_cost_usd || 0;
+    totalRequestsToday += 1;
+  }
+  for (const m of Object.keys(byModel)) {
+    if (byModel[m].requests > 0) byModel[m].avgLatency = Math.round(byModel[m].avgLatency / byModel[m].requests);
+  }
+
+  const acceptanceRate = (totalSuggestions ?? 0) > 0
+    ? Math.round(((acceptedSuggestions ?? 0) / ((acceptedSuggestions ?? 0) + (rejectedSuggestions ?? 0) || 1)) * 100)
+    : 0;
+
+  return json({
+    total_suggestions: totalSuggestions ?? 0,
+    suggestions_today: todaySuggestions ?? 0,
+    accepted: acceptedSuggestions ?? 0,
+    rejected: rejectedSuggestions ?? 0,
+    pending: pendingSuggestions ?? 0,
+    acceptance_rate: acceptanceRate,
+    ai_requests_today: totalRequestsToday,
+    estimated_cost_today_usd: Math.round(totalCostToday * 1000000) / 1000000,
+    usage_by_model: byModel,
+    recent_suggestions: recentSuggestions ?? [],
   });
 }
 
@@ -470,6 +530,7 @@ Deno.serve(async (req) => {
     if (route === "integrity-score" && pathParts[1]) return await integrityScore(req, pathParts[1]);
     if (route === "event-stream") return await eventStream(req);
     if (route === "transparency") return await transparency();
+    if (route === "ai-metrics") return await aiMetrics();
 
     return err("Not found", 404);
   } catch (e) {

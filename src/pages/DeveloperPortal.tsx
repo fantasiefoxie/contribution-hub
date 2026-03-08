@@ -173,6 +173,46 @@ export default function DeveloperPortal() {
             </p>
           </div>
 
+          {/* Zero-AI Architecture */}
+          <div className="bg-primary/5 rounded-xl border border-primary/20 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="h-4 w-4 text-primary" />
+              <h3 className="font-display font-semibold text-sm">Zero-AI Baseline Architecture</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              The platform operates on two strict layers. AI is never required for core operations.
+            </p>
+            <div className="space-y-2">
+              <div className="bg-card rounded-lg p-3 border border-border">
+                <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-1.5">Core Coordination Engine</p>
+                <p className="text-[10px] text-muted-foreground">Deterministic logic only. No AI dependencies.</p>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {["Identity", "Task Engine", "Validation", "Contribution Ledger", "Initiative Engine", "Campaign Ops", "Discovery", "Governance", "Observability", "Protocol API"].map(m => (
+                    <Badge key={m} variant="outline" className="text-[8px]">{m}</Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-card rounded-lg p-3 border border-border/50">
+                <p className="text-[10px] font-semibold text-accent uppercase tracking-wide mb-1.5">Optional Intelligence Layer</p>
+                <p className="text-[10px] text-muted-foreground">AI workers read events, produce advisory outputs requiring human confirmation.</p>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {["Campaign planning", "Task template generation", "Report drafting", "Analytics summaries"].map(m => (
+                    <Badge key={m} variant="outline" className="text-[8px] border-accent/30">{m}</Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 space-y-1">
+              <p className="text-[10px] font-semibold text-foreground">AI Output Fields</p>
+              <div className="bg-muted rounded-lg p-2">
+                <code className="text-[10px] font-mono text-muted-foreground">
+                  {`{ "generated_by": "ai", "confidence_score": 0.87, "status": "pending" }`}
+                </code>
+              </div>
+              <p className="text-[10px] text-muted-foreground">All AI suggestions stored in <code className="font-mono text-foreground">ai_suggestions</code> with status tracking (pending → accepted/rejected).</p>
+            </div>
+          </div>
+
           {/* Endpoints */}
           <div className="bg-card rounded-xl border border-border p-4">
             <h3 className="font-display font-semibold text-sm mb-3">Endpoints</h3>

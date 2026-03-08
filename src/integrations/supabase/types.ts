@@ -14,6 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_suggestions: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          confidence_score: number | null
+          context_entity_id: string | null
+          context_entity_type: string | null
+          created_at: string
+          expires_at: string | null
+          generated_by: string
+          id: string
+          input_summary: string | null
+          model_id: string | null
+          output_content: Json
+          rejected_reason: string | null
+          status: string
+          suggestion_type: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          confidence_score?: number | null
+          context_entity_id?: string | null
+          context_entity_type?: string | null
+          created_at?: string
+          expires_at?: string | null
+          generated_by?: string
+          id?: string
+          input_summary?: string | null
+          model_id?: string | null
+          output_content?: Json
+          rejected_reason?: string | null
+          status?: string
+          suggestion_type: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          confidence_score?: number | null
+          context_entity_id?: string | null
+          context_entity_type?: string | null
+          created_at?: string
+          expires_at?: string | null
+          generated_by?: string
+          id?: string
+          input_summary?: string | null
+          model_id?: string | null
+          output_content?: Json
+          rejected_reason?: string | null
+          status?: string
+          suggestion_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_usage_logs: {
+        Row: {
+          created_at: string
+          estimated_cost_usd: number | null
+          id: string
+          input_tokens: number | null
+          latency_ms: number | null
+          model_id: string
+          operation: string
+          output_tokens: number | null
+          suggestion_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model_id: string
+          operation: string
+          output_tokens?: number | null
+          suggestion_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model_id?: string
+          operation?: string
+          output_tokens?: number | null
+          suggestion_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_logs_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "ai_suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string

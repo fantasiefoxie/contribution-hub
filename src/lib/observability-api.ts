@@ -29,4 +29,5 @@ export const observabilityApi = {
   integrityScore: (userId: string) => invoke(`/integrity-score/${userId}`),
   eventStream: (limit?: number) => invoke(`/event-stream${limit ? `?limit=${limit}` : ""}`),
   transparency: () => invoke("/transparency"),
+  aiMetrics: () => invoke("/ai-metrics"),
 };
