@@ -17,14 +17,19 @@ export function useTasks(params?: { status?: string; visibility?: string }) {
   });
 }
 
+const isMockId = (id: string) => id.startsWith("demo-");
+
 export function useTask(taskId: string, options?: { retry?: boolean | number }) {
   return useQuery({
     queryKey: ["task", taskId],
     queryFn: async () => {
+      if (isMockId(taskId)) {
+        const mock = getMockTask(taskId);
+        return { task: mock ?? null };
+      }
       try {
         return await taskApi.get(taskId);
       } catch {
-        // Graceful fallback to mock data
         const mock = getMockTask(taskId);
         if (mock) return { task: mock };
         return { task: null };
