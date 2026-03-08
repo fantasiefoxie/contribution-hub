@@ -1,4 +1,5 @@
 // ── Stateful System Dynamics Simulation Engine ──
+// Production-hardened: all inputs validated, all outputs clamped, no NaN/Infinity possible.
 
 /** Clamp a number between min and max */
 function clamp(value: number, min: number, max: number): number {
@@ -10,93 +11,101 @@ function safeNum(value: number, fallback: number = 0): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
+/** Safe integer: round + clamp to non-negative */
+function safeInt(value: number, fallback: number = 0): number {
+  const n = safeNum(value, fallback);
+  return Math.max(0, Math.round(n));
+}
+
+// ── Core Types ──
+
 export interface InfraParams {
-  api_servers: number;
-  bg_workers: number;
-  validators: number;
-  events_per_worker_per_second: number;
-  base_latency: number;
-  cache_efficiency: number; // 0.80 – 0.99
+  readonly api_servers: number;
+  readonly bg_workers: number;
+  readonly validators: number;
+  readonly events_per_worker_per_second: number;
+  readonly base_latency: number;
+  readonly cache_efficiency: number; // 0.80 – 0.99
 }
 
 export interface ScenarioConfig {
-  name: string;
-  peak_users: number;
-  peak_minute: number;
-  spread: number;
-  volunteers: number;
-  validators: number;
-  tasks: number;
-  target: string;
+  readonly name: string;
+  readonly peak_users: number;
+  readonly peak_minute: number;
+  readonly spread: number;
+  readonly volunteers: number;
+  readonly validators: number;
+  readonly tasks: number;
+  readonly target: string;
 }
 
 export interface SimPoint {
-  time: string;
-  minute: number;
-  concurrentUsers: number;
-  apiRps: number;
-  eventsProduced: number;
-  eventsProcessed: number;
-  eventQueueBacklog: number;
-  workerUtil: number;
-  p50: number;
-  p95: number;
-  p99: number;
-  errorRate: number;
-  dbQps: number;
-  cacheHitRatio: number;
-  dbConnPool: number;
-  taskClaims: number;
-  submissions: number;
-  validations: number;
+  readonly time: string;
+  readonly minute: number;
+  readonly concurrentUsers: number;
+  readonly apiRps: number;
+  readonly eventsProduced: number;
+  readonly eventsProcessed: number;
+  readonly eventQueueBacklog: number;
+  readonly workerUtil: number;
+  readonly p50: number;
+  readonly p95: number;
+  readonly p99: number;
+  readonly errorRate: number;
+  readonly dbQps: number;
+  readonly cacheHitRatio: number;
+  readonly dbConnPool: number;
+  readonly taskClaims: number;
+  readonly submissions: number;
+  readonly validations: number;
 }
 
 export type HealthLevel = "healthy" | "warning" | "critical";
 
 export interface HealthStatus {
-  workerUtil: HealthLevel;
-  queueBacklog: HealthLevel;
-  p95Latency: HealthLevel;
-  errorRate: HealthLevel;
+  readonly workerUtil: HealthLevel;
+  readonly queueBacklog: HealthLevel;
+  readonly p95Latency: HealthLevel;
+  readonly errorRate: HealthLevel;
 }
 
-/** Summary of a fully-simulated scenario — used for comparison tables */
 export interface ScenarioSummary {
-  key: string;
-  scenario: ScenarioConfig;
-  infra: InfraParams;
-  timeline: SimPoint[];
-  health: HealthStatus;
-  peakApiRps: number;
-  peakDbQps: number;
-  peakWorkerUtil: number;
-  peakBacklog: number;
-  peakP95: number;
-  peakP99: number;
-  peakErrorRate: number;
-  totalApiRequests: number;
-  recommendedInfra: InfraEstimate;
-  breakpoints: Breakpoint[];
-  maxSafeVolunteers: number;
-  bottleneckComponent: string;
+  readonly key: string;
+  readonly scenario: ScenarioConfig;
+  readonly infra: InfraParams;
+  readonly timeline: readonly SimPoint[];
+  readonly health: HealthStatus;
+  readonly peakApiRps: number;
+  readonly peakDbQps: number;
+  readonly peakWorkerUtil: number;
+  readonly peakBacklog: number;
+  readonly peakP95: number;
+  readonly peakP99: number;
+  readonly peakErrorRate: number;
+  readonly totalApiRequests: number;
+  readonly recommendedInfra: InfraEstimate;
+  readonly breakpoints: readonly Breakpoint[];
+  readonly maxSafeVolunteers: number;
+  readonly bottleneckComponent: string;
 }
 
 export interface InfraEstimate {
-  api_servers: number;
-  bg_workers: number;
-  redis_memory_gb: number;
-  db_replicas: number;
+  readonly api_servers: number;
+  readonly bg_workers: number;
+  readonly redis_memory_gb: number;
+  readonly db_replicas: number;
 }
 
 // ── Cost Model ──
+
 export interface CostModel {
-  api_server_monthly: number;
-  worker_monthly: number;
-  postgres_primary: number;
-  postgres_replica: number;
-  redis_node: number;
-  storage_per_gb: number;
-  bandwidth_per_gb: number;
+  readonly api_server_monthly: number;
+  readonly worker_monthly: number;
+  readonly postgres_primary: number;
+  readonly postgres_replica: number;
+  readonly redis_node: number;
+  readonly storage_per_gb: number;
+  readonly bandwidth_per_gb: number;
 }
 
 export const DEFAULT_COST_MODEL: CostModel = {
@@ -110,69 +119,96 @@ export const DEFAULT_COST_MODEL: CostModel = {
 };
 
 export interface CostBreakdown {
-  apiServers: number;
-  workers: number;
-  postgresPrimary: number;
-  postgresReplicas: number;
-  redis: number;
-  storage: number;
-  bandwidth: number;
-  total: number;
-  costPer1kVolunteers: number;
+  readonly apiServers: number;
+  readonly workers: number;
+  readonly postgresPrimary: number;
+  readonly postgresReplicas: number;
+  readonly redis: number;
+  readonly storage: number;
+  readonly bandwidth: number;
+  readonly total: number;
+  readonly costPer1kVolunteers: number;
 }
 
 export interface CostOptimizationHint {
-  title: string;
-  description: string;
-  savingsPercent: number;
+  readonly title: string;
+  readonly description: string;
+  readonly savingsPercent: number;
 }
 
-/** Estimate monthly infrastructure cost */
+/** Sanitize cost model — enforce positive values */
+function safeCostModel(cost: CostModel): CostModel {
+  return {
+    api_server_monthly: Math.max(0, safeNum(cost.api_server_monthly, 85)),
+    worker_monthly: Math.max(0, safeNum(cost.worker_monthly, 45)),
+    postgres_primary: Math.max(0, safeNum(cost.postgres_primary, 120)),
+    postgres_replica: Math.max(0, safeNum(cost.postgres_replica, 80)),
+    redis_node: Math.max(0, safeNum(cost.redis_node, 55)),
+    storage_per_gb: Math.max(0, safeNum(cost.storage_per_gb, 0.10)),
+    bandwidth_per_gb: Math.max(0, safeNum(cost.bandwidth_per_gb, 0.08)),
+  };
+}
+
+/** Estimate monthly infrastructure cost — overflow-safe */
 export function estimateCost(
   infra: InfraEstimate,
   scenario: ScenarioConfig,
-  cost: CostModel = DEFAULT_COST_MODEL,
+  rawCost: CostModel = DEFAULT_COST_MODEL,
 ): CostBreakdown {
-  const storageGB = Math.max(1, Math.ceil(scenario.volunteers * 0.002 * (scenario.tasks / 1000)));
-  const bandwidthGB = Math.max(1, Math.ceil(scenario.peak_users * 0.05 * 30));
+  const cost = safeCostModel(rawCost);
+  const safeVol = Math.max(0, safeNum(scenario.volunteers));
+  const safeTasks = Math.max(1, safeNum(scenario.tasks, 1));
+  const safePeakUsers = Math.max(0, safeNum(scenario.peak_users));
 
-  const apiServers = infra.api_servers * cost.api_server_monthly;
-  const workers = infra.bg_workers * cost.worker_monthly;
+  const storageGB = clamp(Math.ceil(safeVol * 0.002 * (safeTasks / 1000)), 1, 1_000_000);
+  const bandwidthGB = clamp(Math.ceil(safePeakUsers * 0.05 * 30), 1, 10_000_000);
+
+  const apiServers = safeNum(Math.max(1, infra.api_servers) * cost.api_server_monthly);
+  const workers = safeNum(Math.max(1, infra.bg_workers) * cost.worker_monthly);
   const postgresPrimary = cost.postgres_primary;
-  const postgresReplicas = infra.db_replicas * cost.postgres_replica;
-  const redis = Math.max(1, Math.ceil(infra.redis_memory_gb / 4)) * cost.redis_node;
-  const storage = storageGB * cost.storage_per_gb;
-  const bandwidth = bandwidthGB * cost.bandwidth_per_gb;
-  const total = apiServers + workers + postgresPrimary + postgresReplicas + redis + storage + bandwidth;
-  const costPer1k = scenario.volunteers > 0 ? Math.round((total / scenario.volunteers) * 1000 * 100) / 100 : 0;
+  const postgresReplicas = safeNum(Math.max(0, infra.db_replicas) * cost.postgres_replica);
+  const redis = safeNum(Math.max(1, Math.ceil(Math.max(1, infra.redis_memory_gb) / 4)) * cost.redis_node);
+  const storage = safeNum(storageGB * cost.storage_per_gb);
+  const bandwidth = safeNum(bandwidthGB * cost.bandwidth_per_gb);
+  const total = safeNum(apiServers + workers + postgresPrimary + postgresReplicas + redis + storage + bandwidth);
+  const costPer1k = safeVol > 0
+    ? Math.round(safeNum((total / safeVol) * 1000) * 100) / 100
+    : 0;
 
-  return { apiServers, workers, postgresPrimary, postgresReplicas, redis, storage, bandwidth, total, costPer1kVolunteers: costPer1k };
+  return {
+    apiServers, workers, postgresPrimary, postgresReplicas,
+    redis, storage, bandwidth, total,
+    costPer1kVolunteers: costPer1k,
+  };
 }
 
-/** Generate cost optimization hints based on scenario analysis */
+/** Generate cost optimization hints — safe against zero-total */
 export function getCostHints(breakdown: CostBreakdown, scenario: ScenarioConfig): CostOptimizationHint[] {
   const hints: CostOptimizationHint[] = [];
-  if (breakdown.workers / breakdown.total > 0.35) {
+  const total = Math.max(1, breakdown.total); // prevent divide-by-zero
+  if (breakdown.workers / total > 0.35) {
     hints.push({ title: "Batch validation processing", description: "Schedule validations in batches instead of real-time to reduce worker count by ~30%.", savingsPercent: 12 });
   }
-  if (breakdown.bandwidth / breakdown.total > 0.05) {
+  if (breakdown.bandwidth / total > 0.05) {
     hints.push({ title: "Compress uploads", description: "Enable client-side image compression to reduce bandwidth costs.", savingsPercent: 8 });
   }
-  if (breakdown.apiServers / breakdown.total > 0.3) {
+  if (breakdown.apiServers / total > 0.3) {
     hints.push({ title: "Increase cache TTL", description: "Extend cache TTL from 5min to 15min to reduce API server load.", savingsPercent: 15 });
   }
-  if (scenario.volunteers > 50000 && breakdown.postgresReplicas > 0) {
+  if (safeNum(scenario.volunteers) > 50000 && breakdown.postgresReplicas > 0) {
     hints.push({ title: "Use read replicas strategically", description: "Route read-heavy queries to replicas to defer scaling the primary.", savingsPercent: 10 });
   }
   return hints;
 }
 
 export interface Breakpoint {
-  metric: string;
-  threshold: string;
-  actual: string;
-  severity: "warning" | "critical";
+  readonly metric: string;
+  readonly threshold: string;
+  readonly actual: string;
+  readonly severity: "warning" | "critical";
 }
+
+// ── Defaults ──
 
 export const DEFAULT_INFRA: InfraParams = {
   api_servers: 4,
@@ -183,76 +219,71 @@ export const DEFAULT_INFRA: InfraParams = {
   cache_efficiency: 0.92,
 };
 
-// ── Safe Infra: enforce minimums to prevent divide-by-zero ──
+// ── Input Sanitizers ──
+
+/** Enforce safe minimums on infra params — prevents divide-by-zero and NaN */
 function safeInfra(infra: InfraParams): InfraParams {
   return {
-    api_servers: Math.max(1, infra.api_servers),
-    bg_workers: Math.max(1, infra.bg_workers),
-    validators: Math.max(1, infra.validators),
-    events_per_worker_per_second: Math.max(1, infra.events_per_worker_per_second),
-    base_latency: Math.max(0, infra.base_latency),
-    cache_efficiency: clamp(infra.cache_efficiency, 0.01, 0.99),
+    api_servers: clamp(safeNum(infra.api_servers, 1), 1, 100),
+    bg_workers: clamp(safeNum(infra.bg_workers, 1), 1, 200),
+    validators: clamp(safeNum(infra.validators, 1), 1, 100_000),
+    events_per_worker_per_second: clamp(safeNum(infra.events_per_worker_per_second, 50), 1, 1_000),
+    base_latency: clamp(safeNum(infra.base_latency, 10), 0, 2_000),
+    cache_efficiency: clamp(safeNum(infra.cache_efficiency, 0.90), 0.01, 0.99),
+  };
+}
+
+/** Enforce safe minimums on scenario params */
+function safeScenario(s: ScenarioConfig): ScenarioConfig {
+  return {
+    name: (s.name || "Unnamed").slice(0, 100),
+    peak_users: clamp(safeNum(s.peak_users, 100), 0, 10_000_000),
+    peak_minute: clamp(safeNum(s.peak_minute, 60), 0, 120),
+    spread: clamp(safeNum(s.spread, 30), 1, 120),
+    volunteers: clamp(safeNum(s.volunteers, 100), 0, 10_000_000),
+    validators: clamp(safeNum(s.validators, 10), 1, 100_000),
+    tasks: clamp(safeNum(s.tasks, 10), 1, 1_000_000),
+    target: (s.target || "—").slice(0, 100),
   };
 }
 
 // ── Preset Scenarios ──
-export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: ScenarioConfig }> = {
+
+export const PRESETS: Readonly<Record<string, { infra: Partial<InfraParams>; scenario: ScenarioConfig }>> = {
   small_ngo: {
     infra: { api_servers: 2, bg_workers: 3, validators: 50, events_per_worker_per_second: 80, base_latency: 60, cache_efficiency: 0.88 },
-    scenario: {
-      name: "Small NGO Campaign",
-      peak_users: 800, peak_minute: 60, spread: 35,
-      volunteers: 2_000, validators: 50, tasks: 200, target: "4K households",
-    },
+    scenario: { name: "Small NGO Campaign", peak_users: 800, peak_minute: 60, spread: 35, volunteers: 2_000, validators: 50, tasks: 200, target: "4K households" },
   },
   city_survey_10k: {
     infra: { api_servers: 3, bg_workers: 6, validators: 500, events_per_worker_per_second: 90, base_latency: 55, cache_efficiency: 0.90 },
-    scenario: {
-      name: "City Survey (10K)",
-      peak_users: 4_000, peak_minute: 60, spread: 30,
-      volunteers: 10_000, validators: 500, tasks: 1_500, target: "25K households",
-    },
+    scenario: { name: "City Survey (10K)", peak_users: 4_000, peak_minute: 60, spread: 30, volunteers: 10_000, validators: 500, tasks: 1_500, target: "25K households" },
   },
   city_survey: {
     infra: { api_servers: 4, bg_workers: 10, validators: 2_000, events_per_worker_per_second: 100, base_latency: 50, cache_efficiency: 0.92 },
-    scenario: {
-      name: "City Survey (50K)",
-      peak_users: 20_000, peak_minute: 60, spread: 30,
-      volunteers: 50_000, validators: 2_000, tasks: 5_000, target: "100K households",
-    },
+    scenario: { name: "City Survey (50K)", peak_users: 20_000, peak_minute: 60, spread: 30, volunteers: 50_000, validators: 2_000, tasks: 5_000, target: "100K households" },
   },
   disaster_response: {
     infra: { api_servers: 6, bg_workers: 20, validators: 500, events_per_worker_per_second: 120, base_latency: 70, cache_efficiency: 0.85 },
-    scenario: {
-      name: "Disaster Response Surge",
-      peak_users: 40_000, peak_minute: 30, spread: 15,
-      volunteers: 80_000, validators: 500, tasks: 10_000, target: "200K households",
-    },
+    scenario: { name: "Disaster Response Surge", peak_users: 40_000, peak_minute: 30, spread: 15, volunteers: 80_000, validators: 500, tasks: 10_000, target: "200K households" },
   },
   national: {
     infra: { api_servers: 8, bg_workers: 25, validators: 5_000, events_per_worker_per_second: 150, base_latency: 55, cache_efficiency: 0.95 },
-    scenario: {
-      name: "National Campaign (200K)",
-      peak_users: 80_000, peak_minute: 60, spread: 25,
-      volunteers: 200_000, validators: 5_000, tasks: 25_000, target: "500K households",
-    },
+    scenario: { name: "National Campaign (200K)", peak_users: 80_000, peak_minute: 60, spread: 25, volunteers: 200_000, validators: 5_000, tasks: 25_000, target: "500K households" },
   },
   global_network: {
     infra: { api_servers: 16, bg_workers: 50, validators: 10_000, events_per_worker_per_second: 200, base_latency: 65, cache_efficiency: 0.96 },
-    scenario: {
-      name: "Global Network (1M)",
-      peak_users: 300_000, peak_minute: 60, spread: 40,
-      volunteers: 1_000_000, validators: 10_000, tasks: 100_000, target: "2M households",
-    },
+    scenario: { name: "Global Network (1M)", peak_users: 300_000, peak_minute: 60, spread: 40, volunteers: 1_000_000, validators: 10_000, tasks: 100_000, target: "2M households" },
   },
 };
 
 export const DEFAULT_SCENARIO: ScenarioConfig = PRESETS.city_survey.scenario;
 
-export function computeHealth(timeline: SimPoint[]): HealthStatus {
-  if (timeline.length === 0) {
-    return { workerUtil: "healthy", queueBacklog: "healthy", p95Latency: "healthy", errorRate: "healthy" };
-  }
+// ── Analysis Functions ──
+
+const DEFAULT_HEALTH: HealthStatus = { workerUtil: "healthy", queueBacklog: "healthy", p95Latency: "healthy", errorRate: "healthy" };
+
+export function computeHealth(timeline: readonly SimPoint[]): HealthStatus {
+  if (timeline.length === 0) return DEFAULT_HEALTH;
   const peakWorker = Math.max(...timeline.map((p) => p.workerUtil));
   const peakBacklog = Math.max(...timeline.map((p) => p.eventQueueBacklog));
   const peakP95 = Math.max(...timeline.map((p) => p.p95));
@@ -266,18 +297,19 @@ export function computeHealth(timeline: SimPoint[]): HealthStatus {
 }
 
 /** Estimate minimum infra for a scenario at comfortable headroom */
-export function estimateInfra(scenario: ScenarioConfig): InfraEstimate {
-  const peakRps = Math.round(scenario.peak_users * 0.21);
+export function estimateInfra(rawScenario: ScenarioConfig): InfraEstimate {
+  const scenario = safeScenario(rawScenario);
+  const peakRps = safeInt(scenario.peak_users * 0.21);
   const apiServers = Math.max(2, Math.ceil(peakRps / 500));
   const eventsPerSec = peakRps * 0.25;
-  const bgWorkers = Math.max(2, Math.ceil(eventsPerSec / 80)); // 80% target util
+  const bgWorkers = Math.max(2, Math.ceil(eventsPerSec / 80));
   const redisGb = Math.max(1, Math.ceil(scenario.volunteers / 50_000) * 2);
   const dbReplicas = scenario.peak_users > 30_000 ? Math.ceil(scenario.peak_users / 40_000) : 0;
   return { api_servers: apiServers, bg_workers: bgWorkers, redis_memory_gb: redisGb, db_replicas: dbReplicas };
 }
 
 /** Detect scaling breakpoints in a timeline */
-export function detectBreakpoints(timeline: SimPoint[]): Breakpoint[] {
+export function detectBreakpoints(timeline: readonly SimPoint[]): Breakpoint[] {
   if (timeline.length === 0) return [];
   const bp: Breakpoint[] = [];
   const peakWorker = Math.max(...timeline.map((p) => p.workerUtil));
@@ -292,12 +324,20 @@ export function detectBreakpoints(timeline: SimPoint[]): Breakpoint[] {
   return bp;
 }
 
-/** Summarize a full scenario simulation */
+/** Summarize a full scenario simulation — fault-tolerant, never throws */
 export function summarizeScenario(key: string, presetKey?: string): ScenarioSummary {
   const preset = presetKey ? PRESETS[presetKey] : PRESETS[key];
-  if (!preset) throw new Error(`Unknown preset: ${key}`);
+  if (!preset) {
+    // Fallback to default scenario instead of throwing
+    const fallbackInfra = DEFAULT_INFRA;
+    const fallbackScenario: ScenarioConfig = { ...DEFAULT_SCENARIO, name: `Unknown (${key})` };
+    return buildSummary(key, fallbackInfra, fallbackScenario);
+  }
   const infra: InfraParams = { ...DEFAULT_INFRA, ...preset.infra };
-  const scenario = preset.scenario;
+  return buildSummary(key, infra, preset.scenario);
+}
+
+function buildSummary(key: string, infra: InfraParams, scenario: ScenarioConfig): ScenarioSummary {
   const timeline = generateTimeline(infra, scenario);
   const health = computeHealth(timeline);
   const breakpoints = detectBreakpoints(timeline);
@@ -312,14 +352,12 @@ export function summarizeScenario(key: string, presetKey?: string): ScenarioSumm
   const peakErrorRate = timeline.length > 0 ? Math.max(...timeline.map((p) => p.errorRate)) : 0;
   const totalApiRequests = timeline.reduce((s, p) => s + p.apiRps * 5 * 60, 0);
 
-  // Determine bottleneck
   let bottleneckComponent = "None";
   if (peakWorkerUtil >= 95) bottleneckComponent = "Background Workers";
   else if (peakP95 > 500) bottleneckComponent = "API Servers / Latency";
   else if (peakBacklog > 2000) bottleneckComponent = "Event Queue";
   else if (peakErrorRate > 0.05) bottleneckComponent = "Error Cascade";
 
-  // Estimate max safe volunteers (binary search approach simplified)
   let maxSafe = scenario.volunteers;
   if (breakpoints.some((b) => b.severity === "critical")) {
     maxSafe = Math.round(scenario.volunteers * 0.6);
@@ -336,57 +374,67 @@ export function summarizeScenario(key: string, presetKey?: string): ScenarioSumm
   };
 }
 
+// ── Timeline Generator ──
+
+/** Maximum number of time steps to prevent runaway loops */
+const MAX_TIMESTEPS = 50;
+
 export function generateTimeline(
   rawInfra: InfraParams,
-  scenario: ScenarioConfig
+  rawScenario: ScenarioConfig,
 ): SimPoint[] {
   const infra = safeInfra(rawInfra);
+  const scenario = safeScenario(rawScenario);
   const points: SimPoint[] = [];
   const TIMESTEP_SEC = 5 * 60;
   const safeTasks = Math.max(1, scenario.tasks);
   const safeValidators = Math.max(1, scenario.validators);
-  const safeSpread = Math.max(1, scenario.spread);
 
   let queueBacklog = 0;
+  let stepCount = 0;
 
   for (let m = 0; m <= 120; m += 5) {
-    const t = (m - scenario.peak_minute) / safeSpread;
-    const loadFactor = clamp(Math.exp(-0.5 * t * t), 0, 1);
-    const concurrentUsers = Math.round(safeNum(loadFactor * scenario.peak_users));
-    const apiRps = Math.round(safeNum(concurrentUsers * 0.21 * infra.api_servers / 4));
+    if (++stepCount > MAX_TIMESTEPS) break; // hard safety limit
+
+    const t = (m - scenario.peak_minute) / scenario.spread; // spread already >= 1 via safeScenario
+    const loadFactor = clamp(safeNum(Math.exp(-0.5 * t * t)), 0, 1);
+    const concurrentUsers = safeInt(loadFactor * scenario.peak_users);
+    const apiRps = safeInt(concurrentUsers * 0.21 * infra.api_servers / 4);
     const eventsProducedPerSec = apiRps * 0.25;
     const eventsProducedWindow = safeNum(eventsProducedPerSec * TIMESTEP_SEC);
     const workerCapacityPerSec = infra.bg_workers * infra.events_per_worker_per_second;
     const workerCapacityWindow = safeNum(workerCapacityPerSec * TIMESTEP_SEC);
-    const totalToDrain = queueBacklog + eventsProducedWindow;
+    const totalToDrain = safeNum(queueBacklog + eventsProducedWindow);
     const eventsProcessed = Math.min(totalToDrain, workerCapacityWindow);
     queueBacklog = Math.max(0, safeNum(totalToDrain - eventsProcessed));
 
+    // Cap backlog to prevent unbounded growth in extreme scenarios
+    queueBacklog = Math.min(queueBacklog, 1_000_000);
+
     const workerUtil = workerCapacityWindow > 0
-      ? clamp(eventsProcessed / workerCapacityWindow, 0, 1)
+      ? clamp(safeNum(eventsProcessed / workerCapacityWindow), 0, 1)
       : 0;
 
     const cachePenalty = (1 - infra.cache_efficiency) * 200;
-    const p95 = Math.max(0, Math.round(safeNum(
-      infra.base_latency + cachePenalty + workerUtil * 350 + queueBacklog * 0.05
-    )));
-    const p50 = Math.max(0, Math.round(p95 * 0.5));
-    const p99 = Math.max(0, Math.round(p95 * 1.6));
+    const rawP95 = infra.base_latency + cachePenalty + workerUtil * 350 + queueBacklog * 0.05;
+    const p95 = clamp(safeInt(rawP95), 0, 99_999);
+    const p50 = clamp(Math.round(p95 * 0.5), 0, 99_999);
+    const p99 = clamp(Math.round(p95 * 1.6), 0, 99_999);
     const errorRate = clamp(safeNum((p95 - 300) / 1000), 0, 1);
 
     const dbCacheMiss = 1 - infra.cache_efficiency;
-    const dbQps = Math.max(0, Math.round(safeNum(apiRps * (1.5 + dbCacheMiss * 6))));
+    const dbQps = safeInt(apiRps * (1.5 + dbCacheMiss * 6));
     const cacheHitRatio = clamp(
-      Math.round(safeNum(infra.cache_efficiency - workerUtil * 0.04) * 100) / 100, 0.80, 0.99
+      Math.round(safeNum(infra.cache_efficiency - workerUtil * 0.04) * 100) / 100, 0.80, 0.99,
     );
-    const dbConnPool = clamp(Math.round(safeNum(
-      (apiRps / (infra.api_servers * 25)) * 100 * 0.9
-    )), 0, 100);
+    const dbConnPool = clamp(safeInt(
+      (apiRps / (infra.api_servers * 25)) * 100 * 0.9,
+    ), 0, 100);
 
-    const validatorThroughputRatio = clamp(infra.validators / safeValidators, 0, 1);
-    const taskClaims = Math.max(0, Math.round(safeNum(loadFactor * 380 * (safeTasks / 5000))));
-    const submissions = Math.max(0, Math.round(safeNum(loadFactor * 210 * (safeTasks / 5000))));
-    const validations = Math.max(0, Math.round(safeNum(loadFactor * 160 * validatorThroughputRatio * (safeTasks / 5000))));
+    const validatorThroughputRatio = clamp(safeNum(infra.validators / safeValidators), 0, 1);
+    const taskClaims = safeInt(loadFactor * 380 * (safeTasks / 5000));
+    const submissions = safeInt(loadFactor * 210 * (safeTasks / 5000));
+    const validations = safeInt(loadFactor * 160 * validatorThroughputRatio * (safeTasks / 5000));
 
     points.push({
       time: `${Math.floor(m / 60) + 18}:${String(m % 60).padStart(2, "0")}`,
