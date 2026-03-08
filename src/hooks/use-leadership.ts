@@ -1,10 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { leadershipApi } from "@/lib/leadership-api";
+import { useSession } from "@/hooks/use-session";
 
 export function useMyProgression() {
+  const userId = useSession();
   return useQuery({
-    queryKey: ["my-progression"],
+    queryKey: ["my-progression", userId],
     queryFn: () => leadershipApi.myProgression(),
+    enabled: !!userId,
   });
 }
 
