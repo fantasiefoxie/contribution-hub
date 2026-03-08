@@ -45,8 +45,16 @@ export default function TaskDetails() {
     }
   }, [reservationTimer]);
 
+  const isMock = id?.startsWith("demo-") ?? false;
+
   const handleReserve = async () => {
     if (!id) return;
+    if (isMock) {
+      setIsReserved(true);
+      setReservationTimer(60);
+      toast.success("Task reserved! Confirm within 60 seconds.");
+      return;
+    }
     try {
       await reserveMutation.mutateAsync(id);
       setIsReserved(true);
@@ -59,6 +67,13 @@ export default function TaskDetails() {
 
   const handleConfirmClaim = async () => {
     if (!id) return;
+    if (isMock) {
+      setIsReserved(false);
+      setReservationTimer(null);
+      toast.success("Task claimed! Head to Active workspace.");
+      navigate("/active");
+      return;
+    }
     try {
       await claimMutation.mutateAsync(id);
       setIsReserved(false);
