@@ -143,8 +143,11 @@ export default function TaskDetails() {
           <h1 className="font-display text-xl font-bold leading-tight">{t.title}</h1>
           <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
             <Building2 className="h-3.5 w-3.5" />
-            <span>Green City Initiative</span>
+            <span>{ctx.org?.name ?? "Community Project"}</span>
           </div>
+          {ctx.initiative && (
+            <p className="text-xs text-muted-foreground mt-1">Part of <span className="font-medium text-foreground">{ctx.initiative.title}</span></p>
+          )}
         </div>
 
         {/* Meta cards */}
