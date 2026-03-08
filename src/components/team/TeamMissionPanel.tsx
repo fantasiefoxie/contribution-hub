@@ -43,6 +43,10 @@ export default function TeamMissionPanel({ taskId, teamTarget, isTeam }: TeamMis
   };
 
   const handleLeave = async () => {
+    if (isMock) {
+      toast.success("Left the team");
+      return;
+    }
     try {
       await leaveMutation.mutateAsync(taskId);
       toast.success("Left the team");
