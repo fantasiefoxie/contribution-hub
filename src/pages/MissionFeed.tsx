@@ -70,7 +70,7 @@ export default function MissionFeed() {
   const [passportMode, setPassportMode] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useTasks({ status: "open" });
+  const { data, isLoading, isError } = useTasks({ status: "open" });
   const apiTasks: TaskCardData[] = (data?.tasks ?? []).map((t: any) => ({
     id: t.id,
     title: t.title,
@@ -83,6 +83,7 @@ export default function MissionFeed() {
     estimatedTime: undefined,
   }));
 
+  const showLoading = isLoading && !isError;
   const tasks = apiTasks.length > 0 ? apiTasks : mockTasks;
 
   const filtered = tasks.filter((t) => {
