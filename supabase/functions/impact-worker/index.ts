@@ -233,7 +233,7 @@ async function processValidation(req: Request) {
   const { data: contribution } = await db.from("contributions").select("*").eq("id", contribution_id).maybeSingle();
   if (!contribution) return err("Contribution not found", 404);
 
-  const { data: task } = await db.from("tasks").select("*").eq("id", contribution.task_id).single();
+  const { data: task } = await db.from("tasks").select("*").eq("id", contribution.task_id).maybeSingle();
   if (!task) return err("Task not found", 404);
 
   // 1. Send impact feedback notification to contributor
