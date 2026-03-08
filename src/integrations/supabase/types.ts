@@ -422,6 +422,9 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          interests: string[] | null
+          latitude: number | null
+          longitude: number | null
           phone: string | null
           status: Database["public"]["Enums"]["user_status"]
           updated_at: string
@@ -431,6 +434,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          interests?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           phone?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
@@ -440,6 +446,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          interests?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           phone?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
@@ -598,9 +607,12 @@ export type Database = {
           expires_at: string | null
           id: string
           initiative_id: string | null
+          is_priority: boolean
+          latitude: number | null
           lock_duration_mins: number
           locked_by: string | null
           locked_until: string | null
+          longitude: number | null
           org_id: string | null
           project_id: string | null
           reserved_by: string | null
@@ -619,9 +631,12 @@ export type Database = {
           expires_at?: string | null
           id?: string
           initiative_id?: string | null
+          is_priority?: boolean
+          latitude?: number | null
           lock_duration_mins?: number
           locked_by?: string | null
           locked_until?: string | null
+          longitude?: number | null
           org_id?: string | null
           project_id?: string | null
           reserved_by?: string | null
@@ -640,9 +655,12 @@ export type Database = {
           expires_at?: string | null
           id?: string
           initiative_id?: string | null
+          is_priority?: boolean
+          latitude?: number | null
           lock_duration_mins?: number
           locked_by?: string | null
           locked_until?: string | null
+          longitude?: number | null
           org_id?: string | null
           project_id?: string | null
           reserved_by?: string | null
