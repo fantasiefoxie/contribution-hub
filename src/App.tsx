@@ -33,6 +33,9 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/validate" element={<ValidationQueue />} />
           <Route path="/validate/:id" element={<SubmissionReview />} />
+          <Route path="/initiatives" element={<InitiativeDiscovery />} />
+          <Route path="/initiatives/create" element={<InitiativeBuilder />} />
+          <Route path="/initiatives/:id" element={<InitiativeDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
