@@ -26,6 +26,21 @@ function getSupabase(req: Request) {
   );
 }
 
+/** Extract authenticated user ID from JWT, or null if not authenticated */
+async function getAuthUserId(req: Request): Promise<string | null> {
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    const supabase = getSupabase(req);
+    const token = authHeader.replace("Bearer ", "");
+    const { data, error } = await supabase.auth.getClaims(token);
+    if (error || !data?.claims?.sub) return null;
+    return data.claims.sub as string;
+  } catch {
+    return null;
+  }
+}
+
 function getServiceDb() {
   return createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -92,16 +107,15 @@ async function communityFeed(req: Request) {
 // ── GET /impact-worker/my-impact ──
 // Volunteer's cumulative impact
 async function myImpact(req: Request) {
-  const supabase = getSupabase(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return err("Unauthorized", 401);
+  const userId = await getAuthUserId(req);
+  if (!userId) return err("Unauthorized", 401);
 
   const db = getServiceDb();
 
   const { data: contributions } = await db
     .from("contributions")
     .select("score, impact_metrics, created_at, task_id")
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
 
   const items = contributions ?? [];
   const totalScore = items.reduce((sum: number, c: any) => sum + (c.score || 0), 0);
@@ -119,12 +133,15 @@ async function myImpact(req: Request) {
 
   // Count distinct initiatives
   const taskIds = items.map((c: any) => c.task_id);
-  const { data: tasks } = await db
-    .from("tasks")
-    .select("initiative_id")
-    .in("id", taskIds)
-    .not("initiative_id", "is", null);
-  const initiativeCount = new Set((tasks ?? []).map((t: any) => t.initiative_id)).size;
+  let initiativeCount = 0;
+  if (taskIds.length > 0) {
+    const { data: tasks } = await db
+      .from("tasks")
+      .select("initiative_id")
+      .in("id", taskIds)
+      .not("initiative_id", "is", null);
+    initiativeCount = new Set((tasks ?? []).map((t: any) => t.initiative_id)).size;
+  }
 
   return json({
     tasks_completed: items.length,
@@ -146,7 +163,7 @@ async function initiativeProgress(req: Request, rawId: string) {
     .from("initiatives")
     .select("*")
     .eq("id", initiativeId)
-    .single();
+    .maybeSingle();
 
   if (!initiative) return notFound(rawId);
 
@@ -213,10 +230,10 @@ async function processValidation(req: Request) {
 
   if (!contribution_id) return err("contribution_id required");
 
-  const { data: contribution } = await db.from("contributions").select("*").eq("id", contribution_id).single();
+  const { data: contribution } = await db.from("contributions").select("*").eq("id", contribution_id).maybeSingle();
   if (!contribution) return err("Contribution not found", 404);
 
-  const { data: task } = await db.from("tasks").select("*").eq("id", contribution.task_id).single();
+  const { data: task } = await db.from("tasks").select("*").eq("id", contribution.task_id).maybeSingle();
   if (!task) return err("Task not found", 404);
 
   // 1. Send impact feedback notification to contributor
@@ -238,7 +255,7 @@ async function processValidation(req: Request) {
 
   // 2. Check initiative milestones
   if (task.initiative_id) {
-    const { data: initiative } = await db.from("initiatives").select("*").eq("id", task.initiative_id).single();
+    const { data: initiative } = await db.from("initiatives").select("*").eq("id", task.initiative_id).maybeSingle();
     if (initiative && initiative.target_metrics) {
       const targets = initiative.target_metrics as Record<string, number>;
 
@@ -272,7 +289,7 @@ async function processValidation(req: Request) {
             const { error: insertErr } = await db
               .from("initiative_milestones")
               .insert({ initiative_id: task.initiative_id, percentage: milestone })
-              .select().single();
+              .select();
 
             // If insert succeeds (not duplicate), emit notification
             if (!insertErr) {
@@ -366,9 +383,8 @@ async function weeklyySummary(_req: Request) {
 // ── GET /impact-worker/next-mission ──
 // Recommend a related or nearby task after completion
 async function nextMission(req: Request) {
-  const supabase = getSupabase(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return err("Unauthorized", 401);
+  const userId = await getAuthUserId(req);
+  if (!userId) return err("Unauthorized", 401);
 
   const db = getServiceDb();
   const url = new URL(req.url);
@@ -377,7 +393,7 @@ async function nextMission(req: Request) {
   // Get current task tags for relevance
   let tags: string[] = [];
   if (currentTaskId) {
-    const { data: task } = await db.from("tasks").select("tags").eq("id", currentTaskId).single();
+    const { data: task } = await db.from("tasks").select("tags").eq("id", currentTaskId).maybeSingle();
     tags = task?.tags ?? [];
   }
 
@@ -387,7 +403,7 @@ async function nextMission(req: Request) {
     .select("id, title, tags, difficulty, lock_duration_mins")
     .eq("status", "open")
     .eq("visibility", "public")
-    .neq("created_by", user.id)
+    .neq("created_by", userId)
     .limit(10)
     .order("created_at", { ascending: false });
 
