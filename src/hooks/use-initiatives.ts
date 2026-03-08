@@ -13,6 +13,8 @@ export function useInitiative(id: string) {
     queryKey: ["initiative", id],
     queryFn: () => initiativeApi.get(id),
     enabled: !!id,
+    retry: false,
+    meta: { suppressError: true },
   });
 }
 
