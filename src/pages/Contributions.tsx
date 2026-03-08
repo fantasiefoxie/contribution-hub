@@ -6,17 +6,17 @@ import InitiativeProgressCard from "@/components/impact/InitiativeProgressCard";
 import { useMyImpact } from "@/hooks/use-impact";
 
 const badges = [
-  { name: "Community Outreach", level: "Gold", emoji: "🤝", domain: "community" },
-  { name: "Environmental Work", level: "Silver", emoji: "🌿", domain: "environment" },
-  { name: "Survey Research", level: "Bronze", emoji: "📊", domain: "research" },
-  { name: "Event Logistics", level: "Platinum", emoji: "🎪", domain: "logistics" },
+  { name: "Community Outreach", level: "Gold", icon: Users, domain: "community" },
+  { name: "Environmental Work", level: "Silver", icon: Leaf, domain: "environment" },
+  { name: "Survey Research", level: "Bronze", icon: TrendingUp, domain: "research" },
+  { name: "Event Logistics", level: "Platinum", icon: Calendar, domain: "logistics" },
 ];
 
 const levelColors: Record<string, string> = {
-  Bronze: "bg-orange-100 text-orange-700",
-  Silver: "bg-gray-100 text-gray-700",
-  Gold: "bg-yellow-100 text-yellow-700",
-  Platinum: "bg-violet-100 text-violet-700",
+  Bronze: "bg-secondary/10 text-secondary",
+  Silver: "bg-muted text-muted-foreground",
+  Gold: "bg-secondary/15 text-secondary",
+  Platinum: "bg-accent/10 text-accent",
 };
 
 const metricIcons: Record<string, typeof Home> = {
