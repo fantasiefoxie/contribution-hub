@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Flag, Sparkles, MapPin, AlertTriangle, Globe, Loader2 } from "lucide-react";
+import { Search, Flag, Sparkles, MapPin, AlertTriangle, Globe, Loader2, Crosshair } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import AppShell from "@/components/layout/AppShell";
 import PassportToggle from "@/components/mission/PassportToggle";
 import ImpactBanner from "@/components/mission/ImpactBanner";
