@@ -365,6 +365,19 @@ async function approveSubmission(req: Request, submissionId: string) {
     task_id: task.id, validation_id: validation.id,
   });
 
+  // Trigger impact processing (fire-and-forget)
+  if (contribution) {
+    fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/impact-worker/process-validation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        "apikey": Deno.env.get("SUPABASE_ANON_KEY")!,
+      },
+      body: JSON.stringify({ contribution_id: contribution.id }),
+    }).catch(console.error);
+  }
+
   return json({ validation, contribution });
 }
 

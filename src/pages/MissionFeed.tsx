@@ -5,6 +5,7 @@ import FilterChips, { type FilterCategory } from "@/components/mission/FilterChi
 import TaskCard, { type TaskCardData } from "@/components/mission/TaskCard";
 import PassportToggle from "@/components/mission/PassportToggle";
 import ImpactBanner from "@/components/mission/ImpactBanner";
+import CommunityFeed from "@/components/impact/CommunityFeed";
 import { useTasks } from "@/hooks/use-tasks";
 
 // Mock data for display while API loads or returns empty
@@ -154,6 +155,12 @@ export default function MissionFeed() {
           filtered.map((task) => <TaskCard key={task.id} task={task} />)
         )}
       </div>
+
+      {/* Community Activity Feed */}
+      <CommunityFeed />
+
+      {/* Spacer for bottom nav */}
+      <div className="h-8" />
     </AppShell>
   );
 }
