@@ -51,7 +51,7 @@ export default function MissionFeed() {
   }, []);
 
   const { data, isLoading } = useMarketplaceFeed({ passport: false });
-  const feed = (data?.recommended?.length > 0) ? data : mockFeed;
+  const feed = data ?? { recommended: [], nearby: [], priority: [], online: [] };
 
   const currentTasks = (feed[activeFilter] ?? []).filter((t: any) => {
     if (!search) return true;
