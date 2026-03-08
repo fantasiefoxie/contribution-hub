@@ -33,11 +33,11 @@ const quickLinks = [
 const settingsMenu = [
   { label: "Platform Observability", icon: BarChart3, href: "/observability" },
   { label: "Transparency Report", icon: Globe, href: "/transparency" },
-  { label: "Saved Tasks", icon: Bookmark, count: 3 },
-  { label: "My Organizations", icon: Building2, count: 2 },
-  { label: "Notification Preferences", icon: BellRing },
-  { label: "Privacy & Security", icon: Lock },
-  { label: "Help & Support", icon: HelpCircle },
+  { label: "Saved Tasks", icon: Bookmark, count: 3, href: "/saved" },
+  { label: "My Organizations", icon: Building2, count: 2, href: "/organizations" },
+  { label: "Notification Preferences", icon: BellRing, href: "/notifications" },
+  { label: "Privacy & Security", icon: Lock, action: "privacy" },
+  { label: "Help & Support", icon: HelpCircle, action: "help" },
 ];
 
 export default function Profile() {
@@ -164,7 +164,11 @@ export default function Profile() {
             {settingsMenu.map((item, i) => (
               <button
                 key={item.label}
-                onClick={() => item.href && navigate(item.href)}
+                onClick={() => {
+                  if (item.href) navigate(item.href);
+                  else if ((item as any).action === "privacy") toast.info("Privacy & Security settings coming soon");
+                  else if ((item as any).action === "help") toast.info("Help & Support coming soon");
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors ${
                   i < settingsMenu.length - 1 ? "border-b border-border" : ""
                 }`}
@@ -185,7 +189,14 @@ export default function Profile() {
 
       {/* Sign out */}
       <div className="mx-4 mt-4 pb-44">
-        <Button variant="outline" className="w-full rounded-xl h-11 text-destructive border-destructive/20 hover:bg-destructive/5 gap-2">
+        <Button
+          variant="outline"
+          onClick={() => {
+            toast.success("Signed out successfully");
+            navigate("/");
+          }}
+          className="w-full rounded-xl h-11 text-destructive border-destructive/20 hover:bg-destructive/5 gap-2"
+        >
           <LogOut className="h-4 w-4" /> Sign Out
         </Button>
       </div>
