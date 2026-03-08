@@ -9,6 +9,7 @@ import { useInitiatives } from "@/hooks/use-initiatives";
 
 interface EnrichedInitiative {
   id: string;
+  slug?: string;
   title: string;
   description: string | null;
   status: string;
