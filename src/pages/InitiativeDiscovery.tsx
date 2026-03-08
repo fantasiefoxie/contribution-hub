@@ -66,7 +66,7 @@ const mockSections: Section[] = [
   {
     key: "online", title: "Online Missions", icon: "globe",
     items: [
-      { id: "init-5", title: "Digital Literacy Program", description: "Online workshops teaching digital skills to seniors.", status: "active", is_micro: false, is_online: true, start_date: "2026-02-10", end_date: "2026-08-30", target_metrics: { people_served: 300 }, featured_at: null, priority_score: 55, participant_count: 45, volunteer_target: 80, volunteer_gap: 35, task_stats: { total: 30, open: 15, validated: 10 }, completion_pct: 33, lifecycle: "active", category: "education", region_name: null },
+      { id: "init-5", slug: "digital-literacy-program", title: "Digital Literacy Program", description: "Online workshops teaching digital skills to seniors.", status: "active", is_micro: false, is_online: true, start_date: "2026-02-10", end_date: "2026-08-30", target_metrics: { people_served: 300 }, featured_at: null, priority_score: 55, participant_count: 45, volunteer_target: 80, volunteer_gap: 35, task_stats: { total: 30, open: 15, validated: 10 }, completion_pct: 33, lifecycle: "active", category: "education", region_name: null },
     ],
   },
 ];
