@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.leadership]
 verify_jwt = false
+
+[functions.observability]
+verify_jwt = false

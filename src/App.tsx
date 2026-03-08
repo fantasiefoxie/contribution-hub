@@ -42,6 +42,8 @@ const App = () => (
           <Route path="/initiatives/:id" element={<InitiativeDashboard />} />
           <Route path="/initiatives/:id/ops" element={<CampaignOps />} />
           <Route path="/leadership" element={<LeadershipDashboard />} />
+          <Route path="/observability" element={<ObservabilityDashboard />} />
+          <Route path="/transparency" element={<TransparencyPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
