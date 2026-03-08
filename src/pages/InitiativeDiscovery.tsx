@@ -335,7 +335,7 @@ export default function InitiativeDiscovery() {
             </div>
           ) : (
             filtered.map((init) => (
-              <CampaignCard key={init.id} init={init} onClick={() => navigate(`/initiatives/${init.id}`)} />
+              <CampaignCard key={init.id} init={init} onClick={() => navigate(`/initiatives/${init.slug || init.id}`)} />
             ))
           )}
         </div>
