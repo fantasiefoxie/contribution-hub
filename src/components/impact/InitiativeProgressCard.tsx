@@ -1,7 +1,10 @@
+import { useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface InitiativeProgressProps {
   title: string;
+  slug?: string;
   progress: Record<string, { current: number; target: number; percentage: number }>;
   milestones: { percentage: number; reached_at: string }[];
 }
@@ -13,15 +16,26 @@ const metricLabels: Record<string, string> = {
   people_served: "People Served",
 };
 
-export default function InitiativeProgressCard({ title, progress, milestones }: InitiativeProgressProps) {
+export default function InitiativeProgressCard({ title, slug, progress, milestones }: InitiativeProgressProps) {
+  const navigate = useNavigate();
   const entries = Object.entries(progress);
   if (entries.length === 0) return null;
 
   const reachedSet = new Set(milestones.map((m) => m.percentage));
 
+  const handleClick = () => {
+    if (slug) navigate(`/initiative/${slug}`);
+  };
+
   return (
-    <div className="bg-card rounded-2xl border border-border p-4">
-      <p className="font-display font-semibold text-sm mb-3">{title}</p>
+    <button
+      onClick={handleClick}
+      className="w-full text-left bg-card rounded-2xl border border-border p-4 hover:border-primary/20 transition-colors active:scale-[0.99] group"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-display font-semibold text-sm">{title}</p>
+        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+      </div>
       <div className="space-y-4">
         {entries.map(([key, { current, target, percentage }]) => (
           <div key={key}>
@@ -32,7 +46,6 @@ export default function InitiativeProgressCard({ title, progress, milestones }: 
               </span>
             </div>
             <Progress value={percentage} className="h-2" />
-            {/* Milestone markers */}
             <div className="flex justify-between mt-1.5">
               {[25, 50, 75, 100].map((m) => (
                 <div key={m} className="flex flex-col items-center">
@@ -44,6 +57,6 @@ export default function InitiativeProgressCard({ title, progress, milestones }: 
           </div>
         ))}
       </div>
-    </div>
+    </button>
   );
 }
