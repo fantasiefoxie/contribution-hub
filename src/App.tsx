@@ -11,6 +11,9 @@ import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import ValidationQueue from "./pages/ValidationQueue";
 import SubmissionReview from "./pages/SubmissionReview";
+import InitiativeDiscovery from "./pages/InitiativeDiscovery";
+import InitiativeBuilder from "./pages/InitiativeBuilder";
+import InitiativeDashboard from "./pages/InitiativeDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +33,9 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/validate" element={<ValidationQueue />} />
           <Route path="/validate/:id" element={<SubmissionReview />} />
+          <Route path="/initiatives" element={<InitiativeDiscovery />} />
+          <Route path="/initiatives/create" element={<InitiativeBuilder />} />
+          <Route path="/initiatives/:id" element={<InitiativeDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.impact-worker]
 verify_jwt = false
+
+[functions.initiative-engine]
+verify_jwt = false
