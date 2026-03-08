@@ -9,6 +9,8 @@ import ActiveWorkspace from "./pages/ActiveWorkspace";
 import Contributions from "./pages/Contributions";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import ValidationQueue from "./pages/ValidationQueue";
+import SubmissionReview from "./pages/SubmissionReview";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
