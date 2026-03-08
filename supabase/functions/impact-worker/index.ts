@@ -289,7 +289,7 @@ async function processValidation(req: Request) {
             const { error: insertErr } = await db
               .from("initiative_milestones")
               .insert({ initiative_id: task.initiative_id, percentage: milestone })
-              .select().single();
+              .select();
 
             // If insert succeeds (not duplicate), emit notification
             if (!insertErr) {
