@@ -222,6 +222,7 @@ export default function LoadSimulation() {
         {comparisonMode && comparisonSummaries.length > 0 && (
           <div className="space-y-4">
             <ComparisonCharts summaries={comparisonSummaries} />
+            <ComparisonCostTable summaries={comparisonSummaries} />
             <ComparisonPanel summaries={comparisonSummaries} />
           </div>
         )}
