@@ -18,6 +18,7 @@ const profileData = {
 };
 
 const menuItems = [
+  { label: "Leadership & Roles", icon: "👑", count: undefined, href: "/leadership" },
   { label: "Validation Queue", icon: "🛡️", count: undefined, href: "/validate" },
   { label: "Saved Tasks", icon: "📌", count: 3 },
   { label: "My Organizations", icon: "🏢", count: 2 },
