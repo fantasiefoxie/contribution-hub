@@ -340,7 +340,9 @@ async function joinInitiative(req: Request, rawInitiativeId: string) {
 }
 
 // ── POST /:id/promote — promote micro-initiative to full ──
-async function promoteInitiative(req: Request, initiativeId: string) {
+async function promoteInitiative(req: Request, rawInitiativeId: string) {
+  const initiativeId = await resolveId("initiative", rawInitiativeId);
+  if (!initiativeId) return notFound(rawInitiativeId);
   const supabase = getSupabase(req);
   const user = await getUser(supabase);
   if (!user) return err("Unauthorized", 401);
