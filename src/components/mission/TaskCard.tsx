@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { MapPin, Clock, Flame, ArrowRight } from "lucide-react";
+import { MapPin, Clock, Flame, ArrowRight, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useReserveTask } from "@/hooks/use-tasks";
+import { toast } from "sonner";
 
 export interface TaskCardData {
   id: string;
@@ -35,6 +38,22 @@ function DifficultyDots({ level }: { level: number }) {
 
 export default function TaskCard({ task }: TaskCardProps) {
   const navigate = useNavigate();
+  const reserveMutation = useReserveTask();
+
+  const handleQuickClaim = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await reserveMutation.mutateAsync(task.id);
+      toast.success("Task reserved! Tap to confirm claim.", {
+        action: {
+          label: "View",
+          onClick: () => navigate(`/task/${task.id}`),
+        },
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Could not reserve task");
+    }
+  };
 
   return (
     <button
@@ -82,15 +101,28 @@ export default function TaskCard({ task }: TaskCardProps) {
         </div>
       )}
 
-      {task.tags && task.tags.length > 0 && (
-        <div className="flex gap-1.5 mt-2 flex-wrap">
-          {task.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
+      <div className="flex items-center justify-between mt-3">
+        {task.tags && task.tags.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap">
+            {task.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+        {task.status === "open" && (
+          <Button
+            size="sm"
+            onClick={handleQuickClaim}
+            disabled={reserveMutation.isPending}
+            className="rounded-lg text-[11px] h-7 px-3 bg-primary hover:bg-primary/90 gap-1 ml-auto shrink-0"
+          >
+            <Zap className="h-3 w-3" />
+            Quick Claim
+          </Button>
+        )}
+      </div>
     </button>
   );
 }

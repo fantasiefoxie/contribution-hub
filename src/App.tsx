@@ -8,6 +8,7 @@ import TaskDetails from "./pages/TaskDetails";
 import ActiveWorkspace from "./pages/ActiveWorkspace";
 import Contributions from "./pages/Contributions";
 import Notifications from "./pages/Notifications";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/active" element={<ActiveWorkspace />} />
           <Route path="/contributions" element={<Contributions />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

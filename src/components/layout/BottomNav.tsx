@@ -2,10 +2,11 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Compass, Zap, Trophy, Bell, User } from "lucide-react";
 
 const tabs = [
-  { to: "/", icon: Compass, label: "Missions" },
-  { to: "/active", icon: Zap, label: "Active" },
+  { to: "/", icon: Compass, label: "Home" },
+  { to: "/active", icon: Zap, label: "Tasks" },
   { to: "/contributions", icon: Trophy, label: "Impact" },
   { to: "/notifications", icon: Bell, label: "Alerts" },
+  { to: "/profile", icon: User, label: "Profile" },
 ];
 
 export default function BottomNav() {
@@ -13,14 +14,14 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border safe-bottom">
-      <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
+      <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-1">
         {tabs.map(({ to, icon: Icon, label }) => {
           const isActive = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
           return (
             <NavLink
               key={to}
               to={to}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 ${
                 isActive
                   ? "text-primary scale-105"
                   : "text-muted-foreground hover:text-foreground"
