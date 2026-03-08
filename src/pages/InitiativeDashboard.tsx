@@ -69,7 +69,7 @@ type Tab = "overview" | "tasks" | "activity";
 export default function InitiativeDashboard() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data, isLoading } = useInitiative(id ?? "");
+  const { data, isLoading, isError } = useInitiative(id ?? "");
   const { data: progressData } = useInitiativeProgress(id ?? "");
   const joinMutation = useJoinInitiative();
   const promoteMutation = usePromoteInitiative();
