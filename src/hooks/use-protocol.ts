@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { protocolApi } from "@/lib/protocol-api";
 
 export function useProtocolDocs() {
@@ -11,7 +12,17 @@ export function useProtocolDocs() {
 
 // ── API Keys ──
 export function useApiKeys() {
-  return useQuery({ queryKey: ["api-keys"], queryFn: () => protocolApi.listKeys() });
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["api-keys", user?.id],
+    queryFn: async () => {
+      try { return await protocolApi.listKeys(); }
+      catch { return { api_keys: [] }; }
+    },
+    enabled: !!user,
+    retry: false,
+    meta: { suppressError: true },
+  });
 }
 
 export function useCreateApiKey() {
@@ -32,7 +43,17 @@ export function useRevokeApiKey() {
 
 // ── Webhooks ──
 export function useWebhooks() {
-  return useQuery({ queryKey: ["webhooks"], queryFn: () => protocolApi.listWebhooks() });
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["webhooks", user?.id],
+    queryFn: async () => {
+      try { return await protocolApi.listWebhooks(); }
+      catch { return { webhooks: [] }; }
+    },
+    enabled: !!user,
+    retry: false,
+    meta: { suppressError: true },
+  });
 }
 
 export function useCreateWebhook() {
