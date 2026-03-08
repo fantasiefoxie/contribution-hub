@@ -21,6 +21,8 @@ export function useInitiativeProgress(id: string) {
     queryKey: ["initiative-progress", id],
     queryFn: () => impactApi.initiativeProgress(id),
     enabled: !!id,
+    retry: false,
+    meta: { suppressError: true },
   });
 }
 

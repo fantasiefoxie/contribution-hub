@@ -85,7 +85,8 @@ export default function InitiativeDashboard() {
   const [taskCount, setTaskCount] = useState(5);
   const [taskDifficulty, setTaskDifficulty] = useState(2);
 
-  const d = data || mockDashboard;
+  // Fallback to mock data when API returns error or no data (e.g. mock IDs like "init-1")
+  const d = data && typeof data === 'object' && 'initiative' in data ? data : mockDashboard;
   const init = d.initiative;
   const projects = d.projects ?? [];
   const tasks = d.tasks ?? mockDashboard.tasks;
