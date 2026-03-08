@@ -186,52 +186,32 @@ export default function ActiveWorkspace() {
               {progressPct}%
             </span>
           </div>
-          <Progress
-            value={progressPct}
-            className={`h-2.5 transition-all duration-700 ${animateProgress ? "scale-[1.01]" : ""}`}
-          />
-          {/* Status dot legend */}
-          <div className="flex items-center gap-3 mt-2.5">
-            {(["open", "in_progress", "submitted", "validated"] as TaskStatus[]).map((s) => (
-              <div key={s} className="flex items-center gap-1">
-                <div className={`h-2 w-2 rounded-full border ${statusDot[s]}`} />
-                <span className="text-[9px] text-muted-foreground">{statusConfig[s].label}</span>
-              </div>
-            ))}
+          <div className={`transition-all duration-700 ${animateProgress ? "scale-[1.01]" : ""}`}>
+            <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progressPct}%` }} />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <StatusLegend />
           </div>
         </div>
       </div>
 
       {/* ═══ SECTION 2: Task Checklist ═══ */}
       <div className="px-4 mb-2">
-        {/* Quick Filters */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-          {filters.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setActiveFilter(f.key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                activeFilter === f.key
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              <f.icon className="h-3 w-3" />
-              {f.label}
-              {f.key === "all" && (
-                <span className="bg-primary-foreground/20 text-[10px] px-1 rounded">{totalCount}</span>
-              )}
-            </button>
-          ))}
-        </div>
+        <FilterChipsBar<FilterKey>
+          options={filters.map(f => ({ ...f, count: f.key === "all" ? totalCount : undefined }))}
+          active={activeFilter}
+          onChange={setActiveFilter}
+        />
       </div>
 
       {/* Task List */}
       <div className="px-4 space-y-2 pb-44">
         {filtered.map((task, i) => {
           const isExpanded = expandedTask === task.id;
-          const cfg = statusConfig[task.status];
           const notes = inlineNotes[task.id] || "";
+          const uStatus = toUniversalStatus(task.status);
 
           return (
             <div
@@ -246,24 +226,14 @@ export default function ActiveWorkspace() {
                 onClick={() => setExpandedTask(isExpanded ? null : task.id)}
                 className="w-full flex items-center gap-3 p-3.5 min-h-[56px] text-left"
               >
-                {/* Status indicator */}
-                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${statusDot[task.status]}`}>
-                  {task.status === "validated" && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
-                  {task.status === "submitted" && <Circle className="h-2 w-2 text-secondary-foreground" />}
-                </div>
-
-                {/* Title & meta */}
+                <StatusDot status={uStatus} />
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium leading-snug ${task.status === "validated" ? "line-through text-muted-foreground" : "text-foreground"}`}>
                     {task.title}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`text-[10px] font-medium ${difficultyColor(task.difficulty)}`}>
-                      {difficultyLabel(task.difficulty)}
-                    </span>
-                    <Badge className={`${cfg.bg} ${cfg.color} border-0 text-[9px] px-1.5 py-0`}>
-                      {cfg.label}
-                    </Badge>
+                    <DifficultyBadge level={task.difficulty} />
+                    <StatusBadge status={uStatus} />
                     {task.isOnline && (
                       <span className="flex items-center gap-0.5 text-[9px] text-accent">
                         <Wifi className="h-2.5 w-2.5" /> Online
@@ -276,8 +246,6 @@ export default function ActiveWorkspace() {
                     )}
                   </div>
                 </div>
-
-                {/* Expand arrow */}
                 {isExpanded ? (
                   <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
                 ) : (
@@ -289,8 +257,6 @@ export default function ActiveWorkspace() {
               {isExpanded && (
                 <div className="px-3.5 pb-3.5 pt-0 space-y-2.5 animate-fade-in">
                   <div className="border-t border-border pt-2.5" />
-
-                  {/* Quick note input */}
                   {task.status !== "validated" && (
                     <>
                       <Textarea
@@ -300,60 +266,32 @@ export default function ActiveWorkspace() {
                         className="min-h-[60px] border-0 bg-muted rounded-lg text-sm resize-none"
                       />
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePhotoUpload(task.id)}
-                          className="rounded-lg text-[11px] gap-1 h-8"
-                        >
-                          <Camera className="h-3 w-3" />
-                          Photo
+                        <Button variant="outline" size="sm" onClick={() => handlePhotoUpload(task.id)} className="rounded-lg text-[11px] gap-1 h-8">
+                          <Camera className="h-3 w-3" /> Photo
                         </Button>
-
                         <div className="flex-1" />
-
                         {task.status !== "submitted" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAddProgress(task.id)}
-                            disabled={!notes.trim()}
-                            className="rounded-lg text-[11px] gap-1 h-8 border-accent text-accent hover:bg-accent/10"
-                          >
-                            <BarChart3 className="h-3 w-3" />
-                            Add Progress
+                          <Button size="sm" variant="outline" onClick={() => handleAddProgress(task.id)} disabled={!notes.trim()} className="rounded-lg text-[11px] gap-1 h-8 border-accent text-accent hover:bg-accent/10">
+                            <BarChart3 className="h-3 w-3" /> Add Progress
                           </Button>
                         )}
-
                         {(task.status === "in_progress" || task.status === "open") && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleSubmitTask(task.id)}
-                            className="rounded-lg text-[11px] gap-1 h-8 bg-primary hover:bg-primary/90"
-                          >
-                            <Send className="h-3 w-3" />
-                            Submit
+                          <Button size="sm" onClick={() => handleSubmitTask(task.id)} className="rounded-lg text-[11px] gap-1 h-8 bg-primary hover:bg-primary/90">
+                            <Send className="h-3 w-3" /> Submit
                           </Button>
                         )}
                       </div>
                     </>
                   )}
-
                   {task.status === "validated" && (
                     <div className="flex items-center gap-2 text-sm text-primary">
                       <CheckCircle2 className="h-4 w-4" />
                       <span className="font-medium">Validated — great work!</span>
                     </div>
                   )}
-
-                  {/* Release button */}
                   {task.isMine && task.status !== "validated" && task.status !== "submitted" && (
-                    <button
-                      onClick={() => handleReleaseTask(task.id)}
-                      className="flex items-center gap-1.5 text-[11px] text-destructive/70 hover:text-destructive transition-colors pt-1"
-                    >
-                      <Unlock className="h-3 w-3" />
-                      Release this task
+                    <button onClick={() => handleReleaseTask(task.id)} className="flex items-center gap-1.5 text-[11px] text-destructive/70 hover:text-destructive transition-colors pt-1">
+                      <Unlock className="h-3 w-3" /> Release this task
                     </button>
                   )}
                 </div>
@@ -370,83 +308,36 @@ export default function ActiveWorkspace() {
         )}
       </div>
 
-      {/* ═══ SECTION 3: Quick Action Panel (persistent bottom) ═══ */}
-      <div className="fixed bottom-16 left-0 right-0 z-30 pointer-events-none">
-        <div className="max-w-lg mx-auto px-4 pb-2 pointer-events-auto">
-          <div className="bg-card/95 backdrop-blur-md border border-border rounded-2xl p-2.5 shadow-lg">
-            <div className="grid grid-cols-4 gap-1.5">
-              <QuickAction
-                icon={BarChart3}
-                label="Add Progress"
-                color="text-accent"
-                bg="bg-accent/10"
-                onClick={() => {
-                  const inProgressTask = tasks.find((t) => t.status === "in_progress") || tasks.find((t) => t.status === "open");
-                  if (inProgressTask) setExpandedTask(inProgressTask.id);
-                  else toast.info("No open tasks available");
-                }}
-              />
-              <QuickAction
-                icon={Send}
-                label="Submit Task"
-                color="text-primary"
-                bg="bg-primary/10"
-                onClick={() => {
-                  const submittable = tasks.find((t) => t.status === "in_progress");
-                  if (submittable) {
-                    setExpandedTask(submittable.id);
-                  } else toast.info("No tasks ready to submit");
-                }}
-              />
-              <QuickAction
-                icon={Camera}
-                label="Upload Proof"
-                color="text-secondary"
-                bg="bg-secondary/10"
-                onClick={() => fileInputRef.current?.click()}
-              />
-              <QuickAction
-                icon={Unlock}
-                label="Release Task"
-                color="text-destructive"
-                bg="bg-destructive/10"
-                onClick={() => {
-                  const releasable = tasks.find((t) => t.isMine && t.status !== "validated" && t.status !== "submitted");
-                  if (releasable) handleReleaseTask(releasable.id);
-                  else toast.info("No tasks to release");
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* ═══ SECTION 3: Quick Action Panel ═══ */}
+      <QuickActionBar
+        actions={[
+          {
+            icon: BarChart3, label: "Add Progress", color: "text-accent", bg: "bg-accent/10",
+            onClick: () => {
+              const t = tasks.find((t) => t.status === "in_progress") || tasks.find((t) => t.status === "open");
+              if (t) setExpandedTask(t.id); else toast.info("No open tasks available");
+            },
+          },
+          {
+            icon: Send, label: "Submit Task", color: "text-primary", bg: "bg-primary/10",
+            onClick: () => {
+              const t = tasks.find((t) => t.status === "in_progress");
+              if (t) setExpandedTask(t.id); else toast.info("No tasks ready to submit");
+            },
+          },
+          {
+            icon: Camera, label: "Upload Proof", color: "text-secondary", bg: "bg-secondary/10",
+            onClick: () => fileInputRef.current?.click(),
+          },
+          {
+            icon: Unlock, label: "Release Task", color: "text-destructive", bg: "bg-destructive/10",
+            onClick: () => {
+              const t = tasks.find((t) => t.isMine && t.status !== "validated" && t.status !== "submitted");
+              if (t) handleReleaseTask(t.id); else toast.info("No tasks to release");
+            },
+          },
+        ]}
+      />
     </AppShell>
-  );
-}
-
-// ── Quick Action Button ──
-function QuickAction({
-  icon: Icon,
-  label,
-  color,
-  bg,
-  onClick,
-}: {
-  icon: typeof Send;
-  label: string;
-  color: string;
-  bg: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-muted/60 transition-colors active:scale-95"
-    >
-      <div className={`h-9 w-9 rounded-lg ${bg} flex items-center justify-center`}>
-        <Icon className={`h-4 w-4 ${color}`} />
-      </div>
-      <span className="text-[10px] font-medium text-muted-foreground leading-tight text-center">{label}</span>
-    </button>
   );
 }
