@@ -163,7 +163,7 @@ async function initiativeProgress(req: Request, rawId: string) {
     .from("initiatives")
     .select("*")
     .eq("id", initiativeId)
-    .single();
+    .maybeSingle();
 
   if (!initiative) return notFound(rawId);
 
