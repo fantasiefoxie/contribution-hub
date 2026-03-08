@@ -69,7 +69,7 @@ type Tab = "overview" | "tasks" | "activity";
 export default function InitiativeDashboard() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data, isLoading } = useInitiative(id ?? "");
+  const { data, isLoading, isError } = useInitiative(id ?? "");
   const { data: progressData } = useInitiativeProgress(id ?? "");
   const joinMutation = useJoinInitiative();
   const promoteMutation = usePromoteInitiative();
@@ -153,7 +153,7 @@ export default function InitiativeDashboard() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !isError) {
     return <AppShell><div className="flex justify-center py-32"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div></AppShell>;
   }
 
