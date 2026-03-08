@@ -118,3 +118,44 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
+
+/* ── Global scroll reset ── */
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+/* ── Custom scrollbar ── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 9999px;
+  transition: background 0.15s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+/* Hide scrollbar on touch devices */
+@media (pointer: coarse) {
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .custom-scrollbar {
+    scrollbar-width: none;
+  }
+}

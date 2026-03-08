@@ -10,7 +10,7 @@ interface AppShellProps {
 export default function AppShell({ children, bottomBar }: AppShellProps) {
   return (
     <div className="h-[100dvh] flex flex-col bg-background">
-      <main className="flex-1 overflow-y-auto overscroll-y-contain max-w-lg mx-auto w-full">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain scroll-smooth max-w-lg mx-auto w-full custom-scrollbar">
         <div className={bottomBar ? "pb-36" : "pb-20"}>
           {children}
         </div>
