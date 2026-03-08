@@ -18,6 +18,7 @@ import CampaignOps from "./pages/CampaignOps";
 import LeadershipDashboard from "./pages/LeadershipDashboard";
 import ObservabilityDashboard from "./pages/ObservabilityDashboard";
 import TransparencyPage from "./pages/TransparencyPage";
+import DeveloperPortal from "./pages/DeveloperPortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
