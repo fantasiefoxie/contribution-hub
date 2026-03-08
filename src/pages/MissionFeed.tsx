@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Search, Flag } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import FilterChips, { type FilterCategory } from "@/components/mission/FilterChips";
 import TaskCard, { type TaskCardData } from "@/components/mission/TaskCard";
