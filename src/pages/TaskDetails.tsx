@@ -6,6 +6,7 @@ import { useTask, useReserveTask, useConfirmClaim } from "@/hooks/use-tasks";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
+import SocialSignals from "@/components/mission/SocialSignals";
 
 function DifficultyBar({ level }: { level: number }) {
   return (
@@ -163,6 +164,9 @@ export default function TaskDetails() {
             ))}
           </div>
         )}
+
+        {/* Social Signals */}
+        <SocialSignals volunteersJoined={42} tasksInProgress={7} />
 
         {/* Status */}
         <div className="bg-card rounded-xl border border-border p-4">

@@ -5,6 +5,7 @@ import FilterChips, { type FilterCategory } from "@/components/mission/FilterChi
 import TaskCard, { type TaskCardData } from "@/components/mission/TaskCard";
 import PassportToggle from "@/components/mission/PassportToggle";
 import ImpactBanner from "@/components/mission/ImpactBanner";
+import ActiveMissionBanner from "@/components/mission/ActiveMissionBanner";
 import CommunityFeed from "@/components/impact/CommunityFeed";
 import { useTasks } from "@/hooks/use-tasks";
 
@@ -115,6 +116,15 @@ export default function MissionFeed() {
           </div>
         </div>
       </div>
+
+      {/* Active Mission Banner */}
+      <ActiveMissionBanner
+        taskId="demo-1"
+        title="Community Garden Cleanup"
+        lockedUntil={new Date(Date.now() + 2.5 * 3600000).toISOString()}
+        updatesCount={2}
+        totalSteps={6}
+      />
 
       {/* Impact Banner */}
       <ImpactBanner />

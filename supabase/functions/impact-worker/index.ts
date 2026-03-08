@@ -345,6 +345,108 @@ async function weeklyySummary(_req: Request) {
   return json({ summaries_sent: notifications.length });
 }
 
+// ── GET /impact-worker/next-mission ──
+// Recommend a related or nearby task after completion
+async function nextMission(req: Request) {
+  const supabase = getSupabase(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return err("Unauthorized", 401);
+
+  const db = getServiceDb();
+  const url = new URL(req.url);
+  const currentTaskId = url.searchParams.get("current_task_id");
+
+  // Get current task tags for relevance
+  let tags: string[] = [];
+  if (currentTaskId) {
+    const { data: task } = await db.from("tasks").select("tags").eq("id", currentTaskId).single();
+    tags = task?.tags ?? [];
+  }
+
+  // Find open tasks the user hasn't created
+  let query = db
+    .from("tasks")
+    .select("id, title, tags, difficulty, lock_duration_mins")
+    .eq("status", "open")
+    .eq("visibility", "public")
+    .neq("created_by", user.id)
+    .limit(10)
+    .order("created_at", { ascending: false });
+
+  const { data: candidates } = await query;
+  if (!candidates || candidates.length === 0) return json({ next_mission: null });
+
+  // Score by tag overlap
+  const scored = candidates.map((t: any) => {
+    const overlap = (t.tags ?? []).filter((tag: string) => tags.includes(tag)).length;
+    return { ...t, score: overlap };
+  });
+  scored.sort((a: any, b: any) => b.score - a.score);
+
+  const pick = scored[0];
+  return json({
+    next_mission: {
+      id: pick.id,
+      title: pick.title,
+      estimatedTime: `${pick.lock_duration_mins}min`,
+      tags: pick.tags,
+    },
+  });
+}
+
+// ── POST /impact-worker/send-reminders ──
+// Send reminders for claimed tasks with low activity (called by cron)
+async function sendReminders(_req: Request) {
+  const db = getServiceDb();
+
+  // Find claimed/in_progress tasks
+  const { data: activeTasks } = await db
+    .from("tasks")
+    .select("id, title, locked_by, locked_until, status")
+    .in("status", ["claimed", "in_progress"])
+    .not("locked_by", "is", null)
+    .not("locked_until", "is", null);
+
+  if (!activeTasks || activeTasks.length === 0) return json({ reminders_sent: 0 });
+
+  const notifications = [];
+  const now = Date.now();
+
+  for (const task of activeTasks) {
+    const lockEnd = new Date(task.locked_until).getTime();
+    const msLeft = lockEnd - now;
+    const hoursLeft = Math.floor(msLeft / 3600000);
+
+    // Send reminder when ~50% of lock time has passed and < 4h remaining
+    if (msLeft > 0 && msLeft < 4 * 3600000) {
+      // Check if we already sent a reminder recently
+      const { data: existing } = await db
+        .from("notifications")
+        .select("id")
+        .eq("user_id", task.locked_by)
+        .eq("type", "mission_reminder")
+        .gte("created_at", new Date(now - 2 * 3600000).toISOString())
+        .limit(1);
+
+      if (!existing || existing.length === 0) {
+        notifications.push({
+          user_id: task.locked_by,
+          type: "mission_reminder",
+          title: "⏰ Mission Reminder",
+          body: `Your mission "${task.title}" is still active. ${hoursLeft}h remaining.`,
+          data: { task_id: task.id, hours_remaining: hoursLeft },
+        });
+      }
+    }
+  }
+
+  if (notifications.length > 0) {
+    await db.from("notifications").insert(notifications);
+  }
+
+  return json({ reminders_sent: notifications.length });
+}
+
 // ── Router ──
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -357,11 +459,13 @@ Deno.serve(async (req) => {
   try {
     if (req.method === "GET" && pathParts[0] === "community-feed") return await communityFeed(req);
     if (req.method === "GET" && pathParts[0] === "my-impact") return await myImpact(req);
+    if (req.method === "GET" && pathParts[0] === "next-mission") return await nextMission(req);
     if (req.method === "GET" && pathParts[0] === "initiative" && pathParts.length === 3 && pathParts[2] === "progress") {
       return await initiativeProgress(req, pathParts[1]);
     }
     if (req.method === "POST" && pathParts[0] === "process-validation") return await processValidation(req);
     if (req.method === "POST" && pathParts[0] === "weekly-summary") return await weeklyySummary(req);
+    if (req.method === "POST" && pathParts[0] === "send-reminders") return await sendReminders(req);
 
     return err("Not found", 404);
   } catch (e) {
