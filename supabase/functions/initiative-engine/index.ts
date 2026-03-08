@@ -252,7 +252,9 @@ async function createProject(req: Request, rawInitiativeId: string) {
 }
 
 // ── POST /:id/generate-tasks — bulk task generation ──
-async function generateTasks(req: Request, initiativeId: string) {
+async function generateTasks(req: Request, rawInitiativeId: string) {
+  const initiativeId = await resolveId("initiative", rawInitiativeId);
+  if (!initiativeId) return notFound(rawInitiativeId);
   const supabase = getSupabase(req);
   const user = await getUser(supabase);
   if (!user) return err("Unauthorized", 401);
