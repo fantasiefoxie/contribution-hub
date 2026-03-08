@@ -95,7 +95,7 @@ export default function Profile() {
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </button>
 
-      {/* Stats row */}
+      {/* Integrity & Stats row */}
       <div className="flex gap-2 mx-4 mt-4">
         <div className="flex-1 bg-card rounded-xl border border-border p-3 text-center">
           <p className="font-display text-xl font-bold text-primary">24</p>
@@ -106,8 +106,8 @@ export default function Profile() {
           <p className="text-[10px] text-muted-foreground">Score</p>
         </div>
         <div className="flex-1 bg-card rounded-xl border border-border p-3 text-center">
-          <p className="font-display text-xl font-bold text-accent">8</p>
-          <p className="text-[10px] text-muted-foreground">Badges</p>
+          <p className="font-display text-xl font-bold text-accent">87</p>
+          <p className="text-[10px] text-muted-foreground">Integrity</p>
         </div>
       </div>
 
