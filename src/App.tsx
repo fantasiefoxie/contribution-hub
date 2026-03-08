@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import MissionFeed from "./pages/MissionFeed";
 import TaskDetails from "./pages/TaskDetails";
 import ActiveWorkspace from "./pages/ActiveWorkspace";
