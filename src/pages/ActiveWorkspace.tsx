@@ -1,79 +1,168 @@
-import { useState } from "react";
-import { FileText, Upload, Send, Clock, CheckCircle2, Loader2, Zap, ClipboardList, PenLine, ArrowUpFromLine } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import {
+  Clock, CheckCircle2, Circle, Send, Upload, Camera, X,
+  Zap, Filter, ChevronDown, ChevronUp, MapPin, Wifi,
+  AlertTriangle, Loader2, Unlock, FileText, BarChart3,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useAddTaskUpdate, useSubmitTask } from "@/hooks/use-tasks";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
-import TaskProgressBar from "@/components/mission/TaskProgressBar";
-import NextMissionCard from "@/components/mission/NextMissionCard";
 import MissionCompletionScreen from "@/components/mission/MissionCompletionScreen";
 
-// Mock active task for demo
-const mockActive = {
-  id: "demo-1",
-  title: "Community Garden Cleanup",
+// ── Types ──
+type TaskStatus = "open" | "in_progress" | "submitted" | "validated";
+type FilterKey = "all" | "mine" | "nearby" | "online";
+
+interface MissionTask {
+  id: string;
+  title: string;
+  difficulty: number;
+  status: TaskStatus;
+  isMine: boolean;
+  isOnline: boolean;
+  distance?: string;
+}
+
+// ── Mock data ──
+const mockMission = {
+  title: "Spring Community Cleanup Campaign",
   organization: "Green City Initiative",
-  status: "in_progress",
   lockedUntil: new Date(Date.now() + 45 * 60000).toISOString(),
-  instructions:
-    "1. Meet at the garden entrance at 9 AM.\n2. Collect tools from the shed.\n3. Clear weeds from beds A through D.\n4. Water all seedlings.\n5. Take photos of completed work.\n6. Return tools and submit your report.",
-  updates: [
-    { id: "u1", notes: "Arrived at garden, collected tools", created_at: new Date(Date.now() - 30 * 60000).toISOString() },
-    { id: "u2", notes: "Beds A and B cleared", created_at: new Date(Date.now() - 15 * 60000).toISOString() },
-  ],
+  tasks: [
+    { id: "t1", title: "Clear weeds from garden beds A-D", difficulty: 2, status: "validated" as TaskStatus, isMine: true, isOnline: false, distance: "0.2 km" },
+    { id: "t2", title: "Water all seedlings in section B", difficulty: 1, status: "submitted" as TaskStatus, isMine: true, isOnline: false, distance: "0.2 km" },
+    { id: "t3", title: "Photograph completed work areas", difficulty: 1, status: "in_progress" as TaskStatus, isMine: true, isOnline: false, distance: "0.2 km" },
+    { id: "t4", title: "Update volunteer spreadsheet", difficulty: 1, status: "open" as TaskStatus, isMine: false, isOnline: true },
+    { id: "t5", title: "Return tools to garden shed", difficulty: 1, status: "open" as TaskStatus, isMine: false, isOnline: false, distance: "0.3 km" },
+    { id: "t6", title: "Submit final cleanup report", difficulty: 3, status: "open" as TaskStatus, isMine: false, isOnline: true },
+  ] as MissionTask[],
 };
 
+// ── Status helpers ──
+const statusConfig: Record<TaskStatus, { color: string; bg: string; label: string }> = {
+  open: { color: "text-muted-foreground", bg: "bg-muted", label: "Not Started" },
+  in_progress: { color: "text-accent", bg: "bg-accent/10", label: "In Progress" },
+  submitted: { color: "text-secondary", bg: "bg-secondary/10", label: "Submitted" },
+  validated: { color: "text-primary", bg: "bg-primary/10", label: "Validated" },
+};
+
+const statusDot: Record<TaskStatus, string> = {
+  open: "border-muted-foreground/40",
+  in_progress: "border-accent bg-accent",
+  submitted: "border-secondary bg-secondary",
+  validated: "border-primary bg-primary",
+};
+
+const difficultyLabel = (d: number) =>
+  d <= 1 ? "Easy" : d <= 2 ? "Medium" : "Hard";
+const difficultyColor = (d: number) =>
+  d <= 1 ? "text-primary" : d <= 2 ? "text-secondary" : "text-destructive";
+
+// ── Filters ──
+const filters: { key: FilterKey; label: string; icon: typeof Filter }[] = [
+  { key: "all", label: "All", icon: Filter },
+  { key: "mine", label: "My Tasks", icon: CheckCircle2 },
+  { key: "nearby", label: "Nearby", icon: MapPin },
+  { key: "online", label: "Online", icon: Wifi },
+];
+
 export default function ActiveWorkspace() {
-  const [notes, setNotes] = useState("");
-  const [submission, setSubmission] = useState("");
-  const [tab, setTab] = useState<"instructions" | "progress" | "submit">("instructions");
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
+  const [expandedTask, setExpandedTask] = useState<string | null>(null);
+  const [inlineNotes, setInlineNotes] = useState<Record<string, string>>({});
+  const [tasks, setTasks] = useState(mockMission.tasks);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [animateProgress, setAnimateProgress] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const addUpdate = useAddTaskUpdate();
   const submitTask = useSubmitTask();
 
-  const task = mockActive;
+  // ── Computed ──
+  const completedCount = tasks.filter((t) => t.status === "validated").length;
+  const totalCount = tasks.length;
+  const progressPct = Math.round((completedCount / totalCount) * 100);
+  const timeLeft = Math.max(0, Math.floor((new Date(mockMission.lockedUntil).getTime() - Date.now()) / 60000));
+  const hours = Math.floor(timeLeft / 60);
+  const mins = timeLeft % 60;
 
-  const handleAddUpdate = async () => {
-    if (!notes.trim()) return;
+  const filtered = tasks.filter((t) => {
+    if (activeFilter === "mine") return t.isMine;
+    if (activeFilter === "nearby") return !t.isOnline;
+    if (activeFilter === "online") return t.isOnline;
+    return true;
+  });
+
+  // ── Actions ──
+  const triggerProgressAnimation = useCallback(() => {
+    setAnimateProgress(true);
+    setTimeout(() => setAnimateProgress(false), 800);
+  }, []);
+
+  const handleAddProgress = async (taskId: string) => {
+    const notes = inlineNotes[taskId]?.trim();
+    if (!notes) return;
     try {
-      await addUpdate.mutateAsync({ taskId: task.id, input: { notes: notes.trim() } });
-      setNotes("");
-      toast.success("Progress update saved");
+      await addUpdate.mutateAsync({ taskId, input: { notes } });
     } catch {
-      toast.success("Progress update saved");
-      setNotes("");
+      // Demo fallback
+    }
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId && t.status === "open" ? { ...t, status: "in_progress" as TaskStatus } : t))
+    );
+    setInlineNotes((prev) => ({ ...prev, [taskId]: "" }));
+    toast.success("Progress added!");
+    triggerProgressAnimation();
+  };
+
+  const handleSubmitTask = async (taskId: string) => {
+    const notes = inlineNotes[taskId]?.trim() || "Task completed";
+    try {
+      await submitTask.mutateAsync({ taskId, input: { content: notes } });
+    } catch {
+      // Demo fallback
+    }
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: "submitted" as TaskStatus } : t))
+    );
+    setInlineNotes((prev) => ({ ...prev, [taskId]: "" }));
+    setExpandedTask(null);
+    toast.success("Task submitted for validation!");
+    triggerProgressAnimation();
+
+    // Check if all tasks done
+    const updated = tasks.map((t) => (t.id === taskId ? { ...t, status: "submitted" as TaskStatus } : t));
+    if (updated.every((t) => t.status === "submitted" || t.status === "validated")) {
+      setTimeout(() => setShowCompletion(true), 600);
     }
   };
 
-  const handleSubmit = async () => {
-    if (!submission.trim()) return;
-    try {
-      await submitTask.mutateAsync({ taskId: task.id, input: { content: submission.trim() } });
-      setSubmission("");
-      setShowCompletion(true);
-    } catch {
-      setSubmission("");
-      setShowCompletion(true);
-    }
+  const handleReleaseTask = (taskId: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: "open" as TaskStatus, isMine: false } : t))
+    );
+    setExpandedTask(null);
+    toast.info("Task released");
   };
 
-  const timeLeft = Math.max(0, Math.floor((new Date(task.lockedUntil).getTime() - Date.now()) / 60000));
+  const handlePhotoUpload = (taskId: string) => {
+    fileInputRef.current?.click();
+    // In real app, link to task
+    toast.success("Photo attached");
+  };
 
   if (showCompletion) {
     return (
       <MissionCompletionScreen
-        taskTitle={task.title}
+        taskTitle={mockMission.title}
         impactMetrics={{ trees_maintained: 15, waste_removed_kg: 8 }}
         initiativeTitle="Spring Cleanup Campaign"
         initiativeProgress={43}
-        nextMission={{
-          id: "demo-3",
-          title: "Survey 15 households in Ward 3",
-          estimatedTime: "30 min",
-          distance: "1.2 km",
-        }}
+        nextMission={{ id: "demo-3", title: "Survey 15 households in Ward 3", estimatedTime: "30 min", distance: "1.2 km" }}
         onDismiss={() => setShowCompletion(false)}
       />
     );
@@ -81,162 +170,297 @@ export default function ActiveWorkspace() {
 
   return (
     <AppShell>
-      {/* Header */}
-      <div className="px-4 pt-6 pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-bold">Active Mission</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Your current task</p>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
-            <Zap className="h-5 w-5 text-secondary" />
-          </div>
-        </div>
-      </div>
+      {/* Hidden file input */}
+      <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" />
 
-      {/* Task card */}
-      <div className="mx-4 bg-card rounded-2xl border border-border p-4 shadow-sm">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="font-display font-semibold text-base">{task.title}</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{task.organization}</p>
+      {/* ═══ SECTION 1: Mission Header ═══ */}
+      <div className="px-4 pt-5 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Zap className="h-4 w-4 text-secondary shrink-0" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-secondary">Active Mission</span>
+            </div>
+            <h1 className="font-display text-lg font-bold leading-tight truncate">{mockMission.title}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{mockMission.organization}</p>
           </div>
-          <Badge className="bg-secondary/10 text-secondary border-0 text-[11px]">
-            <Clock className="h-3 w-3 mr-1" />
-            {timeLeft}m left
+          <Badge className="bg-card border border-border text-foreground text-[11px] gap-1 shrink-0 font-mono">
+            <Clock className="h-3 w-3 text-secondary" />
+            {hours > 0 ? `${hours}h ` : ""}{mins}m
           </Badge>
         </div>
-      </div>
 
-      {/* Progress Bar */}
-      <div className="mt-4">
-        <TaskProgressBar updatesCount={task.updates.length} totalSteps={6} />
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 mx-4 bg-muted rounded-xl p-1">
-        {(["instructions", "progress", "submit"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 py-2.5 text-xs font-medium rounded-lg transition-all ${
-              tab === t
-                ? "bg-card shadow-sm text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {t === "instructions" ? <><ClipboardList className="h-3 w-3 mr-1 inline" />Instructions</> : t === "progress" ? <><PenLine className="h-3 w-3 mr-1 inline" />Progress</> : <><ArrowUpFromLine className="h-3 w-3 mr-1 inline" />Submit</>}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      <div className="px-4 mt-4 space-y-3 pb-24">
-        {tab === "instructions" && (
-          <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="font-display font-semibold text-sm mb-3 flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" />
-              Task Instructions
-            </h3>
-            <div className="space-y-2">
-              {task.instructions.split("\n").map((line, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <CheckCircle2 className={`h-4 w-4 shrink-0 mt-0.5 ${i < task.updates.length ? "text-primary" : "text-muted"}`} />
-                  <p className={`text-sm leading-relaxed ${i < task.updates.length ? "text-foreground" : "text-muted-foreground"}`}>
-                    {line}
-                  </p>
-                </div>
-              ))}
-            </div>
+        {/* Progress bar */}
+        <div className="mt-3 bg-card rounded-xl border border-border p-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-medium text-muted-foreground">
+              {completedCount} of {totalCount} tasks completed
+            </span>
+            <span className={`font-display font-bold text-sm transition-all duration-500 ${animateProgress ? "text-primary scale-110" : "text-primary"}`}>
+              {progressPct}%
+            </span>
           </div>
-        )}
+          <Progress
+            value={progressPct}
+            className={`h-2.5 transition-all duration-700 ${animateProgress ? "scale-[1.01]" : ""}`}
+          />
+          {/* Status dot legend */}
+          <div className="flex items-center gap-3 mt-2.5">
+            {(["open", "in_progress", "submitted", "validated"] as TaskStatus[]).map((s) => (
+              <div key={s} className="flex items-center gap-1">
+                <div className={`h-2 w-2 rounded-full border ${statusDot[s]}`} />
+                <span className="text-[9px] text-muted-foreground">{statusConfig[s].label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-        {tab === "progress" && (
-          <>
-            <div className="space-y-2">
-              {task.updates.map((u) => (
-                <div key={u.id} className="bg-card rounded-xl border border-border p-3 flex items-start gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm">{u.notes}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      {new Date(u.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </p>
+      {/* ═══ SECTION 2: Task Checklist ═══ */}
+      <div className="px-4 mb-2">
+        {/* Quick Filters */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+          {filters.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                activeFilter === f.key
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              <f.icon className="h-3 w-3" />
+              {f.label}
+              {f.key === "all" && (
+                <span className="bg-primary-foreground/20 text-[10px] px-1 rounded">{totalCount}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Task List */}
+      <div className="px-4 space-y-2 pb-44">
+        {filtered.map((task, i) => {
+          const isExpanded = expandedTask === task.id;
+          const cfg = statusConfig[task.status];
+          const notes = inlineNotes[task.id] || "";
+
+          return (
+            <div
+              key={task.id}
+              className={`bg-card rounded-xl border transition-all duration-200 animate-fade-in ${
+                isExpanded ? "border-primary/30 shadow-md" : "border-border"
+              }`}
+              style={{ animationDelay: `${i * 40}ms` }}
+            >
+              {/* Task Row — Large tap target */}
+              <button
+                onClick={() => setExpandedTask(isExpanded ? null : task.id)}
+                className="w-full flex items-center gap-3 p-3.5 min-h-[56px] text-left"
+              >
+                {/* Status indicator */}
+                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${statusDot[task.status]}`}>
+                  {task.status === "validated" && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
+                  {task.status === "submitted" && <Circle className="h-2 w-2 text-secondary-foreground" />}
+                </div>
+
+                {/* Title & meta */}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium leading-snug ${task.status === "validated" ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                    {task.title}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-[10px] font-medium ${difficultyColor(task.difficulty)}`}>
+                      {difficultyLabel(task.difficulty)}
+                    </span>
+                    <Badge className={`${cfg.bg} ${cfg.color} border-0 text-[9px] px-1.5 py-0`}>
+                      {cfg.label}
+                    </Badge>
+                    {task.isOnline && (
+                      <span className="flex items-center gap-0.5 text-[9px] text-accent">
+                        <Wifi className="h-2.5 w-2.5" /> Online
+                      </span>
+                    )}
+                    {task.distance && !task.isOnline && (
+                      <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
+                        <MapPin className="h-2.5 w-2.5" /> {task.distance}
+                      </span>
+                    )}
                   </div>
                 </div>
-              ))}
+
+                {/* Expand arrow */}
+                {isExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                )}
+              </button>
+
+              {/* ── Inline Expanded Panel ── */}
+              {isExpanded && (
+                <div className="px-3.5 pb-3.5 pt-0 space-y-2.5 animate-fade-in">
+                  <div className="border-t border-border pt-2.5" />
+
+                  {/* Quick note input */}
+                  {task.status !== "validated" && (
+                    <>
+                      <Textarea
+                        placeholder="Quick progress note..."
+                        value={notes}
+                        onChange={(e) => setInlineNotes((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                        className="min-h-[60px] border-0 bg-muted rounded-lg text-sm resize-none"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePhotoUpload(task.id)}
+                          className="rounded-lg text-[11px] gap-1 h-8"
+                        >
+                          <Camera className="h-3 w-3" />
+                          Photo
+                        </Button>
+
+                        <div className="flex-1" />
+
+                        {task.status !== "submitted" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleAddProgress(task.id)}
+                            disabled={!notes.trim()}
+                            className="rounded-lg text-[11px] gap-1 h-8 border-accent text-accent hover:bg-accent/10"
+                          >
+                            <BarChart3 className="h-3 w-3" />
+                            Add Progress
+                          </Button>
+                        )}
+
+                        {(task.status === "in_progress" || task.status === "open") && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleSubmitTask(task.id)}
+                            className="rounded-lg text-[11px] gap-1 h-8 bg-primary hover:bg-primary/90"
+                          >
+                            <Send className="h-3 w-3" />
+                            Submit
+                          </Button>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {task.status === "validated" && (
+                    <div className="flex items-center gap-2 text-sm text-primary">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="font-medium">Validated — great work!</span>
+                    </div>
+                  )}
+
+                  {/* Release button */}
+                  {task.isMine && task.status !== "validated" && task.status !== "submitted" && (
+                    <button
+                      onClick={() => handleReleaseTask(task.id)}
+                      className="flex items-center gap-1.5 text-[11px] text-destructive/70 hover:text-destructive transition-colors pt-1"
+                    >
+                      <Unlock className="h-3 w-3" />
+                      Release this task
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
+          );
+        })}
 
-            <div className="bg-card rounded-xl border border-border p-3 space-y-3">
-              <Textarea
-                placeholder="What have you done so far?"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="min-h-[80px] border-0 bg-muted rounded-lg text-sm resize-none"
-              />
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="rounded-lg text-xs gap-1.5">
-                  <Upload className="h-3 w-3" />
-                  Photo
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleAddUpdate}
-                  disabled={!notes.trim()}
-                  className="rounded-lg text-xs gap-1.5 ml-auto bg-primary"
-                >
-                  <Send className="h-3 w-3" />
-                  Update
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {tab === "submit" && (
-          <div className="space-y-4">
-            <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
-              <p className="text-sm font-medium text-primary">Ready to submit?</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Describe the work you've completed and attach evidence. Your submission will be reviewed by a validator.
-              </p>
-            </div>
-
-            <div className="bg-card rounded-xl border border-border p-3 space-y-3">
-              <Textarea
-                placeholder="Describe the work you completed..."
-                value={submission}
-                onChange={(e) => setSubmission(e.target.value)}
-                className="min-h-[120px] border-0 bg-muted rounded-lg text-sm resize-none"
-              />
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="rounded-lg text-xs gap-1.5">
-                  <Upload className="h-3 w-3" />
-                  Attach Files
-                </Button>
-              </div>
-            </div>
-
-            <Button
-              onClick={handleSubmit}
-              disabled={!submission.trim()}
-              className="w-full h-12 rounded-xl font-display font-semibold text-base bg-primary hover:bg-primary/90"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Submit Work
-            </Button>
-
-            {/* Next mission suggestion */}
-            <NextMissionCard
-              id="demo-3"
-              title="Survey 15 households in Ward 3"
-              estimatedTime="30 min"
-              distance="1.2 km"
-              tags={["research", "community"]}
-            />
+        {filtered.length === 0 && (
+          <div className="text-center py-10 text-muted-foreground">
+            <Filter className="h-8 w-8 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No tasks match this filter</p>
           </div>
         )}
       </div>
+
+      {/* ═══ SECTION 3: Quick Action Panel (persistent bottom) ═══ */}
+      <div className="fixed bottom-16 left-0 right-0 z-30 pointer-events-none">
+        <div className="max-w-lg mx-auto px-4 pb-2 pointer-events-auto">
+          <div className="bg-card/95 backdrop-blur-md border border-border rounded-2xl p-2.5 shadow-lg">
+            <div className="grid grid-cols-4 gap-1.5">
+              <QuickAction
+                icon={BarChart3}
+                label="Add Progress"
+                color="text-accent"
+                bg="bg-accent/10"
+                onClick={() => {
+                  const inProgressTask = tasks.find((t) => t.status === "in_progress") || tasks.find((t) => t.status === "open");
+                  if (inProgressTask) setExpandedTask(inProgressTask.id);
+                  else toast.info("No open tasks available");
+                }}
+              />
+              <QuickAction
+                icon={Send}
+                label="Submit Task"
+                color="text-primary"
+                bg="bg-primary/10"
+                onClick={() => {
+                  const submittable = tasks.find((t) => t.status === "in_progress");
+                  if (submittable) {
+                    setExpandedTask(submittable.id);
+                  } else toast.info("No tasks ready to submit");
+                }}
+              />
+              <QuickAction
+                icon={Camera}
+                label="Upload Proof"
+                color="text-secondary"
+                bg="bg-secondary/10"
+                onClick={() => fileInputRef.current?.click()}
+              />
+              <QuickAction
+                icon={Unlock}
+                label="Release Task"
+                color="text-destructive"
+                bg="bg-destructive/10"
+                onClick={() => {
+                  const releasable = tasks.find((t) => t.isMine && t.status !== "validated" && t.status !== "submitted");
+                  if (releasable) handleReleaseTask(releasable.id);
+                  else toast.info("No tasks to release");
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </AppShell>
+  );
+}
+
+// ── Quick Action Button ──
+function QuickAction({
+  icon: Icon,
+  label,
+  color,
+  bg,
+  onClick,
+}: {
+  icon: typeof Send;
+  label: string;
+  color: string;
+  bg: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-muted/60 transition-colors active:scale-95"
+    >
+      <div className={`h-9 w-9 rounded-lg ${bg} flex items-center justify-center`}>
+        <Icon className={`h-4 w-4 ${color}`} />
+      </div>
+      <span className="text-[10px] font-medium text-muted-foreground leading-tight text-center">{label}</span>
+    </button>
   );
 }
