@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Star, ChevronRight, Users, CheckCircle2, Clock, Loader2, Crown, Award, Eye, Gavel } from "lucide-react";
+import { ArrowLeft, Shield, Star, ChevronRight, Users, CheckCircle2, Clock, Loader2, Crown, Award, Eye, Gavel, LogIn } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
 import { useMyProgression, useLeadershipOpportunities, useLeaderboard, useRequestPromotion } from "@/hooks/use-leadership";
+import { useSession } from "@/hooks/use-session";
 
 const tierIcons: Record<string, typeof Shield> = {
   volunteer: Users,
