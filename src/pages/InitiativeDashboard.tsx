@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, Target, Loader2, Plus, Zap, FolderOpen, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowLeft, Users, Target, Loader2, Plus, Zap, FolderOpen, Sparkles, TrendingUp, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -284,6 +284,12 @@ export default function InitiativeDashboard() {
 
         {/* Actions */}
         <div className="space-y-2">
+          <Button
+            onClick={() => navigate(`/initiatives/${id}/ops`)}
+            className="w-full h-11 rounded-xl font-display font-semibold bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+          >
+            <BarChart3 className="h-4 w-4" /> Campaign Operations
+          </Button>
           <Button onClick={handleJoin} disabled={joinMutation.isPending} className="w-full h-11 rounded-xl font-display font-semibold bg-primary hover:bg-primary/90">
             {joinMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Users className="h-4 w-4 mr-2" /> Join Initiative</>}
           </Button>
