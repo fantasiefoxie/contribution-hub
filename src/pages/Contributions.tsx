@@ -181,15 +181,6 @@ export default function Contributions() {
         )}
       </div>
 
-      {/* ═══ BOTTOM — Act: quick actions ═══ */}
-      <QuickActionBar
-        actions={[
-          { icon: Zap, label: "Resume Task", color: "text-secondary", bg: "bg-secondary/10", onClick: () => navigate("/active") },
-          { icon: Target, label: "Find Task", color: "text-primary", bg: "bg-primary/10", onClick: () => navigate("/") },
-          { icon: Award, label: "Badges", color: "text-accent", bg: "bg-accent/10", onClick: () => setShowBadges(true) },
-          { icon: TrendingUp, label: "Initiatives", color: "text-muted-foreground", bg: "bg-muted", onClick: () => navigate("/initiatives") },
-        ]}
-      />
     </AppShell>
   );
 }

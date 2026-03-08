@@ -239,9 +239,8 @@ export default function TaskDetails() {
         </div>
       </div>
 
-      {/* Bottom action buttons */}
-      <div className="sticky bottom-20 px-4 pb-4">
-        <div className="bg-card/95 backdrop-blur-sm rounded-2xl border border-border p-3 shadow-lg space-y-2">
+        {/* Action buttons (inline) */}
+        <div className="bg-card rounded-2xl border border-border p-3 space-y-2">
           {isReserved ? (
             <>
               <div className="text-center text-xs text-muted-foreground mb-1">
@@ -272,12 +271,15 @@ export default function TaskDetails() {
               <Button
                 variant="outline"
                 className="h-12 w-12 rounded-xl shrink-0"
+                onClick={() => toast.success("Task bookmarked!")}
               >
                 <Bookmark className="h-5 w-5" />
               </Button>
             </div>
           )}
         </div>
+
+        <div className="h-6" />
       </div>
     </AppShell>
   );

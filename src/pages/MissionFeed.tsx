@@ -140,41 +140,6 @@ export default function MissionFeed() {
         </div>
       )}
 
-      {/* ═══ BOTTOM — Act: persistent quick actions ═══ */}
-      <div data-walkthrough="quick-actions">
-        <QuickActionBar
-          actions={[
-            {
-              icon: Zap,
-              label: "Resume Mission",
-              color: "text-secondary",
-              bg: "bg-secondary/10",
-              onClick: () => navigate("/active"),
-            },
-            {
-              icon: Flag,
-              label: "Initiatives",
-              color: "text-accent",
-              bg: "bg-accent/10",
-              onClick: () => navigate("/initiatives"),
-            },
-            {
-              icon: MapPin,
-              label: "Near Me",
-              color: "text-primary",
-              bg: "bg-primary/10",
-              onClick: () => setActiveFilter("nearby"),
-            },
-            {
-              icon: Globe,
-              label: "Online",
-              color: "text-muted-foreground",
-              bg: "bg-muted",
-              onClick: () => setActiveFilter("online"),
-            },
-          ]}
-        />
-      </div>
       <WalkthroughTrigger />
     </AppShell>
   );

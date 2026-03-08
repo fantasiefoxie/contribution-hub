@@ -201,14 +201,6 @@ export default function Profile() {
         </Button>
       </div>
 
-      {/* ═══ BOTTOM — Act: persistent actions ═══ */}
-      <QuickActionBar
-        actions={[
-          { icon: Zap, label: "Active Task", color: "text-secondary", bg: "bg-secondary/10", onClick: () => navigate("/active") },
-          { icon: Target, label: "Find Task", color: "text-primary", bg: "bg-primary/10", onClick: () => navigate("/") },
-          { icon: Settings, label: "Edit Profile", color: "text-muted-foreground", bg: "bg-muted", onClick: () => toast.info("Profile editing coming soon") },
-        ]}
-      />
     </AppShell>
   );
 }
