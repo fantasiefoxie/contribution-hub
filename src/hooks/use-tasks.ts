@@ -111,6 +111,7 @@ export function useTeamMembers(taskId: string) {
   return useQuery({
     queryKey: ["team-members", taskId],
     queryFn: async () => {
+      if (isMockId(taskId)) return getMockTeam(taskId);
       try {
         return await taskApi.getTeam(taskId);
       } catch {
