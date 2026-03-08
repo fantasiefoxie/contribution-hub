@@ -73,7 +73,7 @@ export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: Sc
     },
   },
   city_survey: {
-    infra: { api_servers: 4, bg_workers: 10, validators: 2_000, base_latency: 50, cache_efficiency: 0.92 },
+    infra: { api_servers: 4, bg_workers: 10, validators: 2_000, events_per_worker_per_second: 100, base_latency: 50, cache_efficiency: 0.92 },
     scenario: {
       name: "City Survey (50K)",
       peak_users: 20_000,
