@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState, useEffect, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Activity, Server, Database, HardDrive, Cpu, Clock,
-  TrendingUp, Users, Zap, BarChart3, Layers
+  TrendingUp, Zap, BarChart3, Layers
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -14,11 +15,17 @@ import {
 } from "recharts";
 import {
   generateTimeline, computeHealth, DEFAULT_INFRA, DEFAULT_SCENARIO, PRESETS,
-  type InfraParams, type ScenarioConfig,
+  type InfraParams, type ScenarioConfig, type SimPoint,
 } from "@/lib/load-simulation-engine";
 import InfraControls from "@/components/simulation/InfraControls";
 import MetricCard from "@/components/simulation/MetricCard";
 import BottleneckItem from "@/components/simulation/BottleneckItem";
+
+const CHART_TOOLTIP_STYLE = { fontSize: 12, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" };
+
+function ChartPlaceholder() {
+  return <Skeleton className="w-full h-[300px] rounded-lg" />;
+}
 
 export default function LoadSimulation() {
   const [infra, setInfra] = useState<InfraParams>(DEFAULT_INFRA);
@@ -26,7 +33,7 @@ export default function LoadSimulation() {
   const [activePreset, setActivePreset] = useState<string | null>("city_survey");
   const [elapsed, setElapsed] = useState(0);
 
-  const timeline = useMemo(
+  const timeline: SimPoint[] = useMemo(
     () => generateTimeline(infra, scenario),
     [infra, scenario]
   );
@@ -42,40 +49,60 @@ export default function LoadSimulation() {
     return () => clearTimeout(id);
   }, [elapsed]);
 
-  const handlePreset = (key: string) => {
+  const handlePreset = useCallback((key: string) => {
     const p = PRESETS[key];
     if (!p) return;
     setInfra({ ...DEFAULT_INFRA, ...p.infra });
     setScenario(p.scenario);
     setActivePreset(key);
-  };
+  }, []);
 
-  const handleInfraChange = (next: InfraParams) => {
+  const handleInfraChange = useCallback((next: InfraParams) => {
     setInfra(next);
-    setActivePreset(null); // custom config
-  };
+    setActivePreset(null);
+  }, []);
 
-  const visiblePoints = timeline.filter((p) => p.minute <= elapsed);
-
-  const peak = useMemo(
-    () => timeline.length > 0 ? timeline.reduce((max, p) => (p.apiRps > max.apiRps ? p : max), timeline[0]) : null,
-    [timeline]
+  const visiblePoints = useMemo(
+    () => timeline.filter((p) => p.minute <= elapsed),
+    [timeline, elapsed]
   );
+
+  const hasData = timeline.length > 0;
+  const hasVisibleData = visiblePoints.length > 0;
+
+  const peak = useMemo<SimPoint | null>(
+    () => hasData ? timeline.reduce((max, p) => (p.apiRps > max.apiRps ? p : max), timeline[0]) : null,
+    [timeline, hasData]
+  );
+
   const totalApiRequests = useMemo(
-    () => timeline.reduce((s, p) => s + p.apiRps * 5 * 60, 0),
-    [timeline]
+    () => hasData ? timeline.reduce((s, p) => s + p.apiRps * 5 * 60, 0) : 0,
+    [timeline, hasData]
   );
+
   const peakBacklog = useMemo(
-    () => timeline.length > 0 ? Math.max(...timeline.map((p) => p.eventQueueBacklog)) : 0,
-    [timeline]
+    () => hasData ? Math.max(...timeline.map((p) => p.eventQueueBacklog)) : 0,
+    [timeline, hasData]
   );
+
   const peakWorkerUtil = useMemo(
-    () => timeline.length > 0 ? Math.max(...timeline.map((p) => p.workerUtil)) : 0,
-    [timeline]
+    () => hasData ? Math.max(...timeline.map((p) => p.workerUtil)) : 0,
+    [timeline, hasData]
   );
+
   const peakError = useMemo(
-    () => timeline.length > 0 ? Math.max(...timeline.map((p) => p.errorRate)) : 0,
-    [timeline]
+    () => hasData ? Math.max(...timeline.map((p) => p.errorRate)) : 0,
+    [timeline, hasData]
+  );
+
+  const peakP95 = useMemo(
+    () => hasData ? Math.max(...timeline.map((p) => p.p95)) : 0,
+    [timeline, hasData]
+  );
+
+  const peakP99 = useMemo(
+    () => hasData ? Math.max(...timeline.map((p) => p.p99)) : 0,
+    [timeline, hasData]
   );
 
   const bottlenecks = useMemo(() => {
@@ -106,8 +133,6 @@ export default function LoadSimulation() {
       });
     }
 
-    const peakP95 = Math.max(...timeline.map((p) => p.p95));
-    const peakP99 = Math.max(...timeline.map((p) => p.p99));
     if (peakP99 > 800) {
       items.push({
         severity: "critical",
@@ -129,7 +154,7 @@ export default function LoadSimulation() {
         severity: "critical",
         title: "Error Rate Spike",
         description: `Error rate reaches ${(peakError * 100).toFixed(1)}% — cascading from latency > 300ms.`,
-        recommendation: `Address latency bottlenecks. Add circuit breakers and retry budgets.`,
+        recommendation: "Address latency bottlenecks. Add circuit breakers and retry budgets.",
       });
     }
 
@@ -138,7 +163,7 @@ export default function LoadSimulation() {
         severity: "warning",
         title: "Low Cache Efficiency",
         description: `Cache hit ratio at ${Math.round(infra.cache_efficiency * 100)}% causes excessive DB load.`,
-        recommendation: `Increase Redis memory and TTL. Pre-warm discovery cache before peak window.`,
+        recommendation: "Increase Redis memory and TTL. Pre-warm discovery cache before peak window.",
       });
     }
 
@@ -152,9 +177,7 @@ export default function LoadSimulation() {
     }
 
     return items;
-  }, [timeline, peakBacklog, peakWorkerUtil, peakError, infra]);
-
-  const chartStyle = { fontSize: 12, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" };
+  }, [peakBacklog, peakWorkerUtil, peakP95, peakP99, peakError, infra]);
 
   return (
     <AppShell>
@@ -215,7 +238,7 @@ export default function LoadSimulation() {
 
         {/* Summary Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <MetricCard icon={Zap} label="Peak API RPS" value={peak?.apiRps?.toLocaleString() ?? "—"} sub={`at ${peak?.time ?? ""}`} />
+          <MetricCard icon={Zap} label="Peak API RPS" value={peak?.apiRps?.toLocaleString() ?? "—"} sub={`at ${peak?.time ?? "—"}`} />
           <MetricCard icon={Database} label="Peak DB QPS" value={peak?.dbQps?.toLocaleString() ?? "—"} sub="PostgreSQL primary" />
           <MetricCard icon={Layers} label="Peak Queue" value={peakBacklog.toLocaleString()} sub="event backlog" />
           <MetricCard icon={BarChart3} label="Total Requests" value={`${(totalApiRequests / 1_000_000).toFixed(1)}M`} sub="2h window" />
@@ -236,16 +259,20 @@ export default function LoadSimulation() {
                 <CardTitle className="text-sm">API RPS & DB QPS</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={visiblePoints}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={chartStyle} />
-                    <Area type="monotone" dataKey="dbQps" name="DB QPS" fill="hsl(var(--accent) / 0.2)" stroke="hsl(var(--accent))" />
-                    <Area type="monotone" dataKey="apiRps" name="API RPS" fill="hsl(var(--primary) / 0.3)" stroke="hsl(var(--primary))" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {hasVisibleData ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={visiblePoints}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                      <Area type="monotone" dataKey="dbQps" name="DB QPS" fill="hsl(var(--accent) / 0.2)" stroke="hsl(var(--accent))" />
+                      <Area type="monotone" dataKey="apiRps" name="API RPS" fill="hsl(var(--primary) / 0.3)" stroke="hsl(var(--primary))" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ChartPlaceholder />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -256,17 +283,21 @@ export default function LoadSimulation() {
                 <CardTitle className="text-sm">Latency Percentiles (ms)</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={visiblePoints}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={chartStyle} />
-                    <Line type="monotone" dataKey="p50" name="p50" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="p95" name="p95" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="p99" name="p99" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
+                {hasVisibleData ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={visiblePoints}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                      <Line type="monotone" dataKey="p50" name="p50" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="p95" name="p95" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="p99" name="p99" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ChartPlaceholder />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -277,18 +308,22 @@ export default function LoadSimulation() {
                 <CardTitle className="text-sm">Cascade: Queue → Worker Util → Errors</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={visiblePoints}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis yAxisId="left" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={chartStyle} />
-                    <Line yAxisId="left" type="monotone" dataKey="eventQueueBacklog" name="Queue Backlog" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
-                    <Line yAxisId="right" type="monotone" dataKey="workerUtil" name="Worker %" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                    <Line yAxisId="right" type="monotone" dataKey="errorRate" name="Error Rate" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} strokeDasharray="4 2" />
-                  </LineChart>
-                </ResponsiveContainer>
+                {hasVisibleData ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={visiblePoints}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis yAxisId="left" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                      <Line yAxisId="left" type="monotone" dataKey="eventQueueBacklog" name="Queue Backlog" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+                      <Line yAxisId="right" type="monotone" dataKey="workerUtil" name="Worker %" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                      <Line yAxisId="right" type="monotone" dataKey="errorRate" name="Error Rate" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ChartPlaceholder />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -299,17 +334,21 @@ export default function LoadSimulation() {
                 <CardTitle className="text-sm">Task Operations per 5-min Window</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={visiblePoints}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={chartStyle} />
-                    <Bar dataKey="taskClaims" name="Claims" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="submissions" name="Submissions" fill="hsl(var(--accent))" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="validations" name="Validations" fill="hsl(var(--secondary))" radius={[2, 2, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {hasVisibleData ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={visiblePoints}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                      <Bar dataKey="taskClaims" name="Claims" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
+                      <Bar dataKey="submissions" name="Submissions" fill="hsl(var(--accent))" radius={[2, 2, 0, 0]} />
+                      <Bar dataKey="validations" name="Validations" fill="hsl(var(--secondary))" radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ChartPlaceholder />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -324,13 +363,13 @@ export default function LoadSimulation() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {[
+              {([
                 { label: "API Servers", count: infra.api_servers, icon: Server, health: health.p95Latency },
                 { label: "PostgreSQL", count: 1, icon: Database, health: (peak?.dbConnPool ?? 0) > 85 ? "critical" as const : (peak?.dbConnPool ?? 0) > 60 ? "warning" as const : "healthy" as const },
                 { label: "Redis Cache", count: 1, icon: HardDrive, health: infra.cache_efficiency < 0.88 ? "warning" as const : "healthy" as const },
                 { label: "Workers", count: infra.bg_workers, icon: Cpu, health: health.workerUtil },
                 { label: "Object Store", count: 1, icon: Layers, health: "healthy" as const },
-              ].map(({ label, count, icon: I, health: h }) => (
+              ] as const).map(({ label, count, icon: I, health: h }) => (
                 <div key={label} className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border/60 bg-card">
                   <I className="h-6 w-6 text-muted-foreground" />
                   <span className="text-xs font-semibold text-foreground">{count}× {label}</span>
@@ -355,7 +394,7 @@ export default function LoadSimulation() {
           </CardHeader>
           <CardContent className="space-y-3">
             {bottlenecks.map((b, i) => (
-              <BottleneckItem key={i} {...b} />
+              <BottleneckItem key={`${b.severity}-${b.title}-${i}`} {...b} />
             ))}
           </CardContent>
         </Card>

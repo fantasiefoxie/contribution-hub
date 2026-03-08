@@ -1,5 +1,15 @@
 // ── Stateful System Dynamics Simulation Engine ──
 
+/** Clamp a number between min and max */
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+/** Return value if finite, otherwise fallback */
+function safeNum(value: number, fallback: number = 0): number {
+  return Number.isFinite(value) ? value : fallback;
+}
+
 export interface InfraParams {
   api_servers: number;
   bg_workers: number;
@@ -56,6 +66,18 @@ export const DEFAULT_INFRA: InfraParams = {
   base_latency: 50,
   cache_efficiency: 0.92,
 };
+
+// ── Safe Infra: enforce minimums to prevent divide-by-zero ──
+function safeInfra(infra: InfraParams): InfraParams {
+  return {
+    api_servers: Math.max(1, infra.api_servers),
+    bg_workers: Math.max(1, infra.bg_workers),
+    validators: Math.max(1, infra.validators),
+    events_per_worker_per_second: Math.max(1, infra.events_per_worker_per_second),
+    base_latency: Math.max(0, infra.base_latency),
+    cache_efficiency: clamp(infra.cache_efficiency, 0.01, 0.99),
+  };
+}
 
 // ── Preset Scenarios ──
 export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: ScenarioConfig }> = {
@@ -116,6 +138,10 @@ export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: Sc
 export const DEFAULT_SCENARIO: ScenarioConfig = PRESETS.city_survey.scenario;
 
 export function computeHealth(timeline: SimPoint[]): HealthStatus {
+  if (timeline.length === 0) {
+    return { workerUtil: "healthy", queueBacklog: "healthy", p95Latency: "healthy", errorRate: "healthy" };
+  }
+
   const peakWorker = Math.max(...timeline.map((p) => p.workerUtil));
   const peakBacklog = Math.max(...timeline.map((p) => p.eventQueueBacklog));
   const peakP95 = Math.max(...timeline.map((p) => p.p95));
@@ -130,71 +156,80 @@ export function computeHealth(timeline: SimPoint[]): HealthStatus {
 }
 
 export function generateTimeline(
-  infra: InfraParams,
+  rawInfra: InfraParams,
   scenario: ScenarioConfig
 ): SimPoint[] {
+  const infra = safeInfra(rawInfra);
   const points: SimPoint[] = [];
   const TIMESTEP_SEC = 5 * 60;
+
+  // Safe scenario values
+  const safeTasks = Math.max(1, scenario.tasks);
+  const safeValidators = Math.max(1, scenario.validators);
+  const safeSpread = Math.max(1, scenario.spread);
 
   let queueBacklog = 0;
 
   for (let m = 0; m <= 120; m += 5) {
     // 1. Traffic shape
-    const t = (m - scenario.peak_minute) / scenario.spread;
-    const loadFactor = Math.exp(-0.5 * t * t);
-    const concurrentUsers = Math.round(loadFactor * scenario.peak_users);
+    const t = (m - scenario.peak_minute) / safeSpread;
+    const loadFactor = clamp(Math.exp(-0.5 * t * t), 0, 1);
+    const concurrentUsers = Math.round(safeNum(loadFactor * scenario.peak_users));
 
     // 2. API RPS scales with servers
-    const apiRps = Math.round(concurrentUsers * 0.21 * infra.api_servers / 4);
+    const apiRps = Math.round(safeNum(concurrentUsers * 0.21 * infra.api_servers / 4));
 
     // 3. Event production
     const eventsProducedPerSec = apiRps * 0.25;
-    const eventsProducedWindow = eventsProducedPerSec * TIMESTEP_SEC;
+    const eventsProducedWindow = safeNum(eventsProducedPerSec * TIMESTEP_SEC);
 
     // 4. Worker capacity
     const workerCapacityPerSec = infra.bg_workers * infra.events_per_worker_per_second;
-    const workerCapacityWindow = workerCapacityPerSec * TIMESTEP_SEC;
+    const workerCapacityWindow = safeNum(workerCapacityPerSec * TIMESTEP_SEC);
 
-    // 5. Drain
+    // 5. Drain — eventsProcessed never exceeds total queued
     const totalToDrain = queueBacklog + eventsProducedWindow;
     const eventsProcessed = Math.min(totalToDrain, workerCapacityWindow);
 
-    // 6. Backlog update
-    queueBacklog = Math.max(0, totalToDrain - eventsProcessed);
+    // 6. Backlog update — never negative
+    queueBacklog = Math.max(0, safeNum(totalToDrain - eventsProcessed));
 
-    // 7. Worker util
+    // 7. Worker util — clamped [0, 1]
     const workerUtil = workerCapacityWindow > 0
-      ? Math.min(1, eventsProcessed / workerCapacityWindow)
+      ? clamp(eventsProcessed / workerCapacityWindow, 0, 1)
       : 0;
 
-    // 8. Latency (affected by cache efficiency — lower cache = more DB hits = higher base)
-    const cachePenalty = (1 - infra.cache_efficiency) * 200; // up to +40ms at 80%, 0 at 100%
+    // 8. Latency
+    const cachePenalty = (1 - infra.cache_efficiency) * 200;
     const latencyMultiplier = 350;
     const backlogPenalty = 0.05;
-    const p95 = Math.round(
+    const p95 = Math.max(0, Math.round(safeNum(
       infra.base_latency + cachePenalty +
       workerUtil * latencyMultiplier +
       queueBacklog * backlogPenalty
-    );
-    const p50 = Math.round(p95 * 0.5);
-    const p99 = Math.round(p95 * 1.6);
+    )));
+    const p50 = Math.max(0, Math.round(p95 * 0.5));
+    const p99 = Math.max(0, Math.round(p95 * 1.6));
 
-    // 9. Error rate
-    const errorRate = Math.min(1, Math.max(0, (p95 - 300) / 1000));
+    // 9. Error rate — clamped [0, 1]
+    const errorRate = clamp(safeNum((p95 - 300) / 1000), 0, 1);
 
-    // 10. DB & cache — cache efficiency param directly drives hit ratio
+    // 10. DB & cache
     const dbCacheMiss = 1 - infra.cache_efficiency;
-    const dbQps = Math.round(apiRps * (1.5 + dbCacheMiss * 6)); // more misses = more DB
-    const cacheHitRatio = Math.round(Math.min(0.99, infra.cache_efficiency - workerUtil * 0.04) * 100) / 100;
-    const dbConnPool = Math.min(100, Math.round(
+    const dbQps = Math.max(0, Math.round(safeNum(apiRps * (1.5 + dbCacheMiss * 6))));
+    const cacheHitRatio = clamp(
+      Math.round(safeNum(infra.cache_efficiency - workerUtil * 0.04) * 100) / 100,
+      0.80, 0.99
+    );
+    const dbConnPool = clamp(Math.round(safeNum(
       (apiRps / (infra.api_servers * 25)) * 100 * 0.9
-    ));
+    )), 0, 100);
 
-    // 11. Ops — validator count affects validation throughput
-    const validatorThroughputRatio = Math.min(1, infra.validators / (scenario.validators || 1));
-    const taskClaims = Math.round(loadFactor * 380 * (scenario.tasks / 5000));
-    const submissions = Math.round(loadFactor * 210 * (scenario.tasks / 5000));
-    const validations = Math.round(loadFactor * 160 * validatorThroughputRatio * (scenario.tasks / 5000));
+    // 11. Ops
+    const validatorThroughputRatio = clamp(infra.validators / safeValidators, 0, 1);
+    const taskClaims = Math.max(0, Math.round(safeNum(loadFactor * 380 * (safeTasks / 5000))));
+    const submissions = Math.max(0, Math.round(safeNum(loadFactor * 210 * (safeTasks / 5000))));
+    const validations = Math.max(0, Math.round(safeNum(loadFactor * 160 * validatorThroughputRatio * (safeTasks / 5000))));
 
     points.push({
       time: `${Math.floor(m / 60) + 18}:${String(m % 60).padStart(2, "0")}`,
