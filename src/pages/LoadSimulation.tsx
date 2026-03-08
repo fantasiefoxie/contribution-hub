@@ -326,7 +326,7 @@ export default function LoadSimulation() {
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
                 { label: "API Servers", count: infra.api_servers, icon: Server, health: health.p95Latency },
-                { label: "PostgreSQL", count: 1, icon: Database, health: peak?.dbConnPool > 85 ? "critical" as const : peak?.dbConnPool > 60 ? "warning" as const : "healthy" as const },
+                { label: "PostgreSQL", count: 1, icon: Database, health: (peak?.dbConnPool ?? 0) > 85 ? "critical" as const : (peak?.dbConnPool ?? 0) > 60 ? "warning" as const : "healthy" as const },
                 { label: "Redis Cache", count: 1, icon: HardDrive, health: infra.cache_efficiency < 0.88 ? "warning" as const : "healthy" as const },
                 { label: "Workers", count: infra.bg_workers, icon: Cpu, health: health.workerUtil },
                 { label: "Object Store", count: 1, icon: Layers, health: "healthy" as const },
