@@ -5,7 +5,7 @@ export function useCommunityFeed(limit?: number) {
   return useQuery({
     queryKey: ["community-feed", limit],
     queryFn: () => impactApi.communityFeed(limit),
-    refetchInterval: 30000, // refresh every 30s
+    refetchInterval: 30000,
   });
 }
 
@@ -21,5 +21,13 @@ export function useInitiativeProgress(id: string) {
     queryKey: ["initiative-progress", id],
     queryFn: () => impactApi.initiativeProgress(id),
     enabled: !!id,
+  });
+}
+
+export function useNextMission(currentTaskId?: string) {
+  return useQuery({
+    queryKey: ["next-mission", currentTaskId],
+    queryFn: () => impactApi.nextMission(currentTaskId),
+    enabled: true,
   });
 }

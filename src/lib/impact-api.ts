@@ -30,6 +30,10 @@ export const impactApi = {
   },
   myImpact: () => invoke("/my-impact", "GET"),
   initiativeProgress: (id: string) => invoke(`/initiative/${id}/progress`, "GET"),
+  nextMission: (currentTaskId?: string) => {
+    const qs = currentTaskId ? `?current_task_id=${currentTaskId}` : "";
+    return invoke(`/next-mission${qs}`, "GET");
+  },
   processValidation: (contributionId: string) =>
     invoke("/process-validation", "POST", { contribution_id: contributionId }),
 };
