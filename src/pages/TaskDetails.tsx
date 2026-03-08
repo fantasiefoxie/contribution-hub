@@ -237,7 +237,6 @@ export default function TaskDetails() {
             </Badge>
           </div>
         </div>
-      </div>
 
         {/* Action buttons (inline) */}
         <div className="bg-card rounded-2xl border border-border p-3 space-y-2">
