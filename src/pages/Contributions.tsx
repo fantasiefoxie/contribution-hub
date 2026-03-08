@@ -45,11 +45,13 @@ const recentTasks = [
 const mockInitiatives = [
   {
     title: "River Cleanup Campaign",
+    slug: "river-cleanup-campaign",
     progress: { households_reached: { current: 480, target: 1000, percentage: 48 }, waste_removed_kg: { current: 320, target: 500, percentage: 64 } },
     milestones: [{ percentage: 25, reached_at: "2026-02-15" }],
   },
   {
     title: "Urban Reforestation Drive",
+    slug: "urban-reforestation-drive",
     progress: { trees_planted: { current: 750, target: 1000, percentage: 75 } },
     milestones: [{ percentage: 25, reached_at: "2026-01-10" }, { percentage: 50, reached_at: "2026-02-01" }, { percentage: 75, reached_at: "2026-03-05" }],
   },
@@ -178,7 +180,7 @@ export default function Contributions() {
         {showInitiatives && (
           <div className="space-y-3 animate-fade-in">
             {mockInitiatives.map((init) => (
-              <InitiativeProgressCard key={init.title} title={init.title} progress={init.progress} milestones={init.milestones} />
+              <InitiativeProgressCard key={init.title} title={init.title} slug={init.slug} progress={init.progress} milestones={init.milestones} />
             ))}
           </div>
         )}
