@@ -41,36 +41,38 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <ThemeProvider defaultTheme="system">
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-          <Route path="/" element={<MissionFeed />} />
-          <Route path="/task/:id" element={<TaskDetails />} />
-          <Route path="/active" element={<ActiveWorkspace />} />
-          <Route path="/contributions" element={<Contributions />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/validate" element={<ValidationQueue />} />
-          <Route path="/validate/:id" element={<SubmissionReview />} />
-          <Route path="/initiatives" element={<InitiativeDiscovery />} />
-          <Route path="/initiatives/create" element={<InitiativeBuilder />} />
-          <Route path="/initiatives/:id" element={<InitiativeDashboard />} />
-          <Route path="/initiatives/:id/ops" element={<CampaignOps />} />
-          <Route path="/leadership" element={<LeadershipDashboard />} />
-          <Route path="/observability" element={<ObservabilityDashboard />} />
-          <Route path="/transparency" element={<TransparencyPage />} />
-          <Route path="/developers" element={<DeveloperPortal />} />
-          <Route path="/load-simulation" element={<LoadSimulation />} />
-          <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+  <ErrorBoundary>
+    <ThemeProvider defaultTheme="system">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+            <Route path="/" element={<MissionFeed />} />
+            <Route path="/task/:id" element={<TaskDetails />} />
+            <Route path="/active" element={<ActiveWorkspace />} />
+            <Route path="/contributions" element={<Contributions />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/validate" element={<ValidationQueue />} />
+            <Route path="/validate/:id" element={<SubmissionReview />} />
+            <Route path="/initiatives" element={<InitiativeDiscovery />} />
+            <Route path="/initiatives/create" element={<InitiativeBuilder />} />
+            <Route path="/initiatives/:id" element={<InitiativeDashboard />} />
+            <Route path="/initiatives/:id/ops" element={<CampaignOps />} />
+            <Route path="/leadership" element={<LeadershipDashboard />} />
+            <Route path="/observability" element={<ObservabilityDashboard />} />
+            <Route path="/transparency" element={<TransparencyPage />} />
+            <Route path="/developers" element={<DeveloperPortal />} />
+            <Route path="/load-simulation" element={<LoadSimulation />} />
+            <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;
