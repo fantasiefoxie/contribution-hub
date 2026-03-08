@@ -403,7 +403,7 @@ async function nextMission(req: Request) {
     .select("id, title, tags, difficulty, lock_duration_mins")
     .eq("status", "open")
     .eq("visibility", "public")
-    .neq("created_by", user.id)
+    .neq("created_by", userId)
     .limit(10)
     .order("created_at", { ascending: false });
 
