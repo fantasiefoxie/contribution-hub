@@ -136,7 +136,10 @@ async function myImpact(req: Request) {
 }
 
 // ── GET /impact-worker/initiative/:id/progress ──
-async function initiativeProgress(req: Request, initiativeId: string) {
+async function initiativeProgress(req: Request, rawId: string) {
+  const initiativeId = await resolveId("initiative", rawId);
+  if (!initiativeId) return notFound(rawId);
+
   const db = getServiceDb();
 
   const { data: initiative } = await db
@@ -145,7 +148,7 @@ async function initiativeProgress(req: Request, initiativeId: string) {
     .eq("id", initiativeId)
     .single();
 
-  if (!initiative) return err("Initiative not found", 404);
+  if (!initiative) return notFound(rawId);
 
   // Get all contributions for tasks in this initiative
   const { data: tasks } = await db
