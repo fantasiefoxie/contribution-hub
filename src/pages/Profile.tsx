@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { User, Settings, LogOut, ChevronRight, Shield, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ const profileData = {
 };
 
 const menuItems = [
+  { label: "Validation Queue", icon: "🛡️", count: undefined, href: "/validate" },
   { label: "Saved Tasks", icon: "📌", count: 3 },
   { label: "My Organizations", icon: "🏢", count: 2 },
   { label: "Notification Preferences", icon: "🔔", count: undefined },
@@ -21,6 +23,7 @@ const menuItems = [
 ];
 
 export default function Profile() {
+  const navigate = useNavigate();
   return (
     <AppShell>
       <div className="px-4 pt-6 pb-3">
@@ -75,6 +78,7 @@ export default function Profile() {
         {menuItems.map((item, i) => (
           <button
             key={item.label}
+            onClick={() => item.href && navigate(item.href)}
             className={`w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors ${
               i < menuItems.length - 1 ? "border-b border-border" : ""
             }`}

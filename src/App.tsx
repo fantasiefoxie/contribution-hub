@@ -9,6 +9,8 @@ import ActiveWorkspace from "./pages/ActiveWorkspace";
 import Contributions from "./pages/Contributions";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import ValidationQueue from "./pages/ValidationQueue";
+import SubmissionReview from "./pages/SubmissionReview";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/contributions" element={<Contributions />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/validate" element={<ValidationQueue />} />
+          <Route path="/validate/:id" element={<SubmissionReview />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
