@@ -98,6 +98,24 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_attempts: {
+        Row: {
+          attempted_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contributions: {
         Row: {
           created_at: string
@@ -425,6 +443,7 @@ export type Database = {
           interests: string[] | null
           latitude: number | null
           longitude: number | null
+          max_active_tasks: number
           phone: string | null
           status: Database["public"]["Enums"]["user_status"]
           updated_at: string
@@ -437,6 +456,7 @@ export type Database = {
           interests?: string[] | null
           latitude?: number | null
           longitude?: number | null
+          max_active_tasks?: number
           phone?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
@@ -449,6 +469,7 @@ export type Database = {
           interests?: string[] | null
           latitude?: number | null
           longitude?: number | null
+          max_active_tasks?: number
           phone?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
@@ -483,6 +504,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "projects_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          initiative_id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          initiative_id: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          initiative_id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regions_initiative_id_fkey"
             columns: ["initiative_id"]
             isOneToOne: false
             referencedRelation: "initiatives"
@@ -616,10 +672,12 @@ export type Database = {
           longitude: number | null
           org_id: string | null
           project_id: string | null
+          region_id: string | null
           reserved_by: string | null
           reserved_until: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[] | null
+          task_pool: string
           team_target: number | null
           title: string
           updated_at: string
@@ -642,10 +700,12 @@ export type Database = {
           longitude?: number | null
           org_id?: string | null
           project_id?: string | null
+          region_id?: string | null
           reserved_by?: string | null
           reserved_until?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[] | null
+          task_pool?: string
           team_target?: number | null
           title: string
           updated_at?: string
@@ -668,10 +728,12 @@ export type Database = {
           longitude?: number | null
           org_id?: string | null
           project_id?: string | null
+          region_id?: string | null
           reserved_by?: string | null
           reserved_until?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[] | null
+          task_pool?: string
           team_target?: number | null
           title?: string
           updated_at?: string
@@ -699,6 +761,13 @@ export type Database = {
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tasks_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       team_members: {
@@ -706,6 +775,7 @@ export type Database = {
           id: string
           invite_code: string | null
           joined_at: string
+          region_id: string | null
           task_id: string
           user_id: string
         }
@@ -713,6 +783,7 @@ export type Database = {
           id?: string
           invite_code?: string | null
           joined_at?: string
+          region_id?: string | null
           task_id: string
           user_id: string
         }
@@ -720,10 +791,18 @@ export type Database = {
           id?: string
           invite_code?: string | null
           joined_at?: string
+          region_id?: string | null
           task_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "team_members_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "team_members_task_id_fkey"
             columns: ["task_id"]
