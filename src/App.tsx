@@ -29,6 +29,7 @@ import Documentation from "./pages/Documentation";
 import SavedTasks from "./pages/SavedTasks";
 import Organizations from "./pages/Organizations";
 import InitiativeDetail from "./pages/InitiativeDetail";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/organizations" element={<Organizations />} />
               <Route path="/initiative/:slug" element={<InitiativeDetail />} />
               <Route path="/docs" element={<Documentation />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
