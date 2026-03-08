@@ -230,7 +230,9 @@ async function updateInitiative(req: Request, rawId: string) {
 }
 
 // ── POST /:id/projects — create project ──
-async function createProject(req: Request, initiativeId: string) {
+async function createProject(req: Request, rawInitiativeId: string) {
+  const initiativeId = await resolveId("initiative", rawInitiativeId);
+  if (!initiativeId) return notFound(rawInitiativeId);
   const supabase = getSupabase(req);
   const user = await getUser(supabase);
   if (!user) return err("Unauthorized", 401);
