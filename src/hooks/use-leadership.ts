@@ -8,6 +8,10 @@ export function useMyProgression() {
     queryKey: ["my-progression", userId],
     queryFn: () => leadershipApi.myProgression(),
     enabled: !!userId,
+    retry: (failureCount, error) => {
+      if (error?.message?.includes("Unauthorized") || error?.message?.includes("401")) return false;
+      return failureCount < 2;
+    },
   });
 }
 
