@@ -34,6 +34,18 @@ export default function TaskDetails() {
 
   const task = data?.task;
 
+  // Derive contextual data from mock lookups
+  const ctx = useMemo(() => {
+    const t = task ?? getMockTask(id ?? "");
+    const org = getMockOrg(t?.org_id ?? null);
+    const initiative = getMockInitiative(t?.initiative_id ?? null);
+    const impact = getMockTaskImpact(id ?? "");
+    const estTime = getMockEstTime(id ?? "");
+    const distance = getMockDistance(id ?? "");
+    const isOnline = !t?.latitude && !t?.longitude;
+    return { org, initiative, impact, estTime, distance, isOnline };
+  }, [task, id]);
+
   useEffect(() => {
     if (reservationTimer !== null && reservationTimer > 0) {
       const t = setTimeout(() => setReservationTimer((v) => (v ?? 1) - 1), 1000);
