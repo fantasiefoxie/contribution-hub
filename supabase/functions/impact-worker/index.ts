@@ -107,9 +107,8 @@ async function communityFeed(req: Request) {
 // ── GET /impact-worker/my-impact ──
 // Volunteer's cumulative impact
 async function myImpact(req: Request) {
-  const supabase = getSupabase(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return err("Unauthorized", 401);
+  const userId = await getAuthUserId(req);
+  if (!userId) return err("Unauthorized", 401);
 
   const db = getServiceDb();
 
