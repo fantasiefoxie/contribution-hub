@@ -79,7 +79,7 @@ export default function Notifications() {
             <p className="text-sm text-muted-foreground mt-0.5">Stay updated on your missions</p>
           </div>
           <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-            <span className="text-lg">🔔</span>
+            <Bell className="h-5 w-5 text-muted-foreground" />
           </div>
         </div>
       </div>

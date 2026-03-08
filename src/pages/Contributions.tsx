@@ -133,15 +133,20 @@ export default function Contributions() {
       <div className="px-4 mt-6">
         <h2 className="font-display font-semibold text-base mb-3">Badges Earned</h2>
         <div className="grid grid-cols-2 gap-2">
-          {badges.map((b) => (
+          {badges.map((b) => {
+            const BIcon = b.icon;
+            return (
             <div key={b.name} className="bg-card rounded-xl border border-border p-3 flex items-start gap-3">
-              <span className="text-2xl">{b.emoji}</span>
+              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <BIcon className="h-4 w-4 text-primary" />
+              </div>
               <div className="min-w-0">
                 <p className="font-medium text-xs truncate">{b.name}</p>
                 <Badge className={`${levelColors[b.level]} border-0 text-[10px] mt-1`}>{b.level}</Badge>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

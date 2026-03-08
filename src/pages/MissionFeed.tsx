@@ -54,8 +54,11 @@ export default function MissionFeed() {
               {passportMode ? "Exploring global tasks" : "Smart recommendations for you"}
             </p>
           </div>
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-lg">🎯</span>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Crosshair className="h-5 w-5 text-primary" />
+            </div>
           </div>
         </div>
       </div>

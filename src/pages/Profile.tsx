@@ -152,7 +152,9 @@ export default function Profile() {
               i < menuItems.length - 1 ? "border-b border-border" : ""
             }`}
           >
-            <span className="text-lg">{item.icon}</span>
+            <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <item.icon className="h-4 w-4 text-muted-foreground" />
+            </div>
             <span className="text-sm font-medium flex-1 text-left">{item.label}</span>
             {item.count !== undefined && (
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">

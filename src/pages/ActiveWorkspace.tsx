@@ -125,7 +125,7 @@ export default function ActiveWorkspace() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t === "instructions" ? "📋 Instructions" : t === "progress" ? "📝 Progress" : "📤 Submit"}
+            {t === "instructions" ? <><ClipboardList className="h-3 w-3 mr-1 inline" />Instructions</> : t === "progress" ? <><PenLine className="h-3 w-3 mr-1 inline" />Progress</> : <><ArrowUpFromLine className="h-3 w-3 mr-1 inline" />Submit</>}
           </button>
         ))}
       </div>
