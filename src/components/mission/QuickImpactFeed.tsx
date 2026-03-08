@@ -24,35 +24,35 @@ function MicroMissionOverlay({ mission, onComplete, onDismiss }: { mission: Micr
   const Icon = cfg.icon;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end justify-center animate-fade-in">
-      <div className="w-full max-w-lg bg-card border-t border-border rounded-t-3xl p-5 pb-8 space-y-4 animate-fade-in">
+    <div className="fixed inset-0 z-50 bg-background/60 backdrop-blur-md flex items-end justify-center animate-fade-in">
+      <div className="w-full max-w-lg bg-card border-t border-border rounded-t-3xl p-6 pb-8 space-y-4 animate-slide-up shadow-float">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={`h-8 w-8 rounded-lg ${cfg.bg} flex items-center justify-center`}>
-              <Icon className={`h-4 w-4 ${cfg.color}`} />
+          <div className="flex items-center gap-3">
+            <div className={`h-10 w-10 rounded-xl ${cfg.bg} flex items-center justify-center`}>
+              <Icon className={`h-5 w-5 ${cfg.color}`} />
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">{mission.title}</p>
-              <p className="text-[10px] text-muted-foreground">{cfg.label} · {mission.estimatedMins} min</p>
+              <p className="text-[11px] text-muted-foreground">{cfg.label} · {mission.estimatedMins} min</p>
             </div>
           </div>
-          <button onClick={onDismiss} className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+          <button onClick={onDismiss} className="h-8 w-8 rounded-full bg-muted/80 flex items-center justify-center transition-colors hover:bg-muted">
             <X className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
 
-        <div className="bg-muted rounded-2xl p-6 flex flex-col items-center gap-3">
+        <div className="bg-muted/50 rounded-2xl p-8 flex flex-col items-center gap-3">
           <div className={`h-16 w-16 rounded-2xl ${cfg.bg} flex items-center justify-center`}>
             <Icon className={`h-8 w-8 ${cfg.color}`} />
           </div>
-          <p className="text-sm text-muted-foreground text-center">
+          <p className="text-sm text-muted-foreground text-center leading-relaxed">
             {mission.type === "photo_verify" && "Take a photo to verify this location or item"}
             {mission.type === "location_tag" && "Confirm you are at the correct location"}
             {mission.type === "quick_survey" && "Answer a quick yes/no question"}
           </p>
         </div>
 
-        <Button onClick={onComplete} className="w-full h-14 rounded-2xl text-base font-semibold gap-2 bg-primary hover:bg-primary/90">
+        <Button onClick={onComplete} className="w-full h-14 rounded-2xl text-base font-semibold gap-2 bg-primary hover:bg-primary/90 shadow-card transition-all duration-200 active:scale-[0.98]">
           <Zap className="h-5 w-5" /> {cfg.action}
         </Button>
       </div>
@@ -60,24 +60,23 @@ function MicroMissionOverlay({ mission, onComplete, onDismiss }: { mission: Micr
   );
 }
 
-/** Inline micro-mission card — no horizontal scroll, stacks vertically */
 function MicroMissionCard({ mission, onDoNow }: { mission: MicroMission; onDoNow: (m: MicroMission) => void }) {
   const cfg = typeConfig[mission.type];
   const Icon = cfg.icon;
 
   return (
-    <div className="flex items-center gap-3 py-2.5">
-      <div className={`h-9 w-9 rounded-lg ${cfg.bg} flex items-center justify-center shrink-0`}>
+    <div className="flex items-center gap-3 p-3 bg-card rounded-2xl shadow-card transition-all duration-200 hover:shadow-elevated active:scale-[0.99]">
+      <div className={`h-10 w-10 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0`}>
         <Icon className={`h-4 w-4 ${cfg.color}`} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">{mission.title}</p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground"><Clock className="h-2.5 w-2.5" />{mission.estimatedMins}m</span>
+          <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><Clock className="h-3 w-3" />{mission.estimatedMins}m</span>
           <span className="text-[10px] font-semibold text-primary">+{mission.points} pts</span>
         </div>
       </div>
-      <Button size="sm" onClick={() => onDoNow(mission)} className="h-8 px-3 rounded-lg text-[10px] font-semibold gap-1 bg-primary hover:bg-primary/90 shrink-0">
+      <Button size="sm" onClick={() => onDoNow(mission)} className="h-9 px-3.5 rounded-xl text-[11px] font-semibold gap-1 bg-primary hover:bg-primary/90 shrink-0 shadow-card transition-all duration-200 active:scale-95">
         Do Now <ChevronRight className="h-3 w-3" />
       </Button>
     </div>
@@ -87,7 +86,6 @@ function MicroMissionCard({ mission, onDoNow }: { mission: MicroMission; onDoNow
 interface QuickImpactFeedProps {
   missions: MicroMission[];
   onComplete: (missionId: string) => void;
-  /** Max items to show before "show more" */
   limit?: number;
 }
 
@@ -111,19 +109,19 @@ export default function QuickImpactFeed({ missions, onComplete, limit = 3 }: Qui
 
   return (
     <>
-      <div className="px-4 mb-2">
-        <div className="flex items-center gap-2 mb-1">
+      <div className="px-4 mb-4">
+        <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-3.5 w-3.5 text-secondary" />
           <h2 className="text-xs font-semibold uppercase tracking-wider text-secondary">Quick Impact</h2>
-          <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{available.length}</span>
+          <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{available.length}</span>
         </div>
-        <div className="divide-y divide-border">
+        <div className="space-y-2">
           {visible.map((m) => (
             <MicroMissionCard key={m.id} mission={m} onDoNow={setActiveMission} />
           ))}
         </div>
         {!showAll && available.length > limit && (
-          <button onClick={() => setShowAll(true)} className="w-full py-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+          <button onClick={() => setShowAll(true)} className="w-full py-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors duration-200">
             Show {available.length - limit} more
           </button>
         )}
