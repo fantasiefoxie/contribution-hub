@@ -67,6 +67,13 @@ export default function TaskDetails() {
 
   const handleConfirmClaim = async () => {
     if (!id) return;
+    if (isMock) {
+      setIsReserved(false);
+      setReservationTimer(null);
+      toast.success("Task claimed! Head to Active workspace.");
+      navigate("/active");
+      return;
+    }
     try {
       await claimMutation.mutateAsync(id);
       setIsReserved(false);
