@@ -586,6 +586,7 @@ export type Database = {
           promoted_at: string | null
           promoted_by: string | null
           region_name: string | null
+          slug: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["initiative_status"]
           success_metrics: Json | null
@@ -612,6 +613,7 @@ export type Database = {
           promoted_at?: string | null
           promoted_by?: string | null
           region_name?: string | null
+          slug?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["initiative_status"]
           success_metrics?: Json | null
@@ -638,6 +640,7 @@ export type Database = {
           promoted_at?: string | null
           promoted_by?: string | null
           region_name?: string | null
+          slug?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["initiative_status"]
           success_metrics?: Json | null
@@ -721,6 +724,7 @@ export type Database = {
           logo_url: string | null
           name: string
           slug: string
+          slug_id: string | null
           updated_at: string
         }
         Insert: {
@@ -730,6 +734,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           slug: string
+          slug_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -739,6 +744,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           slug?: string
+          slug_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -761,7 +767,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
-          id: string
+          id?: string
           interests?: string[] | null
           latitude?: number | null
           longitude?: number | null
@@ -1050,6 +1056,7 @@ export type Database = {
           region_id: string | null
           reserved_by: string | null
           reserved_until: string | null
+          slug: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[] | null
           task_pool: string
@@ -1078,6 +1085,7 @@ export type Database = {
           region_id?: string | null
           reserved_by?: string | null
           reserved_until?: string | null
+          slug?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[] | null
           task_pool?: string
@@ -1106,6 +1114,7 @@ export type Database = {
           region_id?: string | null
           reserved_by?: string | null
           reserved_until?: string | null
+          slug?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[] | null
           task_pool?: string
@@ -1290,6 +1299,7 @@ export type Database = {
     }
     Functions: {
       expire_reservations: { Args: never; Returns: undefined }
+      generate_slug: { Args: { _title: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["org_role"]
@@ -1309,6 +1319,7 @@ export type Database = {
         Args: { _identifier: string; _resource_type: string }
         Returns: string
       }
+      uuid_generate_v7: { Args: never; Returns: string }
     }
     Enums: {
       badge_level: "bronze" | "silver" | "gold" | "platinum"
