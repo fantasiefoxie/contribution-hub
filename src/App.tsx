@@ -16,6 +16,8 @@ import InitiativeBuilder from "./pages/InitiativeBuilder";
 import InitiativeDashboard from "./pages/InitiativeDashboard";
 import CampaignOps from "./pages/CampaignOps";
 import LeadershipDashboard from "./pages/LeadershipDashboard";
+import ObservabilityDashboard from "./pages/ObservabilityDashboard";
+import TransparencyPage from "./pages/TransparencyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,8 @@ const App = () => (
           <Route path="/initiatives/:id" element={<InitiativeDashboard />} />
           <Route path="/initiatives/:id/ops" element={<CampaignOps />} />
           <Route path="/leadership" element={<LeadershipDashboard />} />
+          <Route path="/observability" element={<ObservabilityDashboard />} />
+          <Route path="/transparency" element={<TransparencyPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
