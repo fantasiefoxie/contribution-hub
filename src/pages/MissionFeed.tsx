@@ -63,6 +63,15 @@ export default function MissionFeed() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<FeedFilter>("recommended");
   const [search, setSearch] = useState("");
+  const { start: startWalkthrough, active: walkthroughActive } = useWalkthrough();
+
+  // Auto-start walkthrough for first-time users
+  useEffect(() => {
+    if (!hasCompletedWalkthrough() && !walkthroughActive) {
+      const timer = setTimeout(() => startWalkthrough(), 800);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const { data, isLoading } = useMarketplaceFeed({ passport: false });
   const feed = (data?.recommended?.length > 0) ? data : mockFeed;
