@@ -71,16 +71,57 @@ async function getInitiative(req: Request, id: string) {
     { data: participants },
     { count: taskCount },
     { data: taskStats },
+    { data: tasks },
+    { data: initOrgs },
   ] = await Promise.all([
     db.from("projects").select("*").eq("initiative_id", id).order("sort_order"),
     db.from("initiative_participants").select("user_id, joined_at").eq("initiative_id", id),
     db.from("tasks").select("*", { count: "exact", head: true }).eq("initiative_id", id),
     db.from("tasks").select("status").eq("initiative_id", id),
+    db.from("tasks").select("id, title, difficulty, status, tags").eq("initiative_id", id).order("created_at", { ascending: false }).limit(50),
+    db.from("initiative_orgs").select("org_id").eq("initiative_id", id),
   ]);
 
   const statusCounts: Record<string, number> = {};
   for (const t of taskStats ?? []) {
     statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
+  }
+
+  // Fetch org details
+  const orgIds = (initOrgs ?? []).map((o: any) => o.org_id);
+  let organizations: any[] = [];
+  if (orgIds.length > 0) {
+    const { data: orgs } = await db.from("organizations").select("id, name, logo_url").in("id", orgIds);
+    organizations = orgs ?? [];
+  }
+
+  // Fetch recent activity (contributions for this initiative's tasks)
+  const validatedTaskIds = (taskStats ?? []).filter((t: any) => t.status === "validated").map(() => null);
+  const allTaskIds = (tasks ?? []).map((t: any) => t.id);
+  let activity: any[] = [];
+  if (allTaskIds.length > 0) {
+    const { data: contributions } = await db
+      .from("contributions")
+      .select("id, score, impact_metrics, created_at, task_id, user_id")
+      .in("task_id", allTaskIds)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (contributions && contributions.length > 0) {
+      const userIds = [...new Set(contributions.map((c: any) => c.user_id))];
+      const taskMap = Object.fromEntries((tasks ?? []).map((t: any) => [t.id, t]));
+      const { data: profiles } = await db.from("profiles").select("id, display_name, avatar_url").in("id", userIds);
+      const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
+
+      activity = contributions.map((c: any) => ({
+        id: c.id,
+        score: c.score,
+        impact_metrics: c.impact_metrics,
+        created_at: c.created_at,
+        task: taskMap[c.task_id] || { title: "Task", tags: [] },
+        contributor: profileMap[c.user_id] || { display_name: "Volunteer", avatar_url: null },
+      }));
+    }
   }
 
   return json({
@@ -90,6 +131,9 @@ async function getInitiative(req: Request, id: string) {
     participant_count: (participants ?? []).length,
     task_count: taskCount ?? 0,
     task_status_counts: statusCounts,
+    tasks: tasks ?? [],
+    organizations,
+    activity,
   });
 }
 
