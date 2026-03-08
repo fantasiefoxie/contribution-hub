@@ -1,8 +1,12 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Settings, LogOut, ChevronRight, Shield, MapPin } from "lucide-react";
+import { User, Settings, LogOut, ChevronRight, Shield, MapPin, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
+import InterestSelector from "@/components/recommendation/InterestSelector";
+import { useUserInterests, useUpdateInterests } from "@/hooks/use-recommendations";
 
 const profileData = {
   name: "Alex Rivera",
@@ -24,6 +28,33 @@ const menuItems = [
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { data: interestsData, isLoading: loadingInterests } = useUserInterests();
+  const updateMutation = useUpdateInterests();
+
+  const [interests, setInterests] = useState<string[]>([]);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (interestsData?.interests) {
+      setInterests(interestsData.interests);
+    }
+  }, [interestsData]);
+
+  const handleInterestChange = (newInterests: string[]) => {
+    setInterests(newInterests);
+    setDirty(true);
+  };
+
+  const saveInterests = async () => {
+    try {
+      await updateMutation.mutateAsync(interests);
+      setDirty(false);
+      toast.success("Interests updated!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save");
+    }
+  };
+
   return (
     <AppShell>
       <div className="px-4 pt-6 pb-3">
@@ -64,6 +95,25 @@ export default function Profile() {
           <p className="font-display text-xl font-bold text-accent">8</p>
           <p className="text-[10px] text-muted-foreground">Badges</p>
         </div>
+      </div>
+
+      {/* Interests */}
+      <div className="mx-4 mt-4 bg-card rounded-2xl border border-border p-4">
+        <InterestSelector
+          selected={interests}
+          onChange={handleInterestChange}
+          loading={updateMutation.isPending}
+        />
+        {dirty && (
+          <Button
+            onClick={saveInterests}
+            disabled={updateMutation.isPending}
+            size="sm"
+            className="mt-3 rounded-xl"
+          >
+            {updateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save Interests"}
+          </Button>
+        )}
       </div>
 
       {/* Member info */}
