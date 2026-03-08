@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, Target, Loader2, Plus, Zap, FolderOpen, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowLeft, Users, Target, Loader2, Plus, Zap, FolderOpen, Sparkles, TrendingUp, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
