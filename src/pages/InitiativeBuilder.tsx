@@ -58,7 +58,7 @@ export default function InitiativeBuilder() {
         is_micro: isMicro,
       });
       toast.success("Initiative created!");
-      navigate(`/initiatives/${result.initiative.id}`);
+      navigate(`/initiatives/${result.initiative.slug || result.initiative.id}`);
     } catch (e: any) {
       toast.error(e.message || "Failed to create");
     }

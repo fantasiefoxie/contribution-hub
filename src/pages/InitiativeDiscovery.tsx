@@ -9,6 +9,7 @@ import { useInitiatives } from "@/hooks/use-initiatives";
 
 interface EnrichedInitiative {
   id: string;
+  slug?: string;
   title: string;
   description: string | null;
   status: string;
@@ -43,29 +44,29 @@ const mockSections: Section[] = [
   {
     key: "featured", title: "Featured Campaigns", icon: "star",
     items: [
-      { id: "init-1", title: "River Cleanup Campaign", description: "City-wide river cleanup targeting 50 pollution hotspots.", status: "active", is_micro: false, is_online: false, start_date: "2026-02-01", end_date: "2026-05-31", target_metrics: { waste_removed_kg: 500 }, featured_at: "2026-02-15", priority_score: 82, participant_count: 127, volunteer_target: 200, volunteer_gap: 73, task_stats: { total: 50, open: 18, validated: 24 }, completion_pct: 48, lifecycle: "active", category: "environment", region_name: "Downtown" },
-      { id: "init-3", title: "Urban Reforestation Drive", description: "Plant 1000 trees across 15 neighborhoods.", status: "active", is_micro: false, is_online: false, start_date: "2026-01-15", end_date: "2026-06-30", target_metrics: { trees_planted: 1000 }, featured_at: "2026-01-20", priority_score: 71, participant_count: 89, volunteer_target: 150, volunteer_gap: 61, task_stats: { total: 40, open: 8, validated: 28 }, completion_pct: 70, lifecycle: "active", category: "environment", region_name: null },
+      { id: "init-1", slug: "river-cleanup-campaign", title: "River Cleanup Campaign", description: "City-wide river cleanup targeting 50 pollution hotspots.", status: "active", is_micro: false, is_online: false, start_date: "2026-02-01", end_date: "2026-05-31", target_metrics: { waste_removed_kg: 500 }, featured_at: "2026-02-15", priority_score: 82, participant_count: 127, volunteer_target: 200, volunteer_gap: 73, task_stats: { total: 50, open: 18, validated: 24 }, completion_pct: 48, lifecycle: "active", category: "environment", region_name: "Downtown" },
+      { id: "init-3", slug: "urban-reforestation-drive", title: "Urban Reforestation Drive", description: "Plant 1000 trees across 15 neighborhoods.", status: "active", is_micro: false, is_online: false, start_date: "2026-01-15", end_date: "2026-06-30", target_metrics: { trees_planted: 1000 }, featured_at: "2026-01-20", priority_score: 71, participant_count: 89, volunteer_target: 150, volunteer_gap: 61, task_stats: { total: 40, open: 8, validated: 28 }, completion_pct: 70, lifecycle: "active", category: "environment", region_name: null },
     ],
   },
   {
     key: "high_priority", title: "High Priority", icon: "trending-up",
     items: [
-      { id: "init-1", title: "River Cleanup Campaign", description: "City-wide river cleanup targeting 50 pollution hotspots.", status: "active", is_micro: false, is_online: false, start_date: "2026-02-01", end_date: "2026-05-31", target_metrics: { waste_removed_kg: 500 }, featured_at: "2026-02-15", priority_score: 82, participant_count: 127, volunteer_target: 200, volunteer_gap: 73, task_stats: { total: 50, open: 18, validated: 24 }, completion_pct: 48, lifecycle: "active", category: "environment", region_name: "Downtown" },
-      { id: "init-4", title: "Food Distribution Network", description: "Weekly food distribution to underserved communities.", status: "active", is_micro: true, is_online: false, start_date: "2026-03-05", end_date: "2026-04-04", target_metrics: { people_served: 500 }, featured_at: null, priority_score: 76, participant_count: 12, volunteer_target: 60, volunteer_gap: 48, task_stats: { total: 15, open: 12, validated: 1 }, completion_pct: 7, lifecycle: "active", category: "welfare", region_name: null },
-      { id: "init-2", title: "Ward 3 Census Survey", description: "Community-driven census of Ward 3 households.", status: "active", is_micro: true, is_online: false, start_date: "2026-03-01", end_date: "2026-03-30", target_metrics: { households_reached: 200 }, featured_at: null, priority_score: 68, participant_count: 18, volunteer_target: 40, volunteer_gap: 22, task_stats: { total: 20, open: 10, validated: 6 }, completion_pct: 30, lifecycle: "active", category: "governance", region_name: "Ward 3" },
+      { id: "init-1", slug: "river-cleanup-campaign", title: "River Cleanup Campaign", description: "City-wide river cleanup targeting 50 pollution hotspots.", status: "active", is_micro: false, is_online: false, start_date: "2026-02-01", end_date: "2026-05-31", target_metrics: { waste_removed_kg: 500 }, featured_at: "2026-02-15", priority_score: 82, participant_count: 127, volunteer_target: 200, volunteer_gap: 73, task_stats: { total: 50, open: 18, validated: 24 }, completion_pct: 48, lifecycle: "active", category: "environment", region_name: "Downtown" },
+      { id: "init-4", slug: "food-distribution-network", title: "Food Distribution Network", description: "Weekly food distribution to underserved communities.", status: "active", is_micro: true, is_online: false, start_date: "2026-03-05", end_date: "2026-04-04", target_metrics: { people_served: 500 }, featured_at: null, priority_score: 76, participant_count: 12, volunteer_target: 60, volunteer_gap: 48, task_stats: { total: 15, open: 12, validated: 1 }, completion_pct: 7, lifecycle: "active", category: "welfare", region_name: null },
+      { id: "init-2", slug: "ward-3-census-survey", title: "Ward 3 Census Survey", description: "Community-driven census of Ward 3 households.", status: "active", is_micro: true, is_online: false, start_date: "2026-03-01", end_date: "2026-03-30", target_metrics: { households_reached: 200 }, featured_at: null, priority_score: 68, participant_count: 18, volunteer_target: 40, volunteer_gap: 22, task_stats: { total: 20, open: 10, validated: 6 }, completion_pct: 30, lifecycle: "active", category: "governance", region_name: "Ward 3" },
     ],
   },
   {
     key: "community", title: "Community Campaigns", icon: "heart",
     items: [
-      { id: "init-4", title: "Food Distribution Network", description: "Weekly food distribution to underserved communities.", status: "active", is_micro: true, is_online: false, start_date: "2026-03-05", end_date: "2026-04-04", target_metrics: { people_served: 500 }, featured_at: null, priority_score: 76, participant_count: 12, volunteer_target: 60, volunteer_gap: 48, task_stats: { total: 15, open: 12, validated: 1 }, completion_pct: 7, lifecycle: "active", category: "welfare", region_name: null },
-      { id: "init-2", title: "Ward 3 Census Survey", description: "Community-driven census of Ward 3 households.", status: "active", is_micro: true, is_online: false, start_date: "2026-03-01", end_date: "2026-03-30", target_metrics: { households_reached: 200 }, featured_at: null, priority_score: 68, participant_count: 18, volunteer_target: 40, volunteer_gap: 22, task_stats: { total: 20, open: 10, validated: 6 }, completion_pct: 30, lifecycle: "active", category: "governance", region_name: "Ward 3" },
+      { id: "init-4", slug: "food-distribution-network", title: "Food Distribution Network", description: "Weekly food distribution to underserved communities.", status: "active", is_micro: true, is_online: false, start_date: "2026-03-05", end_date: "2026-04-04", target_metrics: { people_served: 500 }, featured_at: null, priority_score: 76, participant_count: 12, volunteer_target: 60, volunteer_gap: 48, task_stats: { total: 15, open: 12, validated: 1 }, completion_pct: 7, lifecycle: "active", category: "welfare", region_name: null },
+      { id: "init-2", slug: "ward-3-census-survey", title: "Ward 3 Census Survey", description: "Community-driven census of Ward 3 households.", status: "active", is_micro: true, is_online: false, start_date: "2026-03-01", end_date: "2026-03-30", target_metrics: { households_reached: 200 }, featured_at: null, priority_score: 68, participant_count: 18, volunteer_target: 40, volunteer_gap: 22, task_stats: { total: 20, open: 10, validated: 6 }, completion_pct: 30, lifecycle: "active", category: "governance", region_name: "Ward 3" },
     ],
   },
   {
     key: "online", title: "Online Missions", icon: "globe",
     items: [
-      { id: "init-5", title: "Digital Literacy Program", description: "Online workshops teaching digital skills to seniors.", status: "active", is_micro: false, is_online: true, start_date: "2026-02-10", end_date: "2026-08-30", target_metrics: { people_served: 300 }, featured_at: null, priority_score: 55, participant_count: 45, volunteer_target: 80, volunteer_gap: 35, task_stats: { total: 30, open: 15, validated: 10 }, completion_pct: 33, lifecycle: "active", category: "education", region_name: null },
+      { id: "init-5", slug: "digital-literacy-program", title: "Digital Literacy Program", description: "Online workshops teaching digital skills to seniors.", status: "active", is_micro: false, is_online: true, start_date: "2026-02-10", end_date: "2026-08-30", target_metrics: { people_served: 300 }, featured_at: null, priority_score: 55, participant_count: 45, volunteer_target: 80, volunteer_gap: 35, task_stats: { total: 30, open: 15, validated: 10 }, completion_pct: 33, lifecycle: "active", category: "education", region_name: null },
     ],
   },
 ];
@@ -174,7 +175,7 @@ function FeaturedCarousel({ items, onSelect }: { items: EnrichedInitiative[]; on
       {items.map((init) => (
         <button
           key={init.id}
-          onClick={() => onSelect(init.id)}
+          onClick={() => onSelect(init.slug || init.id)}
           className="min-w-[260px] bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl border border-primary/15 p-4 text-left shrink-0 hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-1">
@@ -309,7 +310,7 @@ export default function InitiativeDiscovery() {
                 ) : (
                   <div className="px-4 space-y-2">
                     {section.items.slice(0, 3).map((init) => (
-                      <CampaignCard key={init.id} init={init} onClick={() => navigate(`/initiatives/${init.id}`)} />
+                      <CampaignCard key={init.id} init={init} onClick={() => navigate(`/initiatives/${init.slug || init.id}`)} />
                     ))}
                     {section.items.length > 3 && (
                       <button
@@ -334,7 +335,7 @@ export default function InitiativeDiscovery() {
             </div>
           ) : (
             filtered.map((init) => (
-              <CampaignCard key={init.id} init={init} onClick={() => navigate(`/initiatives/${init.id}`)} />
+              <CampaignCard key={init.id} init={init} onClick={() => navigate(`/initiatives/${init.slug || init.id}`)} />
             ))
           )}
         </div>
