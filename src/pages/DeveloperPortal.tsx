@@ -118,16 +118,58 @@ export default function DeveloperPortal() {
             </div>
           </div>
 
+          {/* Idempotency */}
+          <div className="bg-card rounded-xl border border-border p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-4 w-4 text-accent" />
+              <h3 className="font-display font-semibold text-sm">Idempotency</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Pass <code className="font-mono text-foreground">x-idempotency-key</code> header on POST requests to ensure at-most-once delivery. Keys expire after 24h.
+            </p>
+            <div className="bg-muted rounded-lg p-2">
+              <code className="text-[10px] font-mono">x-idempotency-key: unique-request-id-123</code>
+            </div>
+          </div>
+
+          {/* Rate Limits */}
+          <div className="bg-card rounded-xl border border-border p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="h-4 w-4 text-secondary" />
+              <h3 className="font-display font-semibold text-sm">Rate Limits</h3>
+            </div>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p>API Key: <span className="font-medium text-foreground">60 req/min</span> (configurable per key)</p>
+              <p>Bearer Token: <span className="font-medium text-foreground">120 req/min</span></p>
+              <p className="text-[10px] mt-1">Returns <code className="font-mono">429 Too Many Requests</code> when exceeded.</p>
+            </div>
+          </div>
+
           {/* Scopes */}
           <div className="bg-card rounded-xl border border-border p-4">
             <h3 className="font-display font-semibold text-sm mb-2">Permission Scopes</h3>
-            <div className="flex flex-wrap gap-1.5">
+            <p className="text-[10px] text-muted-foreground mb-2">Legacy scopes (backward compatible):</p>
+            <div className="flex flex-wrap gap-1.5 mb-3">
               {AVAILABLE_SCOPES.map(scope => (
                 <Badge key={scope} variant="outline" className="text-[10px] font-mono">{scope}</Badge>
               ))}
             </div>
-            <p className="text-[10px] text-muted-foreground mt-2">
-              API keys must have the required scope to access each module. Use <code className="font-mono">*</code> for full access.
+            <p className="text-[10px] text-muted-foreground mb-2">Granular scopes (v2):</p>
+            <div className="flex flex-wrap gap-1.5">
+              {["tasks:read", "tasks:create", "tasks:claim", "tasks:validate", "tasks:manage",
+                "initiatives:read", "initiatives:create", "initiatives:manage",
+                "contributions:read", "profiles:read", "submissions:review"].map(scope => (
+                <Badge key={scope} variant="outline" className="text-[10px] font-mono">{scope}</Badge>
+              ))}
+            </div>
+          </div>
+
+          {/* Event Versioning */}
+          <div className="bg-card rounded-xl border border-border p-4">
+            <h3 className="font-display font-semibold text-sm mb-2">Event Versioning</h3>
+            <p className="text-xs text-muted-foreground">
+              All events include a <code className="font-mono text-foreground">version</code> field. Current version: <span className="font-medium text-foreground">1</span>.
+              Filter with <code className="font-mono text-foreground">?version=1</code>.
             </p>
           </div>
 
@@ -152,15 +194,6 @@ export default function DeveloperPortal() {
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Rate Limits */}
-          <div className="bg-card rounded-xl border border-border p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="h-4 w-4 text-secondary" />
-              <h3 className="font-display font-semibold text-sm">Rate Limits</h3>
-            </div>
-            <p className="text-xs text-muted-foreground">Default: <span className="font-medium text-foreground">60 requests/minute</span> per API key. Configurable per key.</p>
           </div>
         </TabsContent>
 
