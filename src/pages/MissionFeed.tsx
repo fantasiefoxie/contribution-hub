@@ -102,6 +102,7 @@ export default function MissionFeed() {
 
       {/* ── Active Mission Banner (one-tap resume) ── */}
       <button
+        data-walkthrough="active-mission"
         onClick={() => navigate("/active")}
         className="mx-4 mb-3 bg-gradient-to-r from-secondary/15 via-secondary/10 to-primary/10 rounded-2xl p-3.5 border border-secondary/20 flex items-center gap-3 hover:border-secondary/40 transition-all"
       >
