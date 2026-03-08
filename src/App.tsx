@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MissionFeed from "./pages/MissionFeed";
 import TaskDetails from "./pages/TaskDetails";
@@ -23,23 +23,19 @@ import LoadSimulation from "./pages/LoadSimulation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (failureCount, error) => {
-        // Don't retry 401/403 errors
-        if (error instanceof Error && /40[13]/.test(error.message)) return false;
-        return failureCount < 2;
-      },
-      queryFn: undefined,
-    },
-    mutations: {},
-  },
-  queryCache: new (await import("@tanstack/react-query").then(m => m.QueryCache))({
+  queryCache: new QueryCache({
     onError: (_error, query) => {
-      // Suppress errors for queries that opt in
       if (query.meta?.suppressError) return;
     },
   }),
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        if (error instanceof Error && /40[13]/.test(error.message)) return false;
+        return failureCount < 2;
+      },
+    },
+  },
 });
 
 const App = () => (
