@@ -198,7 +198,7 @@ export default function MissionFeed() {
 }
 
 // ── Task Card with See→Decide→Act pattern ──
-function MissionTaskCard({ task, index }: { task: any; index: number }) {
+function MissionTaskCard({ task, index, isFirst }: { task: any; index: number; isFirst?: boolean }) {
   const navigate = useNavigate();
   const status: UniversalStatus = task.is_priority ? "in_progress" : "not_started";
 
@@ -207,6 +207,7 @@ function MissionTaskCard({ task, index }: { task: any; index: number }) {
       onClick={() => navigate(`/task/${task.id}`)}
       className="w-full bg-card rounded-xl border border-border p-3.5 text-left hover:border-primary/30 transition-all animate-fade-in min-h-[56px]"
       style={{ animationDelay: `${index * 30}ms` }}
+      {...(isFirst ? { "data-walkthrough": "task-card" } : {})}
     >
       <div className="flex items-center gap-3">
         <StatusDot status={status} />
