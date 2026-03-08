@@ -11,6 +11,9 @@ import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import ValidationQueue from "./pages/ValidationQueue";
 import SubmissionReview from "./pages/SubmissionReview";
+import InitiativeDiscovery from "./pages/InitiativeDiscovery";
+import InitiativeBuilder from "./pages/InitiativeBuilder";
+import InitiativeDashboard from "./pages/InitiativeDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
