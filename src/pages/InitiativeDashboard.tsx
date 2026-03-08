@@ -284,6 +284,12 @@ export default function InitiativeDashboard() {
 
         {/* Actions */}
         <div className="space-y-2">
+          <Button
+            onClick={() => navigate(`/initiatives/${id}/ops`)}
+            className="w-full h-11 rounded-xl font-display font-semibold bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+          >
+            <BarChart3 className="h-4 w-4" /> Campaign Operations
+          </Button>
           <Button onClick={handleJoin} disabled={joinMutation.isPending} className="w-full h-11 rounded-xl font-display font-semibold bg-primary hover:bg-primary/90">
             {joinMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Users className="h-4 w-4 mr-2" /> Join Initiative</>}
           </Button>
