@@ -18,7 +18,7 @@ import {
 } from "recharts";
 import {
   generateTimeline, computeHealth, DEFAULT_INFRA, DEFAULT_SCENARIO, PRESETS,
-  summarizeScenario,
+  summarizeScenario, estimateInfra, estimateCost, getCostHints,
   type InfraParams, type ScenarioConfig, type SimPoint, type ScenarioSummary,
 } from "@/lib/load-simulation-engine";
 import InfraControls from "@/components/simulation/InfraControls";
