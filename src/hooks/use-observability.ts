@@ -54,3 +54,11 @@ export function useTransparency() {
     refetchInterval: 60000,
   });
 }
+
+export function useAiMetrics() {
+  return useQuery({
+    queryKey: ["ai-metrics"],
+    queryFn: () => observabilityApi.aiMetrics(),
+    refetchInterval: 30000,
+  });
+}
