@@ -153,7 +153,7 @@ export default function InitiativeDashboard() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !isError) {
     return <AppShell><div className="flex justify-center py-32"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div></AppShell>;
   }
 
