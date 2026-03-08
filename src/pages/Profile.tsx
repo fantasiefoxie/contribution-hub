@@ -62,8 +62,9 @@ export default function Profile() {
 
   return (
     <AppShell>
-      <div className="px-4 pt-6 pb-3">
+      <div className="px-4 pt-6 pb-3 flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Profile</h1>
+        <ThemeToggle />
       </div>
 
       {/* Profile card */}
