@@ -255,7 +255,7 @@ async function processValidation(req: Request) {
 
   // 2. Check initiative milestones
   if (task.initiative_id) {
-    const { data: initiative } = await db.from("initiatives").select("*").eq("id", task.initiative_id).single();
+    const { data: initiative } = await db.from("initiatives").select("*").eq("id", task.initiative_id).maybeSingle();
     if (initiative && initiative.target_metrics) {
       const targets = initiative.target_metrics as Record<string, number>;
 
