@@ -21,6 +21,8 @@ export function useUserInterests() {
   return useQuery({
     queryKey: ["user-interests"],
     queryFn: () => recommendationApi.getInterests(),
+    retry: false,
+    meta: { suppressError: true },
   });
 }
 
