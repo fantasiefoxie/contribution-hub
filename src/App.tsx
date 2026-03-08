@@ -29,6 +29,7 @@ import Documentation from "./pages/Documentation";
 import SavedTasks from "./pages/SavedTasks";
 import Organizations from "./pages/Organizations";
 import InitiativeDetail from "./pages/InitiativeDetail";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
