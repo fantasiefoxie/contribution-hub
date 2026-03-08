@@ -75,6 +75,9 @@ const App = () => (
               <Route path="/transparency" element={<TransparencyPage />} />
               <Route path="/developers" element={<DeveloperPortal />} />
               <Route path="/load-simulation" element={<LoadSimulation />} />
+              <Route path="/saved" element={<SavedTasks />} />
+              <Route path="/organizations" element={<Organizations />} />
+              <Route path="/initiative/:slug" element={<InitiativeDetail />} />
               <Route path="/docs" element={<Documentation />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
