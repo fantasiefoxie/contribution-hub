@@ -70,6 +70,7 @@ const mockTasks: TaskCardData[] = [
 ];
 
 export default function MissionFeed() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<FilterCategory>("nearby");
   const [passportMode, setPassportMode] = useState(false);
   const [search, setSearch] = useState("");
