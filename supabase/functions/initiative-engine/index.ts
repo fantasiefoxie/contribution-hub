@@ -31,6 +31,21 @@ async function getUser(supabase: ReturnType<typeof createClient>) {
   return user;
 }
 
+/** Resolve any identifier (UUID, slug, alias) to a canonical UUID */
+async function resolveId(resourceType: string, identifier: string): Promise<string | null> {
+  const db = getServiceDb();
+  const { data, error } = await db.rpc("resolve_resource", {
+    _resource_type: resourceType,
+    _identifier: identifier,
+  });
+  if (error || !data) return null;
+  return data as string;
+}
+
+function notFound(identifier: string) {
+  return json({ error: "Resource not found", identifier }, 404);
+}
+
 // ── GET / — list initiatives ──
 async function listInitiatives(req: Request) {
   const supabase = getSupabase(req);
@@ -55,7 +70,10 @@ async function listInitiatives(req: Request) {
 }
 
 // ── GET /:id — get initiative with details ──
-async function getInitiative(req: Request, id: string) {
+async function getInitiative(req: Request, rawId: string) {
+  const id = await resolveId("initiative", rawId);
+  if (!id) return notFound(rawId);
+
   const supabase = getSupabase(req);
   const db = getServiceDb();
 
@@ -64,7 +82,7 @@ async function getInitiative(req: Request, id: string) {
     .select("*")
     .eq("id", id)
     .single();
-  if (error || !initiative) return err("Initiative not found", 404);
+  if (error || !initiative) return notFound(rawId);
 
   const [
     { data: projects },
@@ -191,7 +209,10 @@ async function createInitiative(req: Request) {
 }
 
 // ── PUT /:id — update initiative ──
-async function updateInitiative(req: Request, id: string) {
+async function updateInitiative(req: Request, rawId: string) {
+  const id = await resolveId("initiative", rawId);
+  if (!id) return notFound(rawId);
+
   const supabase = getSupabase(req);
   const user = await getUser(supabase);
   if (!user) return err("Unauthorized", 401);
@@ -209,7 +230,9 @@ async function updateInitiative(req: Request, id: string) {
 }
 
 // ── POST /:id/projects — create project ──
-async function createProject(req: Request, initiativeId: string) {
+async function createProject(req: Request, rawInitiativeId: string) {
+  const initiativeId = await resolveId("initiative", rawInitiativeId);
+  if (!initiativeId) return notFound(rawInitiativeId);
   const supabase = getSupabase(req);
   const user = await getUser(supabase);
   if (!user) return err("Unauthorized", 401);
@@ -229,7 +252,9 @@ async function createProject(req: Request, initiativeId: string) {
 }
 
 // ── POST /:id/generate-tasks — bulk task generation ──
-async function generateTasks(req: Request, initiativeId: string) {
+async function generateTasks(req: Request, rawInitiativeId: string) {
+  const initiativeId = await resolveId("initiative", rawInitiativeId);
+  if (!initiativeId) return notFound(rawInitiativeId);
   const supabase = getSupabase(req);
   const user = await getUser(supabase);
   if (!user) return err("Unauthorized", 401);
@@ -284,7 +309,9 @@ async function generateTasks(req: Request, initiativeId: string) {
 }
 
 // ── POST /:id/join — join initiative ──
-async function joinInitiative(req: Request, initiativeId: string) {
+async function joinInitiative(req: Request, rawInitiativeId: string) {
+  const initiativeId = await resolveId("initiative", rawInitiativeId);
+  if (!initiativeId) return notFound(rawInitiativeId);
   const supabase = getSupabase(req);
   const user = await getUser(supabase);
   if (!user) return err("Unauthorized", 401);
@@ -313,7 +340,9 @@ async function joinInitiative(req: Request, initiativeId: string) {
 }
 
 // ── POST /:id/promote — promote micro-initiative to full ──
-async function promoteInitiative(req: Request, initiativeId: string) {
+async function promoteInitiative(req: Request, rawInitiativeId: string) {
+  const initiativeId = await resolveId("initiative", rawInitiativeId);
+  if (!initiativeId) return notFound(rawInitiativeId);
   const supabase = getSupabase(req);
   const user = await getUser(supabase);
   if (!user) return err("Unauthorized", 401);

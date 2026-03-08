@@ -33,6 +33,21 @@ function getServiceDb() {
   );
 }
 
+/** Resolve any identifier (UUID, slug, alias) to a canonical UUID */
+async function resolveId(resourceType: string, identifier: string): Promise<string | null> {
+  const db = getServiceDb();
+  const { data, error } = await db.rpc("resolve_resource", {
+    _resource_type: resourceType,
+    _identifier: identifier,
+  });
+  if (error || !data) return null;
+  return data as string;
+}
+
+function notFound(identifier: string) {
+  return json({ error: "Resource not found", identifier }, 404);
+}
+
 // ── GET /impact-worker/community-feed ──
 // Recent public contributions for activity feed
 async function communityFeed(req: Request) {
@@ -121,7 +136,10 @@ async function myImpact(req: Request) {
 }
 
 // ── GET /impact-worker/initiative/:id/progress ──
-async function initiativeProgress(req: Request, initiativeId: string) {
+async function initiativeProgress(req: Request, rawId: string) {
+  const initiativeId = await resolveId("initiative", rawId);
+  if (!initiativeId) return notFound(rawId);
+
   const db = getServiceDb();
 
   const { data: initiative } = await db
@@ -130,7 +148,7 @@ async function initiativeProgress(req: Request, initiativeId: string) {
     .eq("id", initiativeId)
     .single();
 
-  if (!initiative) return err("Initiative not found", 404);
+  if (!initiative) return notFound(rawId);
 
   // Get all contributions for tasks in this initiative
   const { data: tasks } = await db
