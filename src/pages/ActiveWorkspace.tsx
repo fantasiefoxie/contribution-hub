@@ -1,16 +1,19 @@
 import { useState, useRef, useCallback } from "react";
 import {
-  Clock, CheckCircle2, Circle, Send, Upload, Camera, X,
+  Clock, CheckCircle2, Circle, Send, Camera, X,
   Zap, Filter, ChevronDown, ChevronUp, MapPin, Wifi,
-  AlertTriangle, Loader2, Unlock, FileText, BarChart3,
+  AlertTriangle, Loader2, Unlock, BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { useAddTaskUpdate, useSubmitTask } from "@/hooks/use-tasks";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
+import ScreenHeader from "@/components/shared/ScreenHeader";
+import FilterChipsBar, { type FilterOption } from "@/components/shared/FilterChipsBar";
+import QuickActionBar from "@/components/shared/QuickActionBar";
+import { StatusDot, StatusBadge, StatusLegend, DifficultyBadge, type UniversalStatus } from "@/components/shared/StatusIndicator";
 import MissionCompletionScreen from "@/components/mission/MissionCompletionScreen";
 
 // ── Types ──
@@ -42,28 +45,11 @@ const mockMission = {
   ] as MissionTask[],
 };
 
-// ── Status helpers ──
-const statusConfig: Record<TaskStatus, { color: string; bg: string; label: string }> = {
-  open: { color: "text-muted-foreground", bg: "bg-muted", label: "Not Started" },
-  in_progress: { color: "text-accent", bg: "bg-accent/10", label: "In Progress" },
-  submitted: { color: "text-secondary", bg: "bg-secondary/10", label: "Submitted" },
-  validated: { color: "text-primary", bg: "bg-primary/10", label: "Validated" },
-};
-
-const statusDot: Record<TaskStatus, string> = {
-  open: "border-muted-foreground/40",
-  in_progress: "border-accent bg-accent",
-  submitted: "border-secondary bg-secondary",
-  validated: "border-primary bg-primary",
-};
-
-const difficultyLabel = (d: number) =>
-  d <= 1 ? "Easy" : d <= 2 ? "Medium" : "Hard";
-const difficultyColor = (d: number) =>
-  d <= 1 ? "text-primary" : d <= 2 ? "text-secondary" : "text-destructive";
+const toUniversalStatus = (s: TaskStatus): UniversalStatus =>
+  s === "open" ? "not_started" : s === "in_progress" ? "in_progress" : s === "submitted" ? "submitted" : "validated";
 
 // ── Filters ──
-const filters: { key: FilterKey; label: string; icon: typeof Filter }[] = [
+const filters: FilterOption<FilterKey>[] = [
   { key: "all", label: "All", icon: Filter },
   { key: "mine", label: "My Tasks", icon: CheckCircle2 },
   { key: "nearby", label: "Nearby", icon: MapPin },
