@@ -1,34 +1,18 @@
 import { useState, useRef, useCallback } from "react";
-import {
-  Clock, CheckCircle2, Circle, Send, Camera, X,
-  Zap, Filter, ChevronDown, ChevronUp, MapPin, Wifi,
-  AlertTriangle, Loader2, Unlock, BarChart3,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Clock, Zap, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAddTaskUpdate, useSubmitTask } from "@/hooks/use-tasks";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
-import ScreenHeader from "@/components/shared/ScreenHeader";
-import FilterChipsBar, { type FilterOption } from "@/components/shared/FilterChipsBar";
-import QuickActionBar from "@/components/shared/QuickActionBar";
-import { StatusDot, StatusBadge, StatusLegend, DifficultyBadge, type UniversalStatus } from "@/components/shared/StatusIndicator";
+import { StatusLegend } from "@/components/shared/StatusIndicator";
 import MissionCompletionScreen from "@/components/mission/MissionCompletionScreen";
+import FocusTaskCard, { type FocusTask } from "@/components/mission/FocusTaskCard";
+import TaskFeedCard from "@/components/mission/TaskFeedCard";
 
 // ── Types ──
 type TaskStatus = "open" | "in_progress" | "submitted" | "validated";
-type FilterKey = "all" | "mine" | "nearby" | "online";
 
-interface MissionTask {
-  id: string;
-  title: string;
-  difficulty: number;
-  status: TaskStatus;
-  isMine: boolean;
-  isOnline: boolean;
-  distance?: string;
-}
+interface MissionTask extends FocusTask {}
 
 // ── Mock data ──
 const mockMission = {
@@ -45,99 +29,80 @@ const mockMission = {
   ] as MissionTask[],
 };
 
-const toUniversalStatus = (s: TaskStatus): UniversalStatus =>
-  s === "open" ? "not_started" : s === "in_progress" ? "in_progress" : s === "submitted" ? "submitted" : "validated";
-
-// ── Filters ──
-const filters: FilterOption<FilterKey>[] = [
-  { key: "all", label: "All", icon: Filter },
-  { key: "mine", label: "My Tasks", icon: CheckCircle2 },
-  { key: "nearby", label: "Nearby", icon: MapPin },
-  { key: "online", label: "Online", icon: Wifi },
-];
-
 export default function ActiveWorkspace() {
-  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
-  const [expandedTask, setExpandedTask] = useState<string | null>(null);
-  const [inlineNotes, setInlineNotes] = useState<Record<string, string>>({});
   const [tasks, setTasks] = useState(mockMission.tasks);
   const [showCompletion, setShowCompletion] = useState(false);
   const [animateProgress, setAnimateProgress] = useState(false);
+  const [successFlash, setSuccessFlash] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addUpdate = useAddTaskUpdate();
   const submitTask = useSubmitTask();
 
   // ── Computed ──
-  const completedCount = tasks.filter((t) => t.status === "validated").length;
+  const completedCount = tasks.filter((t) => t.status === "validated" || t.status === "submitted").length;
   const totalCount = tasks.length;
   const progressPct = Math.round((completedCount / totalCount) * 100);
   const timeLeft = Math.max(0, Math.floor((new Date(mockMission.lockedUntil).getTime() - Date.now()) / 60000));
   const hours = Math.floor(timeLeft / 60);
   const mins = timeLeft % 60;
 
-  const filtered = tasks.filter((t) => {
-    if (activeFilter === "mine") return t.isMine;
-    if (activeFilter === "nearby") return !t.isOnline;
-    if (activeFilter === "online") return t.isOnline;
-    return true;
-  });
+  // Focus task: first in_progress or first open that's mine, or first open
+  const focusTask = tasks.find((t) => t.status === "in_progress" && t.isMine)
+    || tasks.find((t) => t.status === "in_progress")
+    || tasks.find((t) => t.status === "open" && t.isMine)
+    || tasks.find((t) => t.status === "open");
 
-  // ── Actions ──
-  const triggerProgressAnimation = useCallback(() => {
+  // Feed: everything except the focus task, sorted by status priority
+  const statusOrder: Record<TaskStatus, number> = { in_progress: 0, open: 1, submitted: 2, validated: 3 };
+  const feedTasks = tasks
+    .filter((t) => t.id !== focusTask?.id)
+    .sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+
+  // ── Animations ──
+  const triggerProgress = useCallback(() => {
     setAnimateProgress(true);
-    setTimeout(() => setAnimateProgress(false), 800);
+    setTimeout(() => setAnimateProgress(false), 900);
   }, []);
 
-  const handleAddProgress = async (taskId: string) => {
-    const notes = inlineNotes[taskId]?.trim();
-    if (!notes) return;
-    try {
-      await addUpdate.mutateAsync({ taskId, input: { notes } });
-    } catch {
-      // Demo fallback
-    }
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId && t.status === "open" ? { ...t, status: "in_progress" as TaskStatus } : t))
-    );
-    setInlineNotes((prev) => ({ ...prev, [taskId]: "" }));
+  const flashSuccess = useCallback((msg: string) => {
+    setSuccessFlash(msg);
+    setTimeout(() => setSuccessFlash(null), 2000);
+  }, []);
+
+  // ── Actions ──
+  const handleAddProgress = async (taskId: string, notes: string) => {
+    try { await addUpdate.mutateAsync({ taskId, input: { notes } }); } catch {}
+    setTasks((prev) => prev.map((t) => (t.id === taskId && t.status === "open" ? { ...t, status: "in_progress" as TaskStatus } : t)));
     toast.success("Progress added!");
-    triggerProgressAnimation();
+    triggerProgress();
   };
 
-  const handleSubmitTask = async (taskId: string) => {
-    const notes = inlineNotes[taskId]?.trim() || "Task completed";
-    try {
-      await submitTask.mutateAsync({ taskId, input: { content: notes } });
-    } catch {
-      // Demo fallback
-    }
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: "submitted" as TaskStatus } : t))
-    );
-    setInlineNotes((prev) => ({ ...prev, [taskId]: "" }));
-    setExpandedTask(null);
-    toast.success("Task submitted for validation!");
-    triggerProgressAnimation();
+  const handleSubmit = async (taskId: string, notes: string) => {
+    try { await submitTask.mutateAsync({ taskId, input: { content: notes } }); } catch {}
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: "submitted" as TaskStatus } : t)));
+    flashSuccess("Task submitted! Next task loading...");
+    triggerProgress();
 
-    // Check if all tasks done
     const updated = tasks.map((t) => (t.id === taskId ? { ...t, status: "submitted" as TaskStatus } : t));
     if (updated.every((t) => t.status === "submitted" || t.status === "validated")) {
-      setTimeout(() => setShowCompletion(true), 600);
+      setTimeout(() => setShowCompletion(true), 800);
     }
   };
 
-  const handleReleaseTask = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: "open" as TaskStatus, isMine: false } : t))
-    );
-    setExpandedTask(null);
+  const handleRelease = (taskId: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: "open" as TaskStatus, isMine: false } : t)));
     toast.info("Task released");
   };
 
-  const handlePhotoUpload = (taskId: string) => {
+  const handleClaim = (taskId: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, isMine: true, status: "in_progress" as TaskStatus } : t)));
+    toast.success("Task claimed!");
+    triggerProgress();
+  };
+
+  const handlePhotoUpload = () => {
     fileInputRef.current?.click();
-    // In real app, link to task
     toast.success("Photo attached");
   };
 
@@ -156,10 +121,18 @@ export default function ActiveWorkspace() {
 
   return (
     <AppShell>
-      {/* Hidden file input */}
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" />
 
-      {/* ═══ SECTION 1: Mission Header ═══ */}
+      {/* ═══ SUCCESS FLASH ═══ */}
+      {successFlash && (
+        <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none flex justify-center pt-4 animate-fade-in">
+          <div className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-sm font-semibold">
+            <Sparkles className="h-4 w-4" /> {successFlash}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ SECTION 1: Mission Header — compact ═══ */}
       <div className="px-4 pt-5 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -176,168 +149,62 @@ export default function ActiveWorkspace() {
           </Badge>
         </div>
 
-        {/* Progress bar */}
+        {/* Progress bar with animation */}
         <div className="mt-3 bg-card rounded-xl border border-border p-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-medium text-muted-foreground">
-              {completedCount} of {totalCount} tasks completed
+              {completedCount} of {totalCount} tasks done
             </span>
-            <span className={`font-display font-bold text-sm transition-all duration-500 ${animateProgress ? "text-primary scale-110" : "text-primary"}`}>
+            <span className={`font-display font-bold text-sm transition-all duration-500 ${animateProgress ? "text-primary scale-125" : "text-primary"}`}>
               {progressPct}%
             </span>
           </div>
-          <div className={`transition-all duration-700 ${animateProgress ? "scale-[1.01]" : ""}`}>
-            <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progressPct}%` }} />
+          <div className={`transition-all duration-700 ${animateProgress ? "scale-[1.02]" : ""}`}>
+            <div className="relative h-3 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-700 ease-out rounded-full"
+                style={{ width: `${progressPct}%` }}
+              />
             </div>
           </div>
-          <div className="mt-2.5">
-            <StatusLegend />
-          </div>
+          <div className="mt-2"><StatusLegend /></div>
         </div>
       </div>
 
-      {/* ═══ SECTION 2: Task Checklist ═══ */}
-      <div className="px-4 mb-2">
-        <FilterChipsBar<FilterKey>
-          options={filters.map(f => ({ ...f, count: f.key === "all" ? totalCount : undefined }))}
-          active={activeFilter}
-          onChange={setActiveFilter}
-        />
-      </div>
-
-      {/* Task List */}
-      <div className="px-4 space-y-2 pb-44">
-        {filtered.map((task, i) => {
-          const isExpanded = expandedTask === task.id;
-          const notes = inlineNotes[task.id] || "";
-          const uStatus = toUniversalStatus(task.status);
-
-          return (
-            <div
-              key={task.id}
-              className={`bg-card rounded-xl border transition-all duration-200 animate-fade-in ${
-                isExpanded ? "border-primary/30 shadow-md" : "border-border"
-              }`}
-              style={{ animationDelay: `${i * 40}ms` }}
-            >
-              {/* Task Row — Large tap target */}
-              <button
-                onClick={() => setExpandedTask(isExpanded ? null : task.id)}
-                className="w-full flex items-center gap-3 p-3.5 min-h-[56px] text-left"
-              >
-                <StatusDot status={uStatus} />
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium leading-snug ${task.status === "validated" ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                    {task.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <DifficultyBadge level={task.difficulty} />
-                    <StatusBadge status={uStatus} />
-                    {task.isOnline && (
-                      <span className="flex items-center gap-0.5 text-[9px] text-accent">
-                        <Wifi className="h-2.5 w-2.5" /> Online
-                      </span>
-                    )}
-                    {task.distance && !task.isOnline && (
-                      <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
-                        <MapPin className="h-2.5 w-2.5" /> {task.distance}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {isExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                )}
-              </button>
-
-              {/* ── Inline Expanded Panel ── */}
-              {isExpanded && (
-                <div className="px-3.5 pb-3.5 pt-0 space-y-2.5 animate-fade-in">
-                  <div className="border-t border-border pt-2.5" />
-                  {task.status !== "validated" && (
-                    <>
-                      <Textarea
-                        placeholder="Quick progress note..."
-                        value={notes}
-                        onChange={(e) => setInlineNotes((prev) => ({ ...prev, [task.id]: e.target.value }))}
-                        className="min-h-[60px] border-0 bg-muted rounded-lg text-sm resize-none"
-                      />
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handlePhotoUpload(task.id)} className="rounded-lg text-[11px] gap-1 h-8">
-                          <Camera className="h-3 w-3" /> Photo
-                        </Button>
-                        <div className="flex-1" />
-                        {task.status !== "submitted" && (
-                          <Button size="sm" variant="outline" onClick={() => handleAddProgress(task.id)} disabled={!notes.trim()} className="rounded-lg text-[11px] gap-1 h-8 border-accent text-accent hover:bg-accent/10">
-                            <BarChart3 className="h-3 w-3" /> Add Progress
-                          </Button>
-                        )}
-                        {(task.status === "in_progress" || task.status === "open") && (
-                          <Button size="sm" onClick={() => handleSubmitTask(task.id)} className="rounded-lg text-[11px] gap-1 h-8 bg-primary hover:bg-primary/90">
-                            <Send className="h-3 w-3" /> Submit
-                          </Button>
-                        )}
-                      </div>
-                    </>
-                  )}
-                  {task.status === "validated" && (
-                    <div className="flex items-center gap-2 text-sm text-primary">
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span className="font-medium">Validated — great work!</span>
-                    </div>
-                  )}
-                  {task.isMine && task.status !== "validated" && task.status !== "submitted" && (
-                    <button onClick={() => handleReleaseTask(task.id)} className="flex items-center gap-1.5 text-[11px] text-destructive/70 hover:text-destructive transition-colors pt-1">
-                      <Unlock className="h-3 w-3" /> Release this task
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {filtered.length === 0 && (
-          <div className="text-center py-10 text-muted-foreground">
-            <Filter className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No tasks match this filter</p>
+      {/* ═══ SECTION 2: Focus Task ═══ */}
+      <div className="px-4 mb-3">
+        {focusTask ? (
+          <FocusTaskCard
+            task={focusTask}
+            remaining={feedTasks.filter((t) => t.status === "open" || t.status === "in_progress").length}
+            onAddProgress={handleAddProgress}
+            onSubmit={handleSubmit}
+            onRelease={handleRelease}
+            onPhotoUpload={handlePhotoUpload}
+          />
+        ) : (
+          <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 text-center animate-fade-in">
+            <Sparkles className="h-8 w-8 text-primary mx-auto mb-2" />
+            <p className="font-semibold text-primary">All tasks completed!</p>
+            <p className="text-xs text-muted-foreground mt-1">Great work on this mission</p>
           </div>
         )}
       </div>
 
-      {/* ═══ SECTION 3: Quick Action Panel ═══ */}
-      <QuickActionBar
-        actions={[
-          {
-            icon: BarChart3, label: "Add Progress", color: "text-accent", bg: "bg-accent/10",
-            onClick: () => {
-              const t = tasks.find((t) => t.status === "in_progress") || tasks.find((t) => t.status === "open");
-              if (t) setExpandedTask(t.id); else toast.info("No open tasks available");
-            },
-          },
-          {
-            icon: Send, label: "Submit Task", color: "text-primary", bg: "bg-primary/10",
-            onClick: () => {
-              const t = tasks.find((t) => t.status === "in_progress");
-              if (t) setExpandedTask(t.id); else toast.info("No tasks ready to submit");
-            },
-          },
-          {
-            icon: Camera, label: "Upload Proof", color: "text-secondary", bg: "bg-secondary/10",
-            onClick: () => fileInputRef.current?.click(),
-          },
-          {
-            icon: Unlock, label: "Release Task", color: "text-destructive", bg: "bg-destructive/10",
-            onClick: () => {
-              const t = tasks.find((t) => t.isMine && t.status !== "validated" && t.status !== "submitted");
-              if (t) handleReleaseTask(t.id); else toast.info("No tasks to release");
-            },
-          },
-        ]}
-      />
+      {/* ═══ SECTION 3: Task Feed ═══ */}
+      {feedTasks.length > 0 && (
+        <div className="px-4 pb-24">
+          <div className="flex items-center gap-2 mb-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Task Queue</h2>
+            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{feedTasks.length}</span>
+          </div>
+          <div className="space-y-2">
+            {feedTasks.map((task, i) => (
+              <TaskFeedCard key={task.id} task={task} index={i} onClaim={handleClaim} />
+            ))}
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
