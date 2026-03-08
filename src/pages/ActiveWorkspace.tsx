@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
-import { Clock, Zap, Sparkles } from "lucide-react";
+import { Clock, Zap, Sparkles, Send, BarChart3, Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useAddTaskUpdate, useSubmitTask } from "@/hooks/use-tasks";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
@@ -12,7 +13,6 @@ import QuickImpactFeed, { type MicroMission } from "@/components/mission/QuickIm
 
 // ── Types ──
 type TaskStatus = "open" | "in_progress" | "submitted" | "validated";
-
 interface MissionTask extends FocusTask {}
 
 // ── Mock data ──
@@ -37,12 +37,15 @@ const mockMicroMissions: MicroMission[] = [
   { id: "mm4", title: "Photograph recycling station", type: "photo_verify", estimatedMins: 3, points: 20, distance: "0.5 km", isOnline: false },
 ];
 
+const FEED_PAGE_SIZE = 5;
+
 export default function ActiveWorkspace() {
   const [tasks, setTasks] = useState(mockMission.tasks);
   const [showCompletion, setShowCompletion] = useState(false);
   const [animateProgress, setAnimateProgress] = useState(false);
   const [successFlash, setSuccessFlash] = useState<string | null>(null);
   const [microPoints, setMicroPoints] = useState(0);
+  const [feedLimit, setFeedLimit] = useState(FEED_PAGE_SIZE);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addUpdate = useAddTaskUpdate();
@@ -56,17 +59,17 @@ export default function ActiveWorkspace() {
   const hours = Math.floor(timeLeft / 60);
   const mins = timeLeft % 60;
 
-  // Focus task: first in_progress or first open that's mine, or first open
   const focusTask = tasks.find((t) => t.status === "in_progress" && t.isMine)
     || tasks.find((t) => t.status === "in_progress")
     || tasks.find((t) => t.status === "open" && t.isMine)
     || tasks.find((t) => t.status === "open");
 
-  // Feed: everything except the focus task, sorted by status priority
   const statusOrder: Record<TaskStatus, number> = { in_progress: 0, open: 1, submitted: 2, validated: 3 };
-  const feedTasks = tasks
+  const allFeedTasks = tasks
     .filter((t) => t.id !== focusTask?.id)
     .sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+  const feedTasks = allFeedTasks.slice(0, feedLimit);
+  const hasMore = allFeedTasks.length > feedLimit;
 
   // ── Animations ──
   const triggerProgress = useCallback(() => {
@@ -92,7 +95,6 @@ export default function ActiveWorkspace() {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: "submitted" as TaskStatus } : t)));
     flashSuccess("Task submitted! Next task loading...");
     triggerProgress();
-
     const updated = tasks.map((t) => (t.id === taskId ? { ...t, status: "submitted" as TaskStatus } : t));
     if (updated.every((t) => t.status === "submitted" || t.status === "validated")) {
       setTimeout(() => setShowCompletion(true), 800);
@@ -128,11 +130,49 @@ export default function ActiveWorkspace() {
     );
   }
 
+  // ── Bottom action bar ──
+  const bottomBar = (
+    <div className="bg-card/95 backdrop-blur-md border-t border-border px-3 py-2">
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          className="flex-1 h-11 rounded-xl text-xs gap-1.5 border-accent text-accent hover:bg-accent/10"
+          onClick={() => {
+            const t = tasks.find((t) => t.status === "in_progress") || tasks.find((t) => t.status === "open");
+            if (t) {
+              /* scroll focus card into view */
+              document.getElementById("focus-task")?.scrollIntoView({ behavior: "smooth" });
+            } else toast.info("No open tasks");
+          }}
+        >
+          <BarChart3 className="h-4 w-4" /> Progress
+        </Button>
+        <Button
+          className="flex-1 h-11 rounded-xl text-xs gap-1.5 bg-primary hover:bg-primary/90"
+          onClick={() => {
+            const t = tasks.find((t) => t.status === "in_progress");
+            if (t) handleSubmit(t.id, "Task completed");
+            else toast.info("No tasks ready to submit");
+          }}
+        >
+          <Send className="h-4 w-4" /> Submit
+        </Button>
+        <Button
+          variant="outline"
+          className="h-11 w-11 rounded-xl border-secondary text-secondary hover:bg-secondary/10 p-0"
+          onClick={handlePhotoUpload}
+        >
+          <Camera className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <AppShell>
+    <AppShell bottomBar={bottomBar}>
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" />
 
-      {/* ═══ SUCCESS FLASH ═══ */}
+      {/* Success flash */}
       {successFlash && (
         <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none flex justify-center pt-4 animate-fade-in">
           <div className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-sm font-semibold">
@@ -141,48 +181,41 @@ export default function ActiveWorkspace() {
         </div>
       )}
 
-      {/* ═══ SECTION 1: Mission Header — compact ═══ */}
-      <div className="px-4 pt-5 pb-3">
-        <div className="flex items-start justify-between gap-3">
+      {/* ═══ Mission Header ═══ */}
+      <div className="px-4 pt-4 pb-2">
+        <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Zap className="h-4 w-4 text-secondary shrink-0" />
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Zap className="h-3.5 w-3.5 text-secondary shrink-0" />
               <span className="text-[10px] font-semibold uppercase tracking-wider text-secondary">Active Mission</span>
             </div>
-            <h1 className="font-display text-lg font-bold leading-tight truncate">{mockMission.title}</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">{mockMission.organization}</p>
+            <h1 className="font-display text-base font-bold leading-tight truncate">{mockMission.title}</h1>
           </div>
-          <Badge className="bg-card border border-border text-foreground text-[11px] gap-1 shrink-0 font-mono">
+          <Badge className="bg-muted text-foreground text-[11px] gap-1 shrink-0 font-mono border-0">
             <Clock className="h-3 w-3 text-secondary" />
             {hours > 0 ? `${hours}h ` : ""}{mins}m
           </Badge>
         </div>
 
-        {/* Progress bar with animation */}
-        <div className="mt-3 bg-card rounded-xl border border-border p-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-medium text-muted-foreground">
-              {completedCount} of {totalCount} tasks done
-            </span>
-            <span className={`font-display font-bold text-sm transition-all duration-500 ${animateProgress ? "text-primary scale-125" : "text-primary"}`}>
-              {progressPct}%
-            </span>
-          </div>
-          <div className={`transition-all duration-700 ${animateProgress ? "scale-[1.02]" : ""}`}>
-            <div className="relative h-3 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-700 ease-out rounded-full"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
-          <div className="mt-2"><StatusLegend /></div>
+        {/* Progress — flat, no box container */}
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[11px] text-muted-foreground">{completedCount}/{totalCount} done</span>
+          <span className={`font-display font-bold text-xs transition-all duration-500 ${animateProgress ? "text-primary scale-125" : "text-primary"}`}>
+            {progressPct}%
+          </span>
         </div>
+        <div className={`transition-all duration-700 ${animateProgress ? "scale-[1.01]" : ""}`}>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-700 ease-out rounded-full" style={{ width: `${progressPct}%` }} />
+          </div>
+        </div>
+        <div className="mt-1.5"><StatusLegend /></div>
       </div>
 
-      {/* ═══ SECTION 2: Quick Impact Micro-Missions ═══ */}
+      {/* ═══ Quick Impact ═══ */}
       <QuickImpactFeed
         missions={mockMicroMissions}
+        limit={2}
         onComplete={(id) => {
           const m = mockMicroMissions.find((mm) => mm.id === id);
           if (m) setMicroPoints((p) => p + m.points);
@@ -190,38 +223,45 @@ export default function ActiveWorkspace() {
         }}
       />
 
-      {/* ═══ SECTION 3: Focus Task ═══ */}
-      <div className="px-4 mb-3">
+      {/* ═══ Focus Task ═══ */}
+      <div id="focus-task" className="px-4 mb-3">
         {focusTask ? (
           <FocusTaskCard
             task={focusTask}
-            remaining={feedTasks.filter((t) => t.status === "open" || t.status === "in_progress").length}
+            remaining={allFeedTasks.filter((t) => t.status === "open" || t.status === "in_progress").length}
             onAddProgress={handleAddProgress}
             onSubmit={handleSubmit}
             onRelease={handleRelease}
             onPhotoUpload={handlePhotoUpload}
           />
         ) : (
-          <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 text-center animate-fade-in">
-            <Sparkles className="h-8 w-8 text-primary mx-auto mb-2" />
-            <p className="font-semibold text-primary">All tasks completed!</p>
-            <p className="text-xs text-muted-foreground mt-1">Great work on this mission</p>
+          <div className="bg-primary/5 rounded-2xl p-5 text-center animate-fade-in">
+            <Sparkles className="h-7 w-7 text-primary mx-auto mb-1.5" />
+            <p className="font-semibold text-primary text-sm">All tasks completed!</p>
           </div>
         )}
       </div>
 
-      {/* ═══ SECTION 3: Task Feed ═══ */}
-      {feedTasks.length > 0 && (
-        <div className="px-4 pb-24">
+      {/* ═══ Task Queue — paginated ═══ */}
+      {allFeedTasks.length > 0 && (
+        <div className="px-4">
           <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Task Queue</h2>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{feedTasks.length}</span>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Task Queue</h2>
+            <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{allFeedTasks.length}</span>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {feedTasks.map((task, i) => (
               <TaskFeedCard key={task.id} task={task} index={i} onClaim={handleClaim} />
             ))}
           </div>
+          {hasMore && (
+            <button
+              onClick={() => setFeedLimit((l) => l + FEED_PAGE_SIZE)}
+              className="w-full py-3 mt-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              Load {Math.min(allFeedTasks.length - feedLimit, FEED_PAGE_SIZE)} more tasks
+            </button>
+          )}
         </div>
       )}
     </AppShell>
