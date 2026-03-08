@@ -8,11 +8,12 @@ export function useTasks(params?: { status?: string; visibility?: string }) {
   });
 }
 
-export function useTask(taskId: string) {
+export function useTask(taskId: string, options?: { retry?: boolean | number }) {
   return useQuery({
     queryKey: ["task", taskId],
     queryFn: () => taskApi.get(taskId),
     enabled: !!taskId,
+    retry: options?.retry ?? true,
   });
 }
 

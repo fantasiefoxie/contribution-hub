@@ -25,7 +25,7 @@ function DifficultyBar({ level }: { level: number }) {
 export default function TaskDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data, isLoading } = useTask(id ?? "");
+  const { data, isLoading } = useTask(id ?? "", { retry: false });
   const reserveMutation = useReserveTask();
   const claimMutation = useConfirmClaim();
   const [reservationTimer, setReservationTimer] = useState<number | null>(null);
