@@ -21,6 +21,7 @@ const menuItems = [
   { label: "Leadership & Roles", icon: "👑", count: undefined, href: "/leadership" },
   { label: "Platform Observability", icon: "📊", count: undefined, href: "/observability" },
   { label: "Transparency Report", icon: "🌍", count: undefined, href: "/transparency" },
+  { label: "Developer Portal", icon: "🔌", count: undefined, href: "/developers" },
   { label: "Validation Queue", icon: "🛡️", count: undefined, href: "/validate" },
   { label: "Saved Tasks", icon: "📌", count: 3 },
   { label: "My Organizations", icon: "🏢", count: 2 },
