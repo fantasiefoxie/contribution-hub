@@ -879,6 +879,30 @@ export type Database = {
           },
         ]
       }
+      resource_aliases: {
+        Row: {
+          alias: string
+          canonical_id: string
+          created_at: string
+          id: string
+          resource_type: string
+        }
+        Insert: {
+          alias: string
+          canonical_id: string
+          created_at?: string
+          id?: string
+          resource_type: string
+        }
+        Update: {
+          alias?: string
+          canonical_id?: string
+          created_at?: string
+          id?: string
+          resource_type?: string
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           id: string
@@ -1280,6 +1304,10 @@ export type Database = {
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
+      }
+      resolve_resource: {
+        Args: { _identifier: string; _resource_type: string }
+        Returns: string
       }
     }
     Enums: {
