@@ -136,7 +136,7 @@ export default function MissionFeed() {
 
       {/* Task List */}
       <div className="px-4 space-y-3 mt-2">
-        {isLoading ? (
+        {showLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-32 rounded-2xl bg-muted animate-pulse-soft" />
           ))
