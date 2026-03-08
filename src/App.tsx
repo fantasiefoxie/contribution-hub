@@ -15,6 +15,7 @@ import InitiativeDiscovery from "./pages/InitiativeDiscovery";
 import InitiativeBuilder from "./pages/InitiativeBuilder";
 import InitiativeDashboard from "./pages/InitiativeDashboard";
 import CampaignOps from "./pages/CampaignOps";
+import LeadershipDashboard from "./pages/LeadershipDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/initiatives/create" element={<InitiativeBuilder />} />
           <Route path="/initiatives/:id" element={<InitiativeDashboard />} />
           <Route path="/initiatives/:id/ops" element={<CampaignOps />} />
+          <Route path="/leadership" element={<LeadershipDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

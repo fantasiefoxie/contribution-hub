@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Settings, LogOut, ChevronRight, Shield, MapPin, Loader2 } from "lucide-react";
+import { User, Settings, LogOut, ChevronRight, Shield, MapPin, Loader2, Crown, Star, Eye, Gavel, Users as UsersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ const profileData = {
 };
 
 const menuItems = [
+  { label: "Leadership & Roles", icon: "👑", count: undefined, href: "/leadership" },
   { label: "Validation Queue", icon: "🛡️", count: undefined, href: "/validate" },
   { label: "Saved Tasks", icon: "📌", count: 3 },
   { label: "My Organizations", icon: "🏢", count: 2 },
@@ -68,7 +69,7 @@ export default function Profile() {
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="font-display font-bold text-lg">{profileData.name}</h2>
-          <div className="flex items-center gap-1.5 mt-1">
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
             <Shield className="h-3 w-3 text-primary" />
             <Badge className="bg-primary/10 text-primary border-0 text-[10px]">
               {profileData.status}
@@ -80,6 +81,19 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Role capabilities hint */}
+      <button
+        onClick={() => navigate("/leadership")}
+        className="mx-4 mt-3 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl p-3 border border-primary/10 flex items-center gap-3 hover:border-primary/20 transition-colors w-[calc(100%-2rem)]"
+      >
+        <Crown className="h-4 w-4 text-secondary" />
+        <div className="flex-1 text-left">
+          <p className="font-display font-semibold text-xs">Leadership Progression</p>
+          <p className="text-[10px] text-muted-foreground">View your role, progress, and opportunities</p>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </button>
 
       {/* Stats row */}
       <div className="flex gap-2 mx-4 mt-4">
