@@ -19,16 +19,16 @@ const profileData = {
 };
 
 const menuItems = [
-  { label: "Leadership & Roles", icon: "👑", count: undefined, href: "/leadership" },
-  { label: "Platform Observability", icon: "📊", count: undefined, href: "/observability" },
-  { label: "Transparency Report", icon: "🌍", count: undefined, href: "/transparency" },
-  { label: "Developer Portal", icon: "🔌", count: undefined, href: "/developers" },
-  { label: "Validation Queue", icon: "🛡️", count: undefined, href: "/validate" },
-  { label: "Saved Tasks", icon: "📌", count: 3 },
-  { label: "My Organizations", icon: "🏢", count: 2 },
-  { label: "Notification Preferences", icon: "🔔", count: undefined },
-  { label: "Privacy & Security", icon: "🔒", count: undefined },
-  { label: "Help & Support", icon: "❓", count: undefined },
+  { label: "Leadership & Roles", icon: Crown, count: undefined, href: "/leadership" },
+  { label: "Platform Observability", icon: BarChart3, count: undefined, href: "/observability" },
+  { label: "Transparency Report", icon: Globe, count: undefined, href: "/transparency" },
+  { label: "Developer Portal", icon: Code2, count: undefined, href: "/developers" },
+  { label: "Validation Queue", icon: ShieldCheck, count: undefined, href: "/validate" },
+  { label: "Saved Tasks", icon: Bookmark, count: 3 },
+  { label: "My Organizations", icon: Building2, count: 2 },
+  { label: "Notification Preferences", icon: BellRing, count: undefined },
+  { label: "Privacy & Security", icon: Lock, count: undefined },
+  { label: "Help & Support", icon: HelpCircle, count: undefined },
 ];
 
 export default function Profile() {
