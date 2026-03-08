@@ -370,58 +370,82 @@ export type Database = {
       }
       initiatives: {
         Row: {
+          category: string | null
           created_at: string
           created_by: string | null
           description: string | null
           end_date: string | null
+          featured_at: string | null
           id: string
           is_micro: boolean
+          is_online: boolean
+          latitude: number | null
+          longitude: number | null
           max_tasks: number | null
           max_volunteers: number | null
+          priority_score: number
           promoted_at: string | null
           promoted_by: string | null
+          region_name: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["initiative_status"]
           success_metrics: Json | null
           target_metrics: Json | null
           title: string
           updated_at: string
+          volunteer_target: number | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           end_date?: string | null
+          featured_at?: string | null
           id?: string
           is_micro?: boolean
+          is_online?: boolean
+          latitude?: number | null
+          longitude?: number | null
           max_tasks?: number | null
           max_volunteers?: number | null
+          priority_score?: number
           promoted_at?: string | null
           promoted_by?: string | null
+          region_name?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["initiative_status"]
           success_metrics?: Json | null
           target_metrics?: Json | null
           title: string
           updated_at?: string
+          volunteer_target?: number | null
         }
         Update: {
+          category?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           end_date?: string | null
+          featured_at?: string | null
           id?: string
           is_micro?: boolean
+          is_online?: boolean
+          latitude?: number | null
+          longitude?: number | null
           max_tasks?: number | null
           max_volunteers?: number | null
+          priority_score?: number
           promoted_at?: string | null
           promoted_by?: string | null
+          region_name?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["initiative_status"]
           success_metrics?: Json | null
           target_metrics?: Json | null
           title?: string
           updated_at?: string
+          volunteer_target?: number | null
         }
         Relationships: []
       }
