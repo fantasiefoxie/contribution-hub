@@ -13,6 +13,7 @@ const profileData = {
 };
 
 const menuItems = [
+  { label: "Validation Queue", icon: "🛡️", count: undefined, href: "/validate" },
   { label: "Saved Tasks", icon: "📌", count: 3 },
   { label: "My Organizations", icon: "🏢", count: 2 },
   { label: "Notification Preferences", icon: "🔔", count: undefined },
