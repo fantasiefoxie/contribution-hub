@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Settings, LogOut, ChevronRight, Shield, MapPin, Loader2 } from "lucide-react";
+import { User, Settings, LogOut, ChevronRight, Shield, MapPin, Loader2, Crown, Star, Eye, Gavel, Users as UsersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
