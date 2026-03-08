@@ -209,7 +209,10 @@ async function createInitiative(req: Request) {
 }
 
 // ── PUT /:id — update initiative ──
-async function updateInitiative(req: Request, id: string) {
+async function updateInitiative(req: Request, rawId: string) {
+  const id = await resolveId("initiative", rawId);
+  if (!id) return notFound(rawId);
+
   const supabase = getSupabase(req);
   const user = await getUser(supabase);
   if (!user) return err("Unauthorized", 401);
