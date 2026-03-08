@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.observability]
 verify_jwt = false
+
+[functions.protocol]
+verify_jwt = false
