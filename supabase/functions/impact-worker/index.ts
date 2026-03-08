@@ -383,9 +383,8 @@ async function weeklyySummary(_req: Request) {
 // ── GET /impact-worker/next-mission ──
 // Recommend a related or nearby task after completion
 async function nextMission(req: Request) {
-  const supabase = getSupabase(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return err("Unauthorized", 401);
+  const userId = await getAuthUserId(req);
+  if (!userId) return err("Unauthorized", 401);
 
   const db = getServiceDb();
   const url = new URL(req.url);
@@ -394,7 +393,7 @@ async function nextMission(req: Request) {
   // Get current task tags for relevance
   let tags: string[] = [];
   if (currentTaskId) {
-    const { data: task } = await db.from("tasks").select("tags").eq("id", currentTaskId).single();
+    const { data: task } = await db.from("tasks").select("tags").eq("id", currentTaskId).maybeSingle();
     tags = task?.tags ?? [];
   }
 
