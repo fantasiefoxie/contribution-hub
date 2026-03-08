@@ -69,8 +69,8 @@ export default function Profile() {
 
       {/* Profile card */}
       <div className="mx-4 bg-card rounded-2xl border border-border p-5 flex items-center gap-4">
-        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-3xl shrink-0">
-          {profileData.avatar}
+        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+          <User className="h-7 w-7 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="font-display font-bold text-lg">{profileData.name}</h2>
