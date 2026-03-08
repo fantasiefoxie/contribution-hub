@@ -97,6 +97,7 @@ type Tab = "progression" | "opportunities" | "leaderboard";
 
 export default function LeadershipDashboard() {
   const navigate = useNavigate();
+  const userId = useSession();
   const [tab, setTab] = useState<Tab>("progression");
   const { data: progData, isLoading: loadingProg } = useMyProgression();
   const { data: oppsData, isLoading: loadingOpps } = useLeadershipOpportunities();
