@@ -15,7 +15,7 @@ const profileData = {
   status: "Trusted Contributor",
   joined: "January 2025",
   location: "San Francisco, CA",
-  avatar: "🧑‍🌾",
+  avatar: null as null,
 };
 
 const menuItems = [
