@@ -175,7 +175,7 @@ function FeaturedCarousel({ items, onSelect }: { items: EnrichedInitiative[]; on
       {items.map((init) => (
         <button
           key={init.id}
-          onClick={() => onSelect(init.id)}
+          onClick={() => onSelect(init.slug || init.id)}
           className="min-w-[260px] bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl border border-primary/15 p-4 text-left shrink-0 hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-1">
