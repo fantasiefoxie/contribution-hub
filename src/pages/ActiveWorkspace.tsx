@@ -8,6 +8,7 @@ import { StatusLegend } from "@/components/shared/StatusIndicator";
 import MissionCompletionScreen from "@/components/mission/MissionCompletionScreen";
 import FocusTaskCard, { type FocusTask } from "@/components/mission/FocusTaskCard";
 import TaskFeedCard from "@/components/mission/TaskFeedCard";
+import QuickImpactFeed, { type MicroMission } from "@/components/mission/QuickImpactFeed";
 
 // ── Types ──
 type TaskStatus = "open" | "in_progress" | "submitted" | "validated";
@@ -29,11 +30,19 @@ const mockMission = {
   ] as MissionTask[],
 };
 
+const mockMicroMissions: MicroMission[] = [
+  { id: "mm1", title: "Verify garden bed cleanup", type: "photo_verify", estimatedMins: 2, points: 15, distance: "0.1 km", isOnline: false },
+  { id: "mm2", title: "Confirm tool shed location", type: "location_tag", estimatedMins: 1, points: 10, distance: "0.3 km", isOnline: false },
+  { id: "mm3", title: "Rate volunteer experience", type: "quick_survey", estimatedMins: 2, points: 10, isOnline: true },
+  { id: "mm4", title: "Photograph recycling station", type: "photo_verify", estimatedMins: 3, points: 20, distance: "0.5 km", isOnline: false },
+];
+
 export default function ActiveWorkspace() {
   const [tasks, setTasks] = useState(mockMission.tasks);
   const [showCompletion, setShowCompletion] = useState(false);
   const [animateProgress, setAnimateProgress] = useState(false);
   const [successFlash, setSuccessFlash] = useState<string | null>(null);
+  const [microPoints, setMicroPoints] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addUpdate = useAddTaskUpdate();
@@ -171,7 +180,17 @@ export default function ActiveWorkspace() {
         </div>
       </div>
 
-      {/* ═══ SECTION 2: Focus Task ═══ */}
+      {/* ═══ SECTION 2: Quick Impact Micro-Missions ═══ */}
+      <QuickImpactFeed
+        missions={mockMicroMissions}
+        onComplete={(id) => {
+          const m = mockMicroMissions.find((mm) => mm.id === id);
+          if (m) setMicroPoints((p) => p + m.points);
+          triggerProgress();
+        }}
+      />
+
+      {/* ═══ SECTION 3: Focus Task ═══ */}
       <div className="px-4 mb-3">
         {focusTask ? (
           <FocusTaskCard
