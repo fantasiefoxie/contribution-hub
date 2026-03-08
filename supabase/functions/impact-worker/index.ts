@@ -33,6 +33,21 @@ function getServiceDb() {
   );
 }
 
+/** Resolve any identifier (UUID, slug, alias) to a canonical UUID */
+async function resolveId(resourceType: string, identifier: string): Promise<string | null> {
+  const db = getServiceDb();
+  const { data, error } = await db.rpc("resolve_resource", {
+    _resource_type: resourceType,
+    _identifier: identifier,
+  });
+  if (error || !data) return null;
+  return data as string;
+}
+
+function notFound(identifier: string) {
+  return json({ error: "Resource not found", identifier }, 404);
+}
+
 // ── GET /impact-worker/community-feed ──
 // Recent public contributions for activity feed
 async function communityFeed(req: Request) {
