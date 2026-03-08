@@ -8,6 +8,7 @@ import { StatusLegend } from "@/components/shared/StatusIndicator";
 import MissionCompletionScreen from "@/components/mission/MissionCompletionScreen";
 import FocusTaskCard, { type FocusTask } from "@/components/mission/FocusTaskCard";
 import TaskFeedCard from "@/components/mission/TaskFeedCard";
+import QuickImpactFeed, { type MicroMission } from "@/components/mission/QuickImpactFeed";
 
 // ── Types ──
 type TaskStatus = "open" | "in_progress" | "submitted" | "validated";
