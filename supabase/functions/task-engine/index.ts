@@ -253,14 +253,17 @@ async function getSubmissions(req: Request, taskId: string) {
 }
 
 // ── Route: GET /tasks/:id ──
-async function getTask(req: Request, taskId: string) {
+async function getTask(req: Request, rawId: string) {
+  const taskId = await resolveId("task", rawId);
+  if (!taskId) return notFound(rawId);
+
   const supabase = getSupabase(req);
   const { data: task, error } = await supabase
     .from("tasks")
     .select("*, task_updates(*), task_submissions(*)")
     .eq("id", taskId).single();
 
-  if (error || !task) return err("Task not found", 404);
+  if (error || !task) return notFound(rawId);
   return json({ task });
 }
 
