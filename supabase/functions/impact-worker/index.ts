@@ -133,12 +133,15 @@ async function myImpact(req: Request) {
 
   // Count distinct initiatives
   const taskIds = items.map((c: any) => c.task_id);
-  const { data: tasks } = await db
-    .from("tasks")
-    .select("initiative_id")
-    .in("id", taskIds)
-    .not("initiative_id", "is", null);
-  const initiativeCount = new Set((tasks ?? []).map((t: any) => t.initiative_id)).size;
+  let initiativeCount = 0;
+  if (taskIds.length > 0) {
+    const { data: tasks } = await db
+      .from("tasks")
+      .select("initiative_id")
+      .in("id", taskIds)
+      .not("initiative_id", "is", null);
+    initiativeCount = new Set((tasks ?? []).map((t: any) => t.initiative_id)).size;
+  }
 
   return json({
     tasks_completed: items.length,
