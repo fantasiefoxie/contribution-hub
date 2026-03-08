@@ -70,21 +70,17 @@ export default function TaskDetails() {
     }
   };
 
-  // Mock fallback for demo
-  const mockTask = {
-    title: "Clean Lake Park",
-    description:
-      "Team up with fellow volunteers to clean Lake Park. Tasks include picking up litter, sorting recyclables, and documenting the cleanup progress. All supplies provided at the meeting point.",
-    difficulty: 2,
+  const t = task ?? {
+    title: "Loading...",
+    description: "",
+    difficulty: 1,
     status: "open",
-    tags: ["environment", "outdoor"],
+    tags: [],
     lock_duration_mins: 60,
     created_at: new Date().toISOString(),
-    is_team: true,
-    team_target: 5,
+    is_team: false,
+    team_target: null,
   };
-
-  const t = task || mockTask;
 
   if (isLoading) {
     return (
