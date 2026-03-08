@@ -5,6 +5,7 @@ import FilterChips, { type FilterCategory } from "@/components/mission/FilterChi
 import TaskCard, { type TaskCardData } from "@/components/mission/TaskCard";
 import PassportToggle from "@/components/mission/PassportToggle";
 import ImpactBanner from "@/components/mission/ImpactBanner";
+import ActiveMissionBanner from "@/components/mission/ActiveMissionBanner";
 import CommunityFeed from "@/components/impact/CommunityFeed";
 import { useTasks } from "@/hooks/use-tasks";
 
