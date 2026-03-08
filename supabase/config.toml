@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.initiative-engine]
 verify_jwt = false
+
+[functions.recommendation-engine]
+verify_jwt = false
