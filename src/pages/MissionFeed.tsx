@@ -155,6 +155,12 @@ export default function MissionFeed() {
           filtered.map((task) => <TaskCard key={task.id} task={task} />)
         )}
       </div>
+
+      {/* Community Activity Feed */}
+      <CommunityFeed />
+
+      {/* Spacer for bottom nav */}
+      <div className="h-8" />
     </AppShell>
   );
 }
