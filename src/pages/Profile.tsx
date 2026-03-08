@@ -17,11 +17,11 @@ import InterestSelector from "@/components/recommendation/InterestSelector";
 import { useUserInterests, useUpdateInterests } from "@/hooks/use-recommendations";
 
 const profileData = {
-  name: "Alex Rivera",
-  phone: "+1 (555) 123-4567",
+  name: "Rahul D",
+  phone: "+91 98XXX XXXXX",
   status: "Trusted Contributor",
   joined: "January 2025",
-  location: "San Francisco, CA",
+  location: "Navi Mumbai, MH",
 };
 
 const quickLinks = [
