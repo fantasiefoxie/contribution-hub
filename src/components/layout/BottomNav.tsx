@@ -2,11 +2,11 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Compass, Zap, Trophy, Bell, User } from "lucide-react";
 
 const tabs = [
-  { to: "/", icon: Compass, label: "Home" },
-  { to: "/active", icon: Zap, label: "Tasks" },
-  { to: "/contributions", icon: Trophy, label: "Impact" },
-  { to: "/notifications", icon: Bell, label: "Alerts" },
-  { to: "/profile", icon: User, label: "Profile" },
+  { to: "/", icon: Compass, label: "Home", walkthrough: "nav-home" },
+  { to: "/active", icon: Zap, label: "Tasks", walkthrough: "nav-tasks" },
+  { to: "/contributions", icon: Trophy, label: "Impact", walkthrough: "nav-impact" },
+  { to: "/notifications", icon: Bell, label: "Alerts", walkthrough: "nav-alerts" },
+  { to: "/profile", icon: User, label: "Profile", walkthrough: "nav-profile" },
 ];
 
 export default function BottomNav() {
