@@ -123,7 +123,7 @@ export default function MissionFeed() {
 
       {/* ═══ CONTENT — Decide: filter + scan ═══ */}
       <div className="px-4 mb-3">
-        <FilterChipsBar options={feedFilters} active={activeFilter} onChange={setActiveFilter} />
+        <FilterChipsBar<FeedFilter> options={feedFilters} active={activeFilter} onChange={setActiveFilter} />
       </div>
 
       {/* Task List */}
