@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, Flame, MapPin, Building2, Bookmark, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, Flame, MapPin, Building2, Bookmark, Loader2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTask, useReserveTask, useConfirmClaim } from "@/hooks/use-tasks";
@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
 import SocialSignals from "@/components/mission/SocialSignals";
+import TeamMissionPanel from "@/components/team/TeamMissionPanel";
 
 function DifficultyBar({ level }: { level: number }) {
   return (
@@ -71,14 +72,16 @@ export default function TaskDetails() {
 
   // Mock fallback for demo
   const mockTask = {
-    title: "Community Garden Cleanup",
+    title: "Clean Lake Park",
     description:
-      "Help maintain our community garden by weeding, watering, and planting new seedlings. Tools and gloves will be provided. Meet at the garden entrance at 9 AM. The work involves clearing overgrown areas, preparing soil beds, and planting seasonal vegetables that will feed local families.",
+      "Team up with fellow volunteers to clean Lake Park. Tasks include picking up litter, sorting recyclables, and documenting the cleanup progress. All supplies provided at the meeting point.",
     difficulty: 2,
     status: "open",
     tags: ["environment", "outdoor"],
     lock_duration_mins: 60,
     created_at: new Date().toISOString(),
+    is_team: true,
+    team_target: 5,
   };
 
   const t = task || mockTask;
@@ -102,6 +105,11 @@ export default function TaskDetails() {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <span className="font-display font-semibold text-sm truncate">Task Details</span>
+          {t.is_team && (
+            <Badge className="bg-accent/10 text-accent border-0 text-[10px] ml-auto">
+              <Users className="h-3 w-3 mr-1" /> Team
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -140,10 +148,19 @@ export default function TaskDetails() {
           <DifficultyBar level={t.difficulty} />
         </div>
 
+        {/* Team Mission Panel */}
+        {t.is_team && id && (
+          <TeamMissionPanel
+            taskId={id}
+            teamTarget={t.team_target || 5}
+            isTeam={t.is_team}
+          />
+        )}
+
         {/* Impact */}
         <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
           <p className="text-xs text-muted-foreground mb-1">Impact</p>
-          <p className="font-display font-semibold text-primary text-lg">🌱 15 trees maintained</p>
+          <p className="font-display font-semibold text-primary text-lg">🌱 50kg waste removed</p>
         </div>
 
         {/* Description */}
