@@ -78,6 +78,7 @@ export default function Profile() {
         {menuItems.map((item, i) => (
           <button
             key={item.label}
+            onClick={() => item.href && navigate(item.href)}
             className={`w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors ${
               i < menuItems.length - 1 ? "border-b border-border" : ""
             }`}
