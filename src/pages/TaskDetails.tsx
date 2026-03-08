@@ -45,8 +45,16 @@ export default function TaskDetails() {
     }
   }, [reservationTimer]);
 
+  const isMock = id?.startsWith("demo-") ?? false;
+
   const handleReserve = async () => {
     if (!id) return;
+    if (isMock) {
+      setIsReserved(true);
+      setReservationTimer(60);
+      toast.success("Task reserved! Confirm within 60 seconds.");
+      return;
+    }
     try {
       await reserveMutation.mutateAsync(id);
       setIsReserved(true);
