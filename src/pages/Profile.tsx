@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
 import ScreenHeader from "@/components/shared/ScreenHeader";
-import QuickActionBar from "@/components/shared/QuickActionBar";
+
 import InterestSelector from "@/components/recommendation/InterestSelector";
 import { useUserInterests, useUpdateInterests } from "@/hooks/use-recommendations";
 
