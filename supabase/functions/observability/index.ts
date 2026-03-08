@@ -70,6 +70,9 @@ async function platformHealth() {
     eventCounts[e.type] = (eventCounts[e.type] || 0) + 1;
   }
 
+  // Count role grants today from events
+  const rolesGrantedToday = (todayEvents ?? []).filter((e: any) => e.type === "RoleGranted").length;
+
   return json({
     total_volunteers: totalVolunteers ?? 0,
     active_volunteers_today: activeVolunteersToday,
@@ -78,6 +81,9 @@ async function platformHealth() {
     total_initiatives: totalInitiatives ?? 0,
     active_initiatives: activeInitiatives ?? 0,
     validation_backlog: validationBacklog ?? 0,
+    credentials_issued_today: credentialsIssuedToday ?? 0,
+    roles_granted_today: rolesGrantedToday,
+    initiative_joins_today: initiativeJoinsToday ?? 0,
     event_breakdown_today: eventCounts,
   });
 }
