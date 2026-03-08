@@ -1,0 +1,4 @@
+project_id = "dsfbviqvpajvqcyrobsb"
+
+[functions.task-engine]
+verify_jwt = false
