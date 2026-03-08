@@ -318,6 +318,39 @@ export type Database = {
           },
         ]
       }
+      contributor_stats: {
+        Row: {
+          contribution_score: number
+          initiatives_joined: number
+          last_activity_at: string | null
+          tasks_claimed: number
+          tasks_completed: number
+          updated_at: string
+          user_id: string
+          validations_done: number
+        }
+        Insert: {
+          contribution_score?: number
+          initiatives_joined?: number
+          last_activity_at?: string | null
+          tasks_claimed?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id: string
+          validations_done?: number
+        }
+        Update: {
+          contribution_score?: number
+          initiatives_joined?: number
+          last_activity_at?: string | null
+          tasks_claimed?: number
+          tasks_completed?: number
+          updated_at?: string
+          user_id?: string
+          validations_done?: number
+        }
+        Relationships: []
+      }
       credential_metadata: {
         Row: {
           created_at: string
@@ -412,6 +445,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      event_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          event_id: string
+          id: string
+          last_error: string | null
+          max_attempts: number
+          next_retry_at: string | null
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          event_id: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_retry_at?: string | null
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          event_id?: string
+          id?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_retry_at?: string | null
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       events: {
         Row: {
@@ -567,6 +636,45 @@ export type Database = {
           },
         ]
       }
+      initiative_progress: {
+        Row: {
+          completion_pct: number
+          contributors_active: number
+          initiative_id: string
+          last_event_at: string | null
+          tasks_completed: number
+          tasks_in_progress: number
+          tasks_open: number
+          tasks_total: number
+          updated_at: string
+          validators_active: number
+        }
+        Insert: {
+          completion_pct?: number
+          contributors_active?: number
+          initiative_id: string
+          last_event_at?: string | null
+          tasks_completed?: number
+          tasks_in_progress?: number
+          tasks_open?: number
+          tasks_total?: number
+          updated_at?: string
+          validators_active?: number
+        }
+        Update: {
+          completion_pct?: number
+          contributors_active?: number
+          initiative_id?: string
+          last_event_at?: string | null
+          tasks_completed?: number
+          tasks_in_progress?: number
+          tasks_open?: number
+          tasks_total?: number
+          updated_at?: string
+          validators_active?: number
+        }
+        Relationships: []
+      }
       initiatives: {
         Row: {
           category: string | null
@@ -715,6 +823,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      org_metrics: {
+        Row: {
+          active_members: number
+          completed_tasks: number
+          last_event_at: string | null
+          org_id: string
+          total_contributions: number
+          total_tasks: number
+          updated_at: string
+        }
+        Insert: {
+          active_members?: number
+          completed_tasks?: number
+          last_event_at?: string | null
+          org_id: string
+          total_contributions?: number
+          total_tasks?: number
+          updated_at?: string
+        }
+        Update: {
+          active_members?: number
+          completed_tasks?: number
+          last_event_at?: string | null
+          org_id?: string
+          total_contributions?: number
+          total_tasks?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       organizations: {
         Row: {
