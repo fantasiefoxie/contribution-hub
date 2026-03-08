@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-qu
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { WalkthroughProvider } from "@/contexts/WalkthroughContext";
+import WalkthroughOverlay from "@/components/walkthrough/WalkthroughOverlay";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import MissionFeed from "./pages/MissionFeed";
 import TaskDetails from "./pages/TaskDetails";
