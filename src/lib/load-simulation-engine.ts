@@ -60,7 +60,7 @@ export const DEFAULT_INFRA: InfraParams = {
 // ── Preset Scenarios ──
 export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: ScenarioConfig }> = {
   small_ngo: {
-    infra: { api_servers: 2, bg_workers: 3, validators: 50, base_latency: 60, cache_efficiency: 0.88 },
+    infra: { api_servers: 2, bg_workers: 3, validators: 50, events_per_worker_per_second: 80, base_latency: 60, cache_efficiency: 0.88 },
     scenario: {
       name: "Small NGO Campaign",
       peak_users: 800,
