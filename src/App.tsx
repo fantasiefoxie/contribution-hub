@@ -47,6 +47,7 @@ const App = () => (
           <Route path="/observability" element={<ObservabilityDashboard />} />
           <Route path="/transparency" element={<TransparencyPage />} />
           <Route path="/developers" element={<DeveloperPortal />} />
+          <Route path="/load-simulation" element={<LoadSimulation />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
