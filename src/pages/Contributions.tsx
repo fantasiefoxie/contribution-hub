@@ -58,7 +58,6 @@ const mockInitiatives = [
 export default function Contributions() {
   const navigate = useNavigate();
   const { data: impactData } = useMyImpact();
-  const [showBadges, setShowBadges] = useState(false);
   const [showInitiatives, setShowInitiatives] = useState(false);
 
   const tasksCompleted = impactData?.tasks_completed ?? 24;
@@ -72,12 +71,14 @@ export default function Contributions() {
     { label: "Tasks Done", value: String(tasksCompleted), icon: Target, color: "text-primary" },
     { label: "Impact Score", value: totalScore.toLocaleString(), icon: Star, color: "text-secondary" },
     { label: "Initiatives", value: String(initiativesCount), icon: Calendar, color: "text-accent" },
-    { label: "Badges", value: "8", icon: Award, color: "text-primary" },
+    { label: "Badges", value: String(badges.length), icon: Award, color: "text-primary" },
   ];
+
+  const tierOrder = ["Platinum", "Gold", "Silver", "Bronze"];
+  const sortedBadges = [...badges].sort((a, b) => tierOrder.indexOf(a.level) - tierOrder.indexOf(b.level));
 
   return (
     <AppShell>
-      {/* ═══ HEADER — See: overall impact at a glance ═══ */}
       <ScreenHeader
         title="My Impact"
         subtitle="Your contribution journey"
@@ -85,7 +86,7 @@ export default function Contributions() {
         iconColor="text-primary"
       />
 
-      {/* ── Stats grid (compact, scannable) ── */}
+      {/* ── Stats grid ── */}
       <div className="grid grid-cols-4 gap-1.5 px-4">
         {stats.map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-card rounded-xl border border-border p-2.5 text-center">
@@ -96,12 +97,38 @@ export default function Contributions() {
         ))}
       </div>
 
-      {/* ═══ CONTENT — Decide: recent tasks as checklist ═══ */}
-      <div className="px-4 mt-5">
-        <h2 className="font-display font-semibold text-sm mb-2 flex items-center gap-2">
+      {/* ═══════════════════════════════════════════
+          SECTION 1 — PERSONAL IMPACT
+          ═══════════════════════════════════════════ */}
+      <div className="px-4 mt-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-1 w-1 rounded-full bg-primary" />
+          <h2 className="font-display font-bold text-xs uppercase tracking-wider text-muted-foreground">Personal Impact</h2>
+        </div>
+
+        {/* Badges — always visible, prominent */}
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          {sortedBadges.map((b) => {
+            const BIcon = b.icon;
+            return (
+              <div key={b.name} className="bg-card rounded-2xl border border-border p-3.5 flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl ${levelColors[b.level]} flex items-center justify-center shrink-0`}>
+                  <BIcon className="h-4.5 w-4.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-display font-semibold text-xs leading-tight truncate">{b.name}</p>
+                  <Badge className={`${levelColors[b.level]} border-0 text-[10px] mt-1`}>{b.level}</Badge>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Recent Activity */}
+        <h3 className="font-display font-semibold text-sm mb-2 flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-primary" />
           Recent Activity
-        </h2>
+        </h3>
         <div className="space-y-1.5">
           {recentTasks.map((task) => (
             <div key={task.id} className="bg-card rounded-xl border border-border p-3 flex items-center gap-3 min-h-[48px]">
@@ -117,10 +144,17 @@ export default function Contributions() {
         </div>
       </div>
 
-      {/* ── Cumulative Impact (compact grid) ── */}
-      <div className="px-4 mt-5">
-        <h2 className="font-display font-semibold text-sm mb-2">Cumulative Impact</h2>
-        <div className="grid grid-cols-2 gap-1.5">
+      {/* ═══════════════════════════════════════════
+          SECTION 2 — PUBLIC IMPACT
+          ═══════════════════════════════════════════ */}
+      <div className="px-4 mt-6">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-1 w-1 rounded-full bg-accent" />
+          <h2 className="font-display font-bold text-xs uppercase tracking-wider text-muted-foreground">Public Impact</h2>
+        </div>
+
+        {/* Cumulative Impact */}
+        <div className="grid grid-cols-2 gap-1.5 mb-4">
           {Object.entries(impactMetrics as Record<string, number>).map(([key, value]) => {
             const Icon = metricIcons[key] || Star;
             return (
@@ -132,15 +166,13 @@ export default function Contributions() {
             );
           })}
         </div>
-      </div>
 
-      {/* ── Initiative Progress (progressive disclosure) ── */}
-      <div className="px-4 mt-5">
+        {/* Initiative Progress (progressive disclosure) */}
         <button
           onClick={() => setShowInitiatives(!showInitiatives)}
           className="w-full flex items-center justify-between py-2"
         >
-          <h2 className="font-display font-semibold text-sm">Initiative Progress</h2>
+          <h3 className="font-display font-semibold text-sm">Initiative Progress</h3>
           {showInitiatives ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </button>
         {showInitiatives && (
@@ -152,35 +184,7 @@ export default function Contributions() {
         )}
       </div>
 
-      {/* ── Badges (progressive disclosure) ── */}
-      <div className="px-4 mt-4 pb-44">
-        <button
-          onClick={() => setShowBadges(!showBadges)}
-          className="w-full flex items-center justify-between py-2"
-        >
-          <h2 className="font-display font-semibold text-sm">Badges Earned</h2>
-          {showBadges ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </button>
-        {showBadges && (
-          <div className="grid grid-cols-2 gap-2 animate-fade-in">
-            {badges.map((b) => {
-              const BIcon = b.icon;
-              return (
-                <div key={b.name} className="bg-card rounded-xl border border-border p-3 flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <BIcon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-xs truncate">{b.name}</p>
-                    <Badge className={`${levelColors[b.level]} border-0 text-[10px] mt-1`}>{b.level}</Badge>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
+      <div className="h-24" />
     </AppShell>
   );
 }
