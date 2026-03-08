@@ -52,7 +52,7 @@ export const DEFAULT_INFRA: InfraParams = {
   api_servers: 4,
   bg_workers: 10,
   validators: 2_000,
-  events_per_worker_per_second: 8,
+  events_per_worker_per_second: 100,
   base_latency: 50,
   cache_efficiency: 0.92,
 };
