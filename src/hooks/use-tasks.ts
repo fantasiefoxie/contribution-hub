@@ -95,6 +95,7 @@ export function useTaskSubmissions(taskId: string) {
   return useQuery({
     queryKey: ["task-submissions", taskId],
     queryFn: async () => {
+      if (isMockId(taskId)) return { submissions: getMockSubmissions(taskId) };
       try {
         return await taskApi.getSubmissions(taskId);
       } catch {
