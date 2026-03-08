@@ -223,6 +223,7 @@ export type Database = {
           id: string
           payload: Json | null
           type: Database["public"]["Enums"]["event_type"]
+          version: number
         }
         Insert: {
           actor_id?: string | null
@@ -232,6 +233,7 @@ export type Database = {
           id?: string
           payload?: Json | null
           type: Database["public"]["Enums"]["event_type"]
+          version?: number
         }
         Update: {
           actor_id?: string | null
@@ -241,6 +243,37 @@ export type Database = {
           id?: string
           payload?: Json | null
           type?: Database["public"]["Enums"]["event_type"]
+          version?: number
+        }
+        Relationships: []
+      }
+      idempotency_keys: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          key: string
+          operation: string
+          result: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          key: string
+          operation: string
+          result?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          key?: string
+          operation?: string
+          result?: Json | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -564,6 +597,30 @@ export type Database = {
           },
         ]
       }
+      rate_limit_entries: {
+        Row: {
+          action: string
+          count: number
+          id: string
+          identifier: string
+          window_start: string
+        }
+        Insert: {
+          action: string
+          count?: number
+          id?: string
+          identifier: string
+          window_start?: string
+        }
+        Update: {
+          action?: string
+          count?: number
+          id?: string
+          identifier?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       regions: {
         Row: {
           created_at: string
@@ -598,6 +655,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      role_permissions: {
+        Row: {
+          id: string
+          role: string
+          scope: string
+        }
+        Insert: {
+          id?: string
+          role: string
+          scope: string
+        }
+        Update: {
+          id?: string
+          role?: string
+          scope?: string
+        }
+        Relationships: []
       }
       task_claims: {
         Row: {
