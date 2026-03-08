@@ -3,7 +3,8 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Settings, Zap, Building2, Globe, AlertTriangle } from "lucide-react";
-import { PRESETS, type InfraParams, type ScenarioConfig, type HealthStatus } from "@/lib/load-simulation-engine";
+import { PRESETS, type InfraParams, type ScenarioConfig, type HealthStatus, type HealthLevel } from "@/lib/load-simulation-engine";
+import { useCallback } from "react";
 
 interface InfraControlsProps {
   infra: InfraParams;
@@ -14,11 +15,18 @@ interface InfraControlsProps {
   activePreset: string | null;
 }
 
-function Param({ label, value, displayValue, unit, min, max, step, onChange }: {
-  label: string; value: number; displayValue?: string; unit: string;
-  min: number; max: number; step: number;
+interface ParamProps {
+  label: string;
+  value: number;
+  displayValue?: string;
+  unit: string;
+  min: number;
+  max: number;
+  step: number;
   onChange: (v: number) => void;
-}) {
+}
+
+function Param({ label, value, displayValue, unit, min, max, step, onChange }: ParamProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -36,29 +44,38 @@ function Param({ label, value, displayValue, unit, min, max, step, onChange }: {
   );
 }
 
-function HealthDot({ status }: { status: "healthy" | "warning" | "critical" }) {
-  const colors = {
-    healthy: "bg-emerald-500",
-    warning: "bg-amber-500 animate-pulse",
-    critical: "bg-destructive animate-pulse",
-  };
-  return <span className={`inline-block w-2.5 h-2.5 rounded-full ${colors[status]}`} />;
+const HEALTH_DOT_STYLES: Record<HealthLevel, string> = {
+  healthy: "bg-primary",
+  warning: "bg-accent animate-pulse",
+  critical: "bg-destructive animate-pulse",
+};
+
+function HealthDot({ status }: { status: HealthLevel }) {
+  return <span className={`inline-block w-2.5 h-2.5 rounded-full ${HEALTH_DOT_STYLES[status]}`} />;
 }
 
-const presetMeta: { key: string; label: string; icon: typeof Zap }[] = [
+interface PresetMeta {
+  key: string;
+  label: string;
+  icon: typeof Zap;
+}
+
+const presetMeta: readonly PresetMeta[] = [
   { key: "small_ngo", label: "Small NGO", icon: Building2 },
   { key: "city_survey_10k", label: "City 10K", icon: Zap },
   { key: "city_survey", label: "City 50K", icon: Zap },
   { key: "disaster_response", label: "Disaster Surge", icon: AlertTriangle },
   { key: "national", label: "National 200K", icon: Globe },
   { key: "global_network", label: "Global 1M", icon: Globe },
-];
+] as const;
 
 export default function InfraControls({
   infra, scenario, health, onChange, onScenarioChange, activePreset,
 }: InfraControlsProps) {
-  const set = (key: keyof InfraParams) => (v: number) =>
-    onChange({ ...infra, [key]: v });
+  const set = useCallback(
+    (key: keyof InfraParams) => (v: number) => onChange({ ...infra, [key]: v }),
+    [infra, onChange],
+  );
 
   return (
     <div className="space-y-4">
@@ -93,22 +110,14 @@ export default function InfraControls({
               <Settings className="h-4 w-4" /> Infrastructure Parameters
             </CardTitle>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <HealthDot status={health.workerUtil} />
-                <span className="text-[10px] text-muted-foreground">Workers</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <HealthDot status={health.queueBacklog} />
-                <span className="text-[10px] text-muted-foreground">Queue</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <HealthDot status={health.p95Latency} />
-                <span className="text-[10px] text-muted-foreground">p95</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <HealthDot status={health.errorRate} />
-                <span className="text-[10px] text-muted-foreground">Errors</span>
-              </div>
+              {(["workerUtil", "queueBacklog", "p95Latency", "errorRate"] as const).map((k) => (
+                <div key={k} className="flex items-center gap-1.5">
+                  <HealthDot status={health[k]} />
+                  <span className="text-[10px] text-muted-foreground">
+                    {k === "workerUtil" ? "Workers" : k === "queueBacklog" ? "Queue" : k === "p95Latency" ? "p95" : "Errors"}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -116,13 +125,13 @@ export default function InfraControls({
           </p>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Param label="API Servers" value={infra.api_servers} unit="nodes" min={2} max={20} step={1} onChange={set("api_servers")} />
-          <Param label="Background Workers" value={infra.bg_workers} unit="workers" min={2} max={50} step={1} onChange={set("bg_workers")} />
-          <Param label="Validators" value={infra.validators} unit="people" min={50} max={5000} step={50} onChange={set("validators")} />
-          <Param label="Events / Worker / Sec" value={infra.events_per_worker_per_second} unit="evt/s" min={50} max={500} step={10} onChange={set("events_per_worker_per_second")} />
+          <Param label="API Servers" value={infra.api_servers} unit="nodes" min={1} max={20} step={1} onChange={set("api_servers")} />
+          <Param label="Background Workers" value={infra.bg_workers} unit="workers" min={1} max={50} step={1} onChange={set("bg_workers")} />
+          <Param label="Validators" value={infra.validators} unit="people" min={10} max={10000} step={10} onChange={set("validators")} />
+          <Param label="Events / Worker / Sec" value={infra.events_per_worker_per_second} unit="evt/s" min={10} max={500} step={10} onChange={set("events_per_worker_per_second")} />
           <Param
             label="Base Latency" value={infra.base_latency} unit="ms"
-            min={50} max={200} step={5} onChange={set("base_latency")}
+            min={10} max={200} step={5} onChange={set("base_latency")}
           />
           <Param
             label="Cache Efficiency" value={infra.cache_efficiency}

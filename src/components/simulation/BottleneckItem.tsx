@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, AlertCircle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface BottleneckItemProps {
   severity: "critical" | "warning" | "info";
@@ -8,13 +9,13 @@ interface BottleneckItemProps {
   recommendation: string;
 }
 
-const severityStyles: Record<string, string> = {
+const severityStyles: Readonly<Record<BottleneckItemProps["severity"], string>> = {
   critical: "bg-destructive/10 text-destructive border-destructive/30",
-  warning: "bg-secondary/10 text-secondary border-secondary/30",
-  info: "bg-accent/10 text-accent border-accent/30",
+  warning: "bg-secondary/10 text-secondary-foreground border-secondary/30",
+  info: "bg-accent/10 text-accent-foreground border-accent/30",
 };
 
-const severityIcons = {
+const severityIcons: Readonly<Record<BottleneckItemProps["severity"], LucideIcon>> = {
   critical: AlertTriangle,
   warning: AlertCircle,
   info: CheckCircle,
@@ -22,8 +23,9 @@ const severityIcons = {
 
 export default function BottleneckItem({ severity, title, description, recommendation }: BottleneckItemProps) {
   const Icon = severityIcons[severity];
+  const style = severityStyles[severity];
   return (
-    <div className={`p-4 rounded-lg border ${severityStyles[severity]}`}>
+    <div className={`p-4 rounded-lg border ${style}`}>
       <div className="flex items-center gap-2 mb-1">
         <Icon className="h-4 w-4 shrink-0" />
         <span className="font-semibold text-sm">{title}</span>
