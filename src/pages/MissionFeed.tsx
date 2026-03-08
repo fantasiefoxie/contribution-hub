@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search, Flag, Sparkles, MapPin, AlertTriangle, Globe, Loader2,
@@ -7,6 +7,14 @@ import {
 import ThemeToggle from "@/components/ThemeToggle";
 import AppShell from "@/components/layout/AppShell";
 import ScreenHeader from "@/components/shared/ScreenHeader";
+import FilterChipsBar from "@/components/shared/FilterChipsBar";
+import QuickActionBar from "@/components/shared/QuickActionBar";
+import { StatusDot, DifficultyBadge, type UniversalStatus } from "@/components/shared/StatusIndicator";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useMarketplaceFeed } from "@/hooks/use-recommendations";
+import { useWalkthrough, hasCompletedWalkthrough } from "@/contexts/WalkthroughContext";
+import WalkthroughTrigger from "@/components/walkthrough/WalkthroughTrigger";
 import FilterChipsBar from "@/components/shared/FilterChipsBar";
 import QuickActionBar from "@/components/shared/QuickActionBar";
 import { StatusDot, DifficultyBadge, type UniversalStatus } from "@/components/shared/StatusIndicator";
