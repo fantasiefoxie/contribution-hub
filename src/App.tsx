@@ -23,6 +23,7 @@ import ObservabilityDashboard from "./pages/ObservabilityDashboard";
 import TransparencyPage from "./pages/TransparencyPage";
 import DeveloperPortal from "./pages/DeveloperPortal";
 import LoadSimulation from "./pages/LoadSimulation";
+import Documentation from "./pages/Documentation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="/transparency" element={<TransparencyPage />} />
               <Route path="/developers" element={<DeveloperPortal />} />
               <Route path="/load-simulation" element={<LoadSimulation />} />
+              <Route path="/docs" element={<Documentation />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
