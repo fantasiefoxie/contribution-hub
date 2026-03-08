@@ -56,11 +56,27 @@ export default function LoadSimulation() {
   };
 
   const visiblePoints = timeline.filter((p) => p.minute <= elapsed);
-  const peak = timeline.reduce((max, p) => (p.apiRps > (max?.apiRps ?? 0) ? p : max), timeline[0]);
-  const totalApiRequests = timeline.reduce((s, p) => s + p.apiRps * 5 * 60, 0);
-  const peakBacklog = Math.max(...timeline.map((p) => p.eventQueueBacklog));
-  const peakWorkerUtil = Math.max(...timeline.map((p) => p.workerUtil));
-  const peakError = Math.max(...timeline.map((p) => p.errorRate));
+
+  const peak = useMemo(
+    () => timeline.length > 0 ? timeline.reduce((max, p) => (p.apiRps > max.apiRps ? p : max), timeline[0]) : null,
+    [timeline]
+  );
+  const totalApiRequests = useMemo(
+    () => timeline.reduce((s, p) => s + p.apiRps * 5 * 60, 0),
+    [timeline]
+  );
+  const peakBacklog = useMemo(
+    () => timeline.length > 0 ? Math.max(...timeline.map((p) => p.eventQueueBacklog)) : 0,
+    [timeline]
+  );
+  const peakWorkerUtil = useMemo(
+    () => timeline.length > 0 ? Math.max(...timeline.map((p) => p.workerUtil)) : 0,
+    [timeline]
+  );
+  const peakError = useMemo(
+    () => timeline.length > 0 ? Math.max(...timeline.map((p) => p.errorRate)) : 0,
+    [timeline]
+  );
 
   const bottlenecks = useMemo(() => {
     const items: { severity: "critical" | "warning" | "info"; title: string; description: string; recommendation: string }[] = [];
@@ -310,7 +326,7 @@ export default function LoadSimulation() {
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
                 { label: "API Servers", count: infra.api_servers, icon: Server, health: health.p95Latency },
-                { label: "PostgreSQL", count: 1, icon: Database, health: peak?.dbConnPool > 85 ? "critical" as const : peak?.dbConnPool > 60 ? "warning" as const : "healthy" as const },
+                { label: "PostgreSQL", count: 1, icon: Database, health: (peak?.dbConnPool ?? 0) > 85 ? "critical" as const : (peak?.dbConnPool ?? 0) > 60 ? "warning" as const : "healthy" as const },
                 { label: "Redis Cache", count: 1, icon: HardDrive, health: infra.cache_efficiency < 0.88 ? "warning" as const : "healthy" as const },
                 { label: "Workers", count: infra.bg_workers, icon: Cpu, health: health.workerUtil },
                 { label: "Object Store", count: 1, icon: Layers, health: "healthy" as const },
