@@ -113,17 +113,18 @@ export default function ObservabilityDashboard() {
 
       <div className="px-4 pt-5 pb-32">
         {/* Tabs */}
-        <div className="flex border-b border-border mb-4">
+        <div className="flex border-b border-border mb-4 overflow-x-auto">
           {([
             { key: "health" as Tab, label: "Health", icon: Activity },
             { key: "validators" as Tab, label: "Validators", icon: Shield },
             { key: "fraud" as Tab, label: "Fraud", icon: AlertTriangle },
             { key: "events" as Tab, label: "Events", icon: Radio },
+            { key: "ai" as Tab, label: "AI Layer", icon: Brain },
           ]).map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`flex-1 py-2.5 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors ${
+              className={`flex-1 py-2.5 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors whitespace-nowrap ${
                 tab === key ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"
               }`}
             >
