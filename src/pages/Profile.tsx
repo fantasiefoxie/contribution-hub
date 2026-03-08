@@ -33,11 +33,11 @@ const quickLinks = [
 const settingsMenu = [
   { label: "Platform Observability", icon: BarChart3, href: "/observability" },
   { label: "Transparency Report", icon: Globe, href: "/transparency" },
-  { label: "Saved Tasks", icon: Bookmark, count: 3 },
-  { label: "My Organizations", icon: Building2, count: 2 },
-  { label: "Notification Preferences", icon: BellRing },
-  { label: "Privacy & Security", icon: Lock },
-  { label: "Help & Support", icon: HelpCircle },
+  { label: "Saved Tasks", icon: Bookmark, count: 3, href: "/saved" },
+  { label: "My Organizations", icon: Building2, count: 2, href: "/organizations" },
+  { label: "Notification Preferences", icon: BellRing, href: "/notifications" },
+  { label: "Privacy & Security", icon: Lock, action: "privacy" },
+  { label: "Help & Support", icon: HelpCircle, action: "help" },
 ];
 
 export default function Profile() {
