@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Upload, Send, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { FileText, Upload, Send, Clock, CheckCircle2, Loader2, Zap, ClipboardList, PenLine, ArrowUpFromLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -89,7 +89,7 @@ export default function ActiveWorkspace() {
             <p className="text-sm text-muted-foreground mt-0.5">Your current task</p>
           </div>
           <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
-            <span className="text-lg">⚡</span>
+            <Zap className="h-5 w-5 text-secondary" />
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@ export default function ActiveWorkspace() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t === "instructions" ? "📋 Instructions" : t === "progress" ? "📝 Progress" : "📤 Submit"}
+            {t === "instructions" ? <><ClipboardList className="h-3 w-3 mr-1 inline" />Instructions</> : t === "progress" ? <><PenLine className="h-3 w-3 mr-1 inline" />Progress</> : <><ArrowUpFromLine className="h-3 w-3 mr-1 inline" />Submit</>}
           </button>
         ))}
       </div>

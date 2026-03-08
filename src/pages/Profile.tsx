@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Settings, LogOut, ChevronRight, Shield, MapPin, Loader2, Crown, Star, Eye, Gavel, Users as UsersIcon } from "lucide-react";
+import { User, Settings, LogOut, ChevronRight, Shield, MapPin, Loader2, Crown, Star, Eye, Gavel, Users as UsersIcon, Bookmark, Building2, BellRing, Lock, HelpCircle, BarChart3, Globe, Code2, ShieldCheck } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -14,20 +15,20 @@ const profileData = {
   status: "Trusted Contributor",
   joined: "January 2025",
   location: "San Francisco, CA",
-  avatar: "🧑‍🌾",
+  avatar: null as null,
 };
 
 const menuItems = [
-  { label: "Leadership & Roles", icon: "👑", count: undefined, href: "/leadership" },
-  { label: "Platform Observability", icon: "📊", count: undefined, href: "/observability" },
-  { label: "Transparency Report", icon: "🌍", count: undefined, href: "/transparency" },
-  { label: "Developer Portal", icon: "🔌", count: undefined, href: "/developers" },
-  { label: "Validation Queue", icon: "🛡️", count: undefined, href: "/validate" },
-  { label: "Saved Tasks", icon: "📌", count: 3 },
-  { label: "My Organizations", icon: "🏢", count: 2 },
-  { label: "Notification Preferences", icon: "🔔", count: undefined },
-  { label: "Privacy & Security", icon: "🔒", count: undefined },
-  { label: "Help & Support", icon: "❓", count: undefined },
+  { label: "Leadership & Roles", icon: Crown, count: undefined, href: "/leadership" },
+  { label: "Platform Observability", icon: BarChart3, count: undefined, href: "/observability" },
+  { label: "Transparency Report", icon: Globe, count: undefined, href: "/transparency" },
+  { label: "Developer Portal", icon: Code2, count: undefined, href: "/developers" },
+  { label: "Validation Queue", icon: ShieldCheck, count: undefined, href: "/validate" },
+  { label: "Saved Tasks", icon: Bookmark, count: 3 },
+  { label: "My Organizations", icon: Building2, count: 2 },
+  { label: "Notification Preferences", icon: BellRing, count: undefined },
+  { label: "Privacy & Security", icon: Lock, count: undefined },
+  { label: "Help & Support", icon: HelpCircle, count: undefined },
 ];
 
 export default function Profile() {
@@ -61,14 +62,15 @@ export default function Profile() {
 
   return (
     <AppShell>
-      <div className="px-4 pt-6 pb-3">
+      <div className="px-4 pt-6 pb-3 flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Profile</h1>
+        <ThemeToggle />
       </div>
 
       {/* Profile card */}
       <div className="mx-4 bg-card rounded-2xl border border-border p-5 flex items-center gap-4">
-        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-3xl shrink-0">
-          {profileData.avatar}
+        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+          <User className="h-7 w-7 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="font-display font-bold text-lg">{profileData.name}</h2>
@@ -150,7 +152,9 @@ export default function Profile() {
               i < menuItems.length - 1 ? "border-b border-border" : ""
             }`}
           >
-            <span className="text-lg">{item.icon}</span>
+            <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <item.icon className="h-4 w-4 text-muted-foreground" />
+            </div>
             <span className="text-sm font-medium flex-1 text-left">{item.label}</span>
             {item.count !== undefined && (
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
