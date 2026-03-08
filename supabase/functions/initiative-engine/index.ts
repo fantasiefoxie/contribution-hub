@@ -70,7 +70,10 @@ async function listInitiatives(req: Request) {
 }
 
 // ── GET /:id — get initiative with details ──
-async function getInitiative(req: Request, id: string) {
+async function getInitiative(req: Request, rawId: string) {
+  const id = await resolveId("initiative", rawId);
+  if (!id) return notFound(rawId);
+
   const supabase = getSupabase(req);
   const db = getServiceDb();
 
@@ -79,7 +82,7 @@ async function getInitiative(req: Request, id: string) {
     .select("*")
     .eq("id", id)
     .single();
-  if (error || !initiative) return err("Initiative not found", 404);
+  if (error || !initiative) return notFound(rawId);
 
   const [
     { data: projects },
