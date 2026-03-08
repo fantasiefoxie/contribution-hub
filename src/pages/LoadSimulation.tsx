@@ -26,6 +26,7 @@ import MetricCard from "@/components/simulation/MetricCard";
 import BottleneckItem from "@/components/simulation/BottleneckItem";
 import ComparisonPanel from "@/components/simulation/ComparisonPanel";
 import ComparisonCharts from "@/components/simulation/ComparisonCharts";
+import { SingleCostPanel, ComparisonCostTable } from "@/components/simulation/CostPanel";
 
 const CHART_TOOLTIP_STYLE = { fontSize: 12, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" };
 
