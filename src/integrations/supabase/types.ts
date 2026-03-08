@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          org_id: string | null
+          rate_limit_per_min: number
+          scopes: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          org_id?: string | null
+          rate_limit_per_min?: number
+          scopes?: string[]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          org_id?: string | null
+          rate_limit_per_min?: number
+          scopes?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appeals: {
         Row: {
           appellant_id: string
@@ -861,6 +914,50 @@ export type Database = {
             columns: ["submission_id"]
             isOneToOne: false
             referencedRelation: "task_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_subscriptions: {
+        Row: {
+          api_key_id: string
+          created_at: string
+          events: string[]
+          failure_count: number
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          secret: string
+          url: string
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string
+          events?: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          secret: string
+          url: string
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string
+          events?: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          secret?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_subscriptions_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
             referencedColumns: ["id"]
           },
         ]
