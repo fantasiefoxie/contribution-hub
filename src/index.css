@@ -101,11 +101,13 @@
 @layer base {
   * {
     @apply border-border;
+    overflow-anchor: none;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -117,12 +119,36 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  /* Layout containment for dynamic cards */
+  .contain-layout {
+    contain: layout style;
+  }
+
+  .contain-paint {
+    contain: layout style paint;
+  }
 }
 
 /* ── Global scroll reset ── */
 html {
   overflow-x: hidden;
   scroll-behavior: smooth;
+}
+
+/* ── GPU compositing for scroll container ── */
+.scroll-container {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* ── Scroll edge fades ── */
+.scroll-edge-top {
+  background: linear-gradient(to bottom, hsl(var(--background)), transparent);
+}
+
+.scroll-edge-bottom {
+  background: linear-gradient(to top, hsl(var(--background)), transparent);
 }
 
 /* ── Custom scrollbar ── */
@@ -158,4 +184,23 @@ html {
   .custom-scrollbar {
     scrollbar-width: none;
   }
+}
+
+/* ── List item transitions ── */
+.list-item-enter {
+  animation: list-slide-in 0.18s ease-out both;
+}
+
+.list-item-exit {
+  animation: list-slide-out 0.15s ease-in both;
+}
+
+@keyframes list-slide-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes list-slide-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-4px); }
 }
