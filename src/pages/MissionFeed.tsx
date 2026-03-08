@@ -115,6 +115,9 @@ export default function MissionFeed() {
         </div>
       </div>
 
+      {/* Impact Banner */}
+      <ImpactBanner />
+
       {/* Search */}
       <div className="px-4 py-2">
         <div className="relative">
