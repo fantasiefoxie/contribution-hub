@@ -4,6 +4,7 @@ import AppShell from "@/components/layout/AppShell";
 import FilterChips, { type FilterCategory } from "@/components/mission/FilterChips";
 import TaskCard, { type TaskCardData } from "@/components/mission/TaskCard";
 import PassportToggle from "@/components/mission/PassportToggle";
+import ImpactBanner from "@/components/mission/ImpactBanner";
 import { useTasks } from "@/hooks/use-tasks";
 
 // Mock data for display while API loads or returns empty
