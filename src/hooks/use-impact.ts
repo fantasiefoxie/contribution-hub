@@ -13,6 +13,8 @@ export function useMyImpact() {
   return useQuery({
     queryKey: ["my-impact"],
     queryFn: () => impactApi.myImpact(),
+    retry: false,
+    meta: { suppressError: true },
   });
 }
 
