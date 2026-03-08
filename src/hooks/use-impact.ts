@@ -1,26 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { impactApi } from "@/lib/impact-api";
-
-const defaultImpact = {
-  tasks_completed: 0,
-  total_score: 0,
-  impact_metrics: {},
-  initiatives_participated: 0,
-  contributions: [],
-};
+import { mockMyImpact, mockCommunityFeed, mockNextMission as mockNext } from "@/lib/mock-data";
 
 export function useCommunityFeed(limit?: number) {
   return useQuery({
     queryKey: ["community-feed", limit],
     queryFn: async () => {
       try {
-        return await impactApi.communityFeed(limit);
+        const data = await impactApi.communityFeed(limit);
+        if (!data?.feed?.length) return mockCommunityFeed;
+        return data;
       } catch {
-        return { feed: [] };
+        return mockCommunityFeed;
       }
     },
     refetchInterval: 30000,
+    retry: false,
   });
 }
 
@@ -32,7 +28,7 @@ export function useMyImpact() {
       try {
         return await impactApi.myImpact();
       } catch {
-        return defaultImpact;
+        return mockMyImpact;
       }
     },
     enabled: !!user,
@@ -44,7 +40,14 @@ export function useMyImpact() {
 export function useInitiativeProgress(id: string) {
   return useQuery({
     queryKey: ["initiative-progress", id],
-    queryFn: () => impactApi.initiativeProgress(id),
+    queryFn: async () => {
+      try {
+        return await impactApi.initiativeProgress(id);
+      } catch {
+        // Return a sensible default
+        return { completion_pct: 0, tasks_total: 0, tasks_completed: 0, contributors_active: 0 };
+      }
+    },
     enabled: !!id,
     retry: false,
     meta: { suppressError: true },
@@ -59,9 +62,10 @@ export function useNextMission(currentTaskId?: string) {
       try {
         return await impactApi.nextMission(currentTaskId);
       } catch {
-        return { next_mission: null };
+        return mockNext;
       }
     },
     enabled: !!user,
+    retry: false,
   });
 }

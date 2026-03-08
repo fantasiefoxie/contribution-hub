@@ -1,10 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskApi, type ValidationActionInput, type AppealInput, type AppealResolveInput } from "@/lib/task-api";
+import { mockPendingValidations } from "@/lib/mock-data";
 
 export function usePendingValidations() {
   return useQuery({
     queryKey: ["validations", "pending"],
-    queryFn: () => taskApi.getPendingValidations(),
+    queryFn: async () => {
+      try {
+        return await taskApi.getPendingValidations();
+      } catch {
+        return mockPendingValidations;
+      }
+    },
+    retry: false,
   });
 }
 

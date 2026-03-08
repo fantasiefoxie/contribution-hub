@@ -16,24 +16,7 @@ import { useMarketplaceFeed } from "@/hooks/use-recommendations";
 import { useWalkthrough, hasCompletedWalkthrough } from "@/contexts/WalkthroughContext";
 import WalkthroughTrigger from "@/components/walkthrough/WalkthroughTrigger";
 
-// ── Mock data ──
-const mockFeed = {
-  recommended: [
-    { id: "demo-1", title: "Community Garden Cleanup", description: "Help maintain the local community garden", difficulty: 2, tags: ["environment", "outdoor"], is_priority: false, _score: 72, _distance: 1.2, _reasons: ["nearby", "interest_match"], expires_at: null },
-    { id: "demo-2", title: "Survey Local Businesses", description: "Map and document local businesses for community directory", difficulty: 3, tags: ["research", "community"], is_priority: false, _score: 65, _distance: 0.8, _reasons: ["nearby", "difficulty_match"], expires_at: null },
-    { id: "demo-3", title: "Youth Coding Workshop Helper", description: "Mentor students during a weekend coding workshop", difficulty: 4, tags: ["community", "education"], is_priority: true, _score: 58, _distance: 3.5, _reasons: ["priority", "interest_match"], expires_at: null },
-  ],
-  nearby: [
-    { id: "demo-1", title: "Community Garden Cleanup", description: "Help maintain the local community garden", difficulty: 2, tags: ["environment", "outdoor"], is_priority: false, _score: 72, _distance: 1.2, _reasons: ["nearby"], expires_at: null },
-    { id: "demo-4", title: "River Water Quality Testing", description: "Collect water samples for environmental analysis", difficulty: 3, tags: ["environment", "research"], is_priority: false, _score: 45, _distance: 5.1, _reasons: ["medium_distance"], expires_at: null },
-  ],
-  priority: [
-    { id: "demo-3", title: "Youth Coding Workshop Helper", description: "Mentor students during a weekend coding workshop", difficulty: 4, tags: ["community", "education"], is_priority: true, _score: 58, _distance: 3.5, _reasons: ["priority"], expires_at: null },
-  ],
-  online: [
-    { id: "demo-5", title: "Translate Health Flyers", description: "Translate community health flyers to local languages", difficulty: 1, tags: ["community", "online"], is_priority: false, _score: 40, _distance: null, _reasons: ["online"], expires_at: null },
-  ],
-};
+// Mock data now handled inside useMarketplaceFeed hook
 
 type FeedFilter = "recommended" | "nearby" | "priority" | "online";
 
@@ -68,7 +51,7 @@ export default function MissionFeed() {
   }, []);
 
   const { data, isLoading } = useMarketplaceFeed({ passport: false });
-  const feed = (data?.recommended?.length > 0) ? data : mockFeed;
+  const feed = data ?? { recommended: [], nearby: [], priority: [], online: [] };
 
   const currentTasks = (feed[activeFilter] ?? []).filter((t: any) => {
     if (!search) return true;
