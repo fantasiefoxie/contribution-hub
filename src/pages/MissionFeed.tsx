@@ -152,7 +152,7 @@ export default function MissionFeed() {
             </div>
           )}
           {currentTasks.map((task: any, i: number) => (
-            <MissionTaskCard key={task.id} task={task} index={i} />
+            <MissionTaskCard key={task.id} task={task} index={i} isFirst={i === 0} />
           ))}
         </div>
       )}
