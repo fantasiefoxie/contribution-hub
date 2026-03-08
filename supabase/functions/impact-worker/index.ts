@@ -26,6 +26,21 @@ function getSupabase(req: Request) {
   );
 }
 
+/** Extract authenticated user ID from JWT, or null if not authenticated */
+async function getAuthUserId(req: Request): Promise<string | null> {
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    const supabase = getSupabase(req);
+    const token = authHeader.replace("Bearer ", "");
+    const { data, error } = await supabase.auth.getClaims(token);
+    if (error || !data?.claims?.sub) return null;
+    return data.claims.sub as string;
+  } catch {
+    return null;
+  }
+}
+
 function getServiceDb() {
   return createClient(
     Deno.env.get("SUPABASE_URL")!,
