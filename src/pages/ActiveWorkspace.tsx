@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Upload, Send, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { FileText, Upload, Send, Clock, CheckCircle2, Loader2, Zap, ClipboardList, PenLine, ArrowUpFromLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
