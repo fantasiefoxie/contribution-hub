@@ -21,6 +21,7 @@ export default function BottomNav() {
             <NavLink
               key={to}
               to={to}
+              data-walkthrough={walkthrough}
               className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 ${
                 isActive
                   ? "text-primary"
