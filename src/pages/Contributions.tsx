@@ -180,7 +180,7 @@ export default function Contributions() {
         {showInitiatives && (
           <div className="space-y-3 animate-fade-in">
             {mockInitiatives.map((init) => (
-              <InitiativeProgressCard key={init.title} title={init.title} progress={init.progress} milestones={init.milestones} />
+              <InitiativeProgressCard key={init.title} title={init.title} slug={init.slug} progress={init.progress} milestones={init.milestones} />
             ))}
           </div>
         )}
