@@ -1,13 +1,14 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, Flame, MapPin, Building2, Bookmark, Loader2, Users } from "lucide-react";
+import { ArrowLeft, Clock, Flame, MapPin, Building2, Bookmark, Loader2, Users, Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTask, useReserveTask, useConfirmClaim } from "@/hooks/use-tasks";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
 import SocialSignals from "@/components/mission/SocialSignals";
 import TeamMissionPanel from "@/components/team/TeamMissionPanel";
+import { getMockTask, getMockOrg, getMockInitiative, getMockTaskImpact, getMockEstTime, getMockDistance } from "@/lib/mock-data";
 
 function DifficultyBar({ level }: { level: number }) {
   return (
