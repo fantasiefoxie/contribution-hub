@@ -363,7 +363,8 @@ export default function LeadershipDashboard() {
             )}
           </div>
         )}
-      </div>}
+      </div>
+      </ProtectedRoute>
 
     </AppShell>
   );
