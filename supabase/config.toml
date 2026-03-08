@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.protocol]
 verify_jwt = false
+
+[functions.platform-worker]
+verify_jwt = false
