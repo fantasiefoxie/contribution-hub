@@ -131,6 +131,19 @@ export default function MissionFeed() {
       {/* Impact Banner */}
       <ImpactBanner />
 
+      {/* Initiatives Quick Link */}
+      <button
+        onClick={() => navigate("/initiatives")}
+        className="mx-4 mb-2 bg-gradient-to-r from-accent/10 to-primary/5 rounded-xl p-3 border border-accent/15 flex items-center gap-3 hover:border-accent/30 transition-colors"
+      >
+        <Flag className="h-4 w-4 text-accent" />
+        <div className="flex-1">
+          <p className="font-display font-semibold text-xs">Browse Initiatives</p>
+          <p className="text-[10px] text-muted-foreground">Join campaigns making real impact</p>
+        </div>
+        <span className="text-xs text-primary font-medium">View →</span>
+      </button>
+
       {/* Search */}
       <div className="px-4 py-2">
         <div className="relative">
