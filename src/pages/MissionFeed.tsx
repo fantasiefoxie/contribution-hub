@@ -15,12 +15,6 @@ import { Progress } from "@/components/ui/progress";
 import { useMarketplaceFeed } from "@/hooks/use-recommendations";
 import { useWalkthrough, hasCompletedWalkthrough } from "@/contexts/WalkthroughContext";
 import WalkthroughTrigger from "@/components/walkthrough/WalkthroughTrigger";
-import FilterChipsBar from "@/components/shared/FilterChipsBar";
-import QuickActionBar from "@/components/shared/QuickActionBar";
-import { StatusDot, DifficultyBadge, type UniversalStatus } from "@/components/shared/StatusIndicator";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { useMarketplaceFeed } from "@/hooks/use-recommendations";
 
 // ── Mock data ──
 const mockFeed = {
