@@ -164,7 +164,11 @@ export default function Profile() {
             {settingsMenu.map((item, i) => (
               <button
                 key={item.label}
-                onClick={() => item.href && navigate(item.href)}
+                onClick={() => {
+                  if (item.href) navigate(item.href);
+                  else if ((item as any).action === "privacy") toast.info("Privacy & Security settings coming soon");
+                  else if ((item as any).action === "help") toast.info("Help & Support coming soon");
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors ${
                   i < settingsMenu.length - 1 ? "border-b border-border" : ""
                 }`}
