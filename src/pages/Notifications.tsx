@@ -1,4 +1,4 @@
-import { CheckCircle2, MapPin, Award, Megaphone, Clock } from "lucide-react";
+import { CheckCircle2, MapPin, Award, Megaphone, Clock, Bell } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 
 type NotifType = "validation" | "nearby" | "badge" | "announcement";
