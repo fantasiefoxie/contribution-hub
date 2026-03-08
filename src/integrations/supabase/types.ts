@@ -235,6 +235,35 @@ export type Database = {
           },
         ]
       }
+      initiative_participants: {
+        Row: {
+          id: string
+          initiative_id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          initiative_id: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          initiative_id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "initiative_participants_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       initiatives: {
         Row: {
           created_at: string
@@ -243,6 +272,10 @@ export type Database = {
           end_date: string | null
           id: string
           is_micro: boolean
+          max_tasks: number | null
+          max_volunteers: number | null
+          promoted_at: string | null
+          promoted_by: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["initiative_status"]
           success_metrics: Json | null
@@ -257,6 +290,10 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_micro?: boolean
+          max_tasks?: number | null
+          max_volunteers?: number | null
+          promoted_at?: string | null
+          promoted_by?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["initiative_status"]
           success_metrics?: Json | null
@@ -271,6 +308,10 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_micro?: boolean
+          max_tasks?: number | null
+          max_volunteers?: number | null
+          promoted_at?: string | null
+          promoted_by?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["initiative_status"]
           success_metrics?: Json | null
@@ -405,6 +446,41 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          initiative_id: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          initiative_id: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          initiative_id?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_claims: {
         Row: {
           claimed_at: string
@@ -526,6 +602,7 @@ export type Database = {
           locked_by: string | null
           locked_until: string | null
           org_id: string | null
+          project_id: string | null
           reserved_by: string | null
           reserved_until: string | null
           status: Database["public"]["Enums"]["task_status"]
@@ -546,6 +623,7 @@ export type Database = {
           locked_by?: string | null
           locked_until?: string | null
           org_id?: string | null
+          project_id?: string | null
           reserved_by?: string | null
           reserved_until?: string | null
           status?: Database["public"]["Enums"]["task_status"]
@@ -566,6 +644,7 @@ export type Database = {
           locked_by?: string | null
           locked_until?: string | null
           org_id?: string | null
+          project_id?: string | null
           reserved_by?: string | null
           reserved_until?: string | null
           status?: Database["public"]["Enums"]["task_status"]
@@ -587,6 +666,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
