@@ -23,6 +23,7 @@ import ObservabilityDashboard from "./pages/ObservabilityDashboard";
 import TransparencyPage from "./pages/TransparencyPage";
 import DeveloperPortal from "./pages/DeveloperPortal";
 import LoadSimulation from "./pages/LoadSimulation";
+import Documentation from "./pages/Documentation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
