@@ -310,7 +310,7 @@ export default function InitiativeDiscovery() {
                 ) : (
                   <div className="px-4 space-y-2">
                     {section.items.slice(0, 3).map((init) => (
-                      <CampaignCard key={init.id} init={init} onClick={() => navigate(`/initiatives/${init.id}`)} />
+                      <CampaignCard key={init.id} init={init} onClick={() => navigate(`/initiatives/${init.slug || init.id}`)} />
                     ))}
                     {section.items.length > 3 && (
                       <button
