@@ -88,6 +88,85 @@ export interface InfraEstimate {
   db_replicas: number;
 }
 
+// ── Cost Model ──
+export interface CostModel {
+  api_server_monthly: number;
+  worker_monthly: number;
+  postgres_primary: number;
+  postgres_replica: number;
+  redis_node: number;
+  storage_per_gb: number;
+  bandwidth_per_gb: number;
+}
+
+export const DEFAULT_COST_MODEL: CostModel = {
+  api_server_monthly: 85,
+  worker_monthly: 45,
+  postgres_primary: 120,
+  postgres_replica: 80,
+  redis_node: 55,
+  storage_per_gb: 0.10,
+  bandwidth_per_gb: 0.08,
+};
+
+export interface CostBreakdown {
+  apiServers: number;
+  workers: number;
+  postgresPrimary: number;
+  postgresReplicas: number;
+  redis: number;
+  storage: number;
+  bandwidth: number;
+  total: number;
+  costPer1kVolunteers: number;
+}
+
+export interface CostOptimizationHint {
+  title: string;
+  description: string;
+  savingsPercent: number;
+}
+
+/** Estimate monthly infrastructure cost */
+export function estimateCost(
+  infra: InfraEstimate,
+  scenario: ScenarioConfig,
+  cost: CostModel = DEFAULT_COST_MODEL,
+): CostBreakdown {
+  const storageGB = Math.max(1, Math.ceil(scenario.volunteers * 0.002 * (scenario.tasks / 1000)));
+  const bandwidthGB = Math.max(1, Math.ceil(scenario.peak_users * 0.05 * 30));
+
+  const apiServers = infra.api_servers * cost.api_server_monthly;
+  const workers = infra.bg_workers * cost.worker_monthly;
+  const postgresPrimary = cost.postgres_primary;
+  const postgresReplicas = infra.db_replicas * cost.postgres_replica;
+  const redis = Math.max(1, Math.ceil(infra.redis_memory_gb / 4)) * cost.redis_node;
+  const storage = storageGB * cost.storage_per_gb;
+  const bandwidth = bandwidthGB * cost.bandwidth_per_gb;
+  const total = apiServers + workers + postgresPrimary + postgresReplicas + redis + storage + bandwidth;
+  const costPer1k = scenario.volunteers > 0 ? Math.round((total / scenario.volunteers) * 1000 * 100) / 100 : 0;
+
+  return { apiServers, workers, postgresPrimary, postgresReplicas, redis, storage, bandwidth, total, costPer1kVolunteers: costPer1k };
+}
+
+/** Generate cost optimization hints based on scenario analysis */
+export function getCostHints(breakdown: CostBreakdown, scenario: ScenarioConfig): CostOptimizationHint[] {
+  const hints: CostOptimizationHint[] = [];
+  if (breakdown.workers / breakdown.total > 0.35) {
+    hints.push({ title: "Batch validation processing", description: "Schedule validations in batches instead of real-time to reduce worker count by ~30%.", savingsPercent: 12 });
+  }
+  if (breakdown.bandwidth / breakdown.total > 0.05) {
+    hints.push({ title: "Compress uploads", description: "Enable client-side image compression to reduce bandwidth costs.", savingsPercent: 8 });
+  }
+  if (breakdown.apiServers / breakdown.total > 0.3) {
+    hints.push({ title: "Increase cache TTL", description: "Extend cache TTL from 5min to 15min to reduce API server load.", savingsPercent: 15 });
+  }
+  if (scenario.volunteers > 50000 && breakdown.postgresReplicas > 0) {
+    hints.push({ title: "Use read replicas strategically", description: "Route read-heavy queries to replicas to defer scaling the primary.", savingsPercent: 10 });
+  }
+  return hints;
+}
+
 export interface Breakpoint {
   metric: string;
   threshold: string;

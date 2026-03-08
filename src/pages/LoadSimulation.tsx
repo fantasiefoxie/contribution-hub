@@ -18,7 +18,7 @@ import {
 } from "recharts";
 import {
   generateTimeline, computeHealth, DEFAULT_INFRA, DEFAULT_SCENARIO, PRESETS,
-  summarizeScenario,
+  summarizeScenario, estimateInfra, estimateCost, getCostHints,
   type InfraParams, type ScenarioConfig, type SimPoint, type ScenarioSummary,
 } from "@/lib/load-simulation-engine";
 import InfraControls from "@/components/simulation/InfraControls";
@@ -26,6 +26,7 @@ import MetricCard from "@/components/simulation/MetricCard";
 import BottleneckItem from "@/components/simulation/BottleneckItem";
 import ComparisonPanel from "@/components/simulation/ComparisonPanel";
 import ComparisonCharts from "@/components/simulation/ComparisonCharts";
+import { SingleCostPanel, ComparisonCostTable } from "@/components/simulation/CostPanel";
 
 const CHART_TOOLTIP_STYLE = { fontSize: 12, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" };
 
@@ -123,6 +124,14 @@ export default function LoadSimulation() {
     [timeline, hasData]
   );
 
+  // Cost estimation for single scenario
+  const singleCost = useMemo(() => {
+    const infEst = estimateInfra(scenario);
+    return estimateCost(infEst, scenario);
+  }, [scenario]);
+
+  const costHints = useMemo(() => getCostHints(singleCost, scenario), [singleCost, scenario]);
+
   // Comparison summaries
   const comparisonSummaries = useMemo<ScenarioSummary[]>(() => {
     if (!comparisonMode) return [];
@@ -213,6 +222,7 @@ export default function LoadSimulation() {
         {comparisonMode && comparisonSummaries.length > 0 && (
           <div className="space-y-4">
             <ComparisonCharts summaries={comparisonSummaries} />
+            <ComparisonCostTable summaries={comparisonSummaries} />
             <ComparisonPanel summaries={comparisonSummaries} />
           </div>
         )}
@@ -361,6 +371,9 @@ export default function LoadSimulation() {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {/* Cost Estimation */}
+            <SingleCostPanel breakdown={singleCost} hints={costHints} scenarioName={scenario.name} />
 
             {/* Infrastructure Topology */}
             <Card>
