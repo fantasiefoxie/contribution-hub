@@ -15,6 +15,7 @@ import InitiativeDiscovery from "./pages/InitiativeDiscovery";
 import InitiativeBuilder from "./pages/InitiativeBuilder";
 import InitiativeDashboard from "./pages/InitiativeDashboard";
 import CampaignOps from "./pages/CampaignOps";
+import LeadershipDashboard from "./pages/LeadershipDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
