@@ -359,6 +359,126 @@ export default function ObservabilityDashboard() {
             )}
           </div>
         )}
+
+        {/* AI Layer Tab */}
+        {tab === "ai" && (
+          <div className="space-y-4">
+            {loadingAi ? (
+              <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+            ) : (
+              <>
+                {/* Architecture Rule Banner */}
+                <div className="bg-primary/5 rounded-2xl border border-primary/20 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-semibold text-primary">Zero-AI Baseline Architecture</p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    All core operations (task creation, claims, validation, contribution recording, governance) run on deterministic backend logic.
+                    AI exists only in the <span className="font-medium text-foreground">Optional Intelligence Layer</span> — outputs are advisory and require human confirmation.
+                  </p>
+                </div>
+
+                {/* AI Usage Stats */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Total Suggestions", value: aiData?.total_suggestions ?? 0, icon: Sparkles, color: "text-accent" },
+                    { label: "Acceptance Rate", value: `${aiData?.acceptance_rate ?? 0}%`, icon: CheckCircle2, color: "text-secondary" },
+                    { label: "AI Requests Today", value: aiData?.ai_requests_today ?? 0, icon: Brain, color: "text-primary" },
+                    { label: "Est. Cost Today", value: `$${(aiData?.estimated_cost_today_usd ?? 0).toFixed(4)}`, icon: Activity, color: "text-muted-foreground" },
+                  ].map(({ label, value, icon: Icon, color }) => (
+                    <div key={label} className="bg-card rounded-xl border border-border p-3">
+                      <Icon className={`h-4 w-4 ${color} mb-1`} />
+                      <p className="font-display font-bold text-xl">{value}</p>
+                      <p className="text-[10px] text-muted-foreground">{label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Suggestion Status Breakdown */}
+                <div className="bg-card rounded-2xl border border-border p-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Suggestion Pipeline</p>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <p className="font-display font-bold text-lg text-secondary">{aiData?.accepted ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Accepted</p>
+                    </div>
+                    <div>
+                      <p className="font-display font-bold text-lg text-destructive">{aiData?.rejected ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Rejected</p>
+                    </div>
+                    <div>
+                      <p className="font-display font-bold text-lg text-accent">{aiData?.pending ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Pending</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Usage by Model */}
+                {aiData?.usage_by_model && Object.keys(aiData.usage_by_model).length > 0 && (
+                  <div className="bg-card rounded-2xl border border-border p-4">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Usage by Model</p>
+                    <div className="space-y-2">
+                      {Object.entries(aiData.usage_by_model as Record<string, any>).map(([model, stats]: [string, any]) => (
+                        <div key={model} className="flex items-center justify-between bg-muted/50 rounded-lg p-2">
+                          <div>
+                            <p className="text-xs font-medium">{model}</p>
+                            <p className="text-[10px] text-muted-foreground">{stats.tokens} tokens · {stats.avgLatency}ms avg</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-bold">{stats.requests} req</p>
+                            <p className="text-[10px] text-muted-foreground">${stats.cost.toFixed(4)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Suggestions */}
+                {(aiData?.recent_suggestions ?? []).length > 0 && (
+                  <div className="bg-card rounded-2xl border border-border p-4">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Recent Suggestions</p>
+                    <div className="space-y-1.5">
+                      {(aiData?.recent_suggestions ?? []).map((s: any) => (
+                        <div key={s.id} className="flex items-center gap-2 bg-muted/50 rounded-lg p-2">
+                          <Badge className={`border-0 text-[9px] ${
+                            s.status === "accepted" ? "bg-secondary/10 text-secondary" :
+                            s.status === "rejected" ? "bg-destructive/10 text-destructive" :
+                            "bg-accent/10 text-accent"
+                          }`}>{s.status}</Badge>
+                          <span className="text-[11px] flex-1 truncate">{s.suggestion_type}</span>
+                          {s.confidence_score != null && (
+                            <span className="text-[10px] text-muted-foreground">{Math.round(s.confidence_score * 100)}%</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Isolation Rules */}
+                <div className="bg-card rounded-2xl border border-border p-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">AI Isolation Rules</p>
+                  <div className="space-y-2 text-[11px]">
+                    {[
+                      "AI cannot write directly to core tables (tasks, contributions, validations)",
+                      "All AI outputs marked with generated_by: 'ai' and confidence_score",
+                      "AI workers read from event stream only — no direct DB mutations",
+                      "Human confirmation required before suggestions become real data",
+                      "Core modules operate independently with zero AI dependencies",
+                    ].map((rule, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                        <span className="text-muted-foreground">{rule}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </AppShell>
   );
