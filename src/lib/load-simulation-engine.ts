@@ -86,7 +86,7 @@ export const PRESETS: Record<string, { infra: Partial<InfraParams>; scenario: Sc
     },
   },
   disaster_response: {
-    infra: { api_servers: 6, bg_workers: 20, validators: 500, base_latency: 70, cache_efficiency: 0.85 },
+    infra: { api_servers: 6, bg_workers: 20, validators: 500, events_per_worker_per_second: 120, base_latency: 70, cache_efficiency: 0.85 },
     scenario: {
       name: "Disaster Response Surge",
       peak_users: 40_000,
