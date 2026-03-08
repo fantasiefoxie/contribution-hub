@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import AppShell from "@/components/layout/AppShell";
 import ScreenHeader from "@/components/shared/ScreenHeader";
-import QuickActionBar from "@/components/shared/QuickActionBar";
+
 import { StatusDot, type UniversalStatus } from "@/components/shared/StatusIndicator";
 import InitiativeProgressCard from "@/components/impact/InitiativeProgressCard";
 import { useMyImpact } from "@/hooks/use-impact";
