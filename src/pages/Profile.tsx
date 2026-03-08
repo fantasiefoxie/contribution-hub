@@ -189,7 +189,14 @@ export default function Profile() {
 
       {/* Sign out */}
       <div className="mx-4 mt-4 pb-44">
-        <Button variant="outline" className="w-full rounded-xl h-11 text-destructive border-destructive/20 hover:bg-destructive/5 gap-2">
+        <Button
+          variant="outline"
+          onClick={() => {
+            toast.success("Signed out successfully");
+            navigate("/");
+          }}
+          className="w-full rounded-xl h-11 text-destructive border-destructive/20 hover:bg-destructive/5 gap-2"
+        >
           <LogOut className="h-4 w-4" /> Sign Out
         </Button>
       </div>
