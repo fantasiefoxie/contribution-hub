@@ -74,7 +74,7 @@ export default function ActiveWorkspace() {
   // ── Animations ──
   const triggerProgress = useCallback(() => {
     setAnimateProgress(true);
-    setTimeout(() => setAnimateProgress(false), 900);
+    setTimeout(() => setAnimateProgress(false), 600);
   }, []);
 
   const flashSuccess = useCallback((msg: string) => {
@@ -132,23 +132,21 @@ export default function ActiveWorkspace() {
 
   // ── Bottom action bar ──
   const bottomBar = (
-    <div className="bg-card/95 backdrop-blur-md border-t border-border px-3 py-2">
+    <div className="bg-card/95 backdrop-blur-xl border-t border-border/60 px-4 py-3">
       <div className="flex gap-2">
         <Button
           variant="outline"
-          className="flex-1 h-11 rounded-xl text-xs gap-1.5 border-accent text-accent hover:bg-accent/10"
+          className="flex-1 h-12 rounded-2xl text-xs gap-1.5 border-accent/30 text-accent hover:bg-accent/5 transition-all duration-200 active:scale-95"
           onClick={() => {
             const t = tasks.find((t) => t.status === "in_progress") || tasks.find((t) => t.status === "open");
-            if (t) {
-              /* scroll focus card into view */
-              document.getElementById("focus-task")?.scrollIntoView({ behavior: "smooth" });
-            } else toast.info("No open tasks");
+            if (t) document.getElementById("focus-task")?.scrollIntoView({ behavior: "smooth" });
+            else toast.info("No open tasks");
           }}
         >
           <BarChart3 className="h-4 w-4" /> Progress
         </Button>
         <Button
-          className="flex-1 h-11 rounded-xl text-xs gap-1.5 bg-primary hover:bg-primary/90"
+          className="flex-1 h-12 rounded-2xl text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-card transition-all duration-200 active:scale-95"
           onClick={() => {
             const t = tasks.find((t) => t.status === "in_progress");
             if (t) handleSubmit(t.id, "Task completed");
@@ -159,7 +157,7 @@ export default function ActiveWorkspace() {
         </Button>
         <Button
           variant="outline"
-          className="h-11 w-11 rounded-xl border-secondary text-secondary hover:bg-secondary/10 p-0"
+          className="h-12 w-12 rounded-2xl border-secondary/30 text-secondary hover:bg-secondary/5 p-0 transition-all duration-200 active:scale-95"
           onClick={handlePhotoUpload}
         >
           <Camera className="h-4 w-4" />
@@ -174,42 +172,45 @@ export default function ActiveWorkspace() {
 
       {/* Success flash */}
       {successFlash && (
-        <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none flex justify-center pt-4 animate-fade-in">
-          <div className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-sm font-semibold">
+        <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none flex justify-center pt-4 animate-slide-up">
+          <div className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl shadow-float flex items-center gap-2 text-sm font-semibold">
             <Sparkles className="h-4 w-4" /> {successFlash}
           </div>
         </div>
       )}
 
       {/* ═══ Mission Header ═══ */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between gap-3 mb-2">
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
+            <div className="flex items-center gap-1.5 mb-1">
               <Zap className="h-3.5 w-3.5 text-secondary shrink-0" />
               <span className="text-[10px] font-semibold uppercase tracking-wider text-secondary">Active Mission</span>
             </div>
             <h1 className="font-display text-base font-bold leading-tight truncate">{mockMission.title}</h1>
           </div>
-          <Badge className="bg-muted text-foreground text-[11px] gap-1 shrink-0 font-mono border-0">
+          <Badge className="bg-card text-foreground text-[11px] gap-1.5 shrink-0 font-mono border-0 shadow-card rounded-xl px-3 py-1.5">
             <Clock className="h-3 w-3 text-secondary" />
             {hours > 0 ? `${hours}h ` : ""}{mins}m
           </Badge>
         </div>
 
-        {/* Progress — flat, no box container */}
-        <div className="flex items-center justify-between mb-1">
+        {/* Progress bar */}
+        <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] text-muted-foreground">{completedCount}/{totalCount} done</span>
-          <span className={`font-display font-bold text-xs transition-all duration-500 ${animateProgress ? "text-primary scale-125" : "text-primary"}`}>
+          <span className={`font-display font-bold text-xs transition-all duration-200 ${animateProgress ? "text-primary scale-110" : "text-primary"}`}>
             {progressPct}%
           </span>
         </div>
-        <div className={`transition-all duration-700 ${animateProgress ? "scale-[1.01]" : ""}`}>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-700 ease-out rounded-full" style={{ width: `${progressPct}%` }} />
+        <div className={`transition-all duration-200 ${animateProgress ? "animate-task-complete" : ""}`}>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted/80">
+            <div
+              className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out rounded-full"
+              style={{ width: `${progressPct}%` }}
+            />
           </div>
         </div>
-        <div className="mt-1.5"><StatusLegend /></div>
+        <div className="mt-2"><StatusLegend /></div>
       </div>
 
       {/* ═══ Quick Impact ═══ */}
@@ -224,7 +225,7 @@ export default function ActiveWorkspace() {
       />
 
       {/* ═══ Focus Task ═══ */}
-      <div id="focus-task" className="px-4 mb-3">
+      <div id="focus-task" className="px-4 mb-4">
         {focusTask ? (
           <FocusTaskCard
             task={focusTask}
@@ -235,21 +236,21 @@ export default function ActiveWorkspace() {
             onPhotoUpload={handlePhotoUpload}
           />
         ) : (
-          <div className="bg-primary/5 rounded-2xl p-5 text-center animate-fade-in">
-            <Sparkles className="h-7 w-7 text-primary mx-auto mb-1.5" />
+          <div className="bg-primary/5 rounded-2xl p-6 text-center animate-slide-up shadow-card">
+            <Sparkles className="h-7 w-7 text-primary mx-auto mb-2" />
             <p className="font-semibold text-primary text-sm">All tasks completed!</p>
           </div>
         )}
       </div>
 
-      {/* ═══ Task Queue — paginated ═══ */}
+      {/* ═══ Task Queue ═══ */}
       {allFeedTasks.length > 0 && (
-        <div className="px-4">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="px-4 pb-4">
+          <div className="flex items-center gap-2 mb-3">
             <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Task Queue</h2>
-            <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{allFeedTasks.length}</span>
+            <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{allFeedTasks.length}</span>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {feedTasks.map((task, i) => (
               <TaskFeedCard key={task.id} task={task} index={i} onClaim={handleClaim} />
             ))}
@@ -257,7 +258,7 @@ export default function ActiveWorkspace() {
           {hasMore && (
             <button
               onClick={() => setFeedLimit((l) => l + FEED_PAGE_SIZE)}
-              className="w-full py-3 mt-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+              className="w-full py-3 mt-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors duration-200"
             >
               Load {Math.min(allFeedTasks.length - feedLimit, FEED_PAGE_SIZE)} more tasks
             </button>
