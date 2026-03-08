@@ -197,7 +197,7 @@ export default function TaskDetails() {
         {/* Impact */}
         <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
           <p className="text-xs text-muted-foreground mb-1">Impact</p>
-          <p className="font-display font-semibold text-primary text-lg">🌱 50kg waste removed</p>
+          <p className="font-display font-semibold text-primary text-lg">{ctx.impact}</p>
         </div>
 
         {/* Description */}

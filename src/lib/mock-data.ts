@@ -516,9 +516,63 @@ export const mockNextMission = {
   },
 };
 
+// ─── Impact per task (contextualized) ───
+const taskImpactMap: Record<string, string> = {
+  "demo-1": "🌿 15 seedlings planted, 3 plots cleared",
+  "demo-2": "📊 48 businesses surveyed & documented",
+  "demo-3": "🎓 20 students mentored in coding",
+  "demo-4": "🔬 3 water quality samples collected",
+  "demo-5": "🏥 Health flyers translated to 2 languages",
+  "demo-6": "🍲 200+ food items sorted & packed",
+  "demo-7": "🎨 20m boundary wall painted",
+  "demo-8": "📋 500 census records digitized",
+};
+
+const taskEstTimeMap: Record<string, string> = {
+  "demo-1": "1.5h",
+  "demo-2": "3h",
+  "demo-3": "4h",
+  "demo-4": "2h",
+  "demo-5": "45min",
+  "demo-6": "2.5h",
+  "demo-7": "5h",
+  "demo-8": "1h",
+};
+
+const taskDistanceMap: Record<string, string | null> = {
+  "demo-1": "1.2 km",
+  "demo-2": "0.8 km",
+  "demo-3": "3.5 km",
+  "demo-4": "5.1 km",
+  "demo-5": null,
+  "demo-6": "2.3 km",
+  "demo-7": "4.0 km",
+  "demo-8": null,
+};
+
 // ─── Lookup helpers ───
 export function getMockTask(id: string) {
   return mockTasks.find((t) => t.id === id || t.slug === id) ?? null;
+}
+
+export function getMockOrg(orgId: string | null) {
+  return mockOrganizations.find((o) => o.id === orgId) ?? null;
+}
+
+export function getMockInitiative(initId: string | null) {
+  return mockInitiatives.find((i) => i.id === initId) ?? null;
+}
+
+export function getMockTaskImpact(taskId: string) {
+  return taskImpactMap[taskId] ?? "🌱 Positive community impact";
+}
+
+export function getMockEstTime(taskId: string) {
+  return taskEstTimeMap[taskId] ?? "1h";
+}
+
+export function getMockDistance(taskId: string) {
+  return taskDistanceMap[taskId];
 }
 
 export function getMockTeam(taskId: string) {
