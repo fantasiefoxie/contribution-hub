@@ -89,7 +89,7 @@ export default function ActiveWorkspace() {
             <p className="text-sm text-muted-foreground mt-0.5">Your current task</p>
           </div>
           <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
-            <span className="text-lg">⚡</span>
+            <Zap className="h-5 w-5 text-secondary" />
           </div>
         </div>
       </div>
