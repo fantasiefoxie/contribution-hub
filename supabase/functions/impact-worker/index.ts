@@ -115,7 +115,7 @@ async function myImpact(req: Request) {
   const { data: contributions } = await db
     .from("contributions")
     .select("score, impact_metrics, created_at, task_id")
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
 
   const items = contributions ?? [];
   const totalScore = items.reduce((sum: number, c: any) => sum + (c.score || 0), 0);
