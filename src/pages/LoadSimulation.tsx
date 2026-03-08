@@ -7,14 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Activity, Server, Database, HardDrive, Cpu, Clock,
-  TrendingUp, Zap, BarChart3, Layers, GitCompare
+  TrendingUp, Zap, BarChart3, Layers, GitCompare,
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, AreaChart, Area, BarChart, Bar
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar,
 } from "recharts";
 import {
   generateTimeline, computeHealth, DEFAULT_INFRA, DEFAULT_SCENARIO, PRESETS,
@@ -28,13 +28,18 @@ import ComparisonPanel from "@/components/simulation/ComparisonPanel";
 import ComparisonCharts from "@/components/simulation/ComparisonCharts";
 import { SingleCostPanel, ComparisonCostTable } from "@/components/simulation/CostPanel";
 
-const CHART_TOOLTIP_STYLE = { fontSize: 12, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" };
+const CHART_TOOLTIP_STYLE = { fontSize: 12, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" } as const;
 
 function ChartPlaceholder() {
   return <Skeleton className="w-full h-[300px] rounded-lg" />;
 }
 
-const COMPARISON_PRESETS = [
+interface ComparisonPreset {
+  key: string;
+  label: string;
+}
+
+const COMPARISON_PRESETS: readonly ComparisonPreset[] = [
   { key: "small_ngo", label: "Small NGO" },
   { key: "city_survey_10k", label: "City 10K" },
   { key: "city_survey", label: "City 50K" },
@@ -51,18 +56,29 @@ export default function LoadSimulation() {
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedComparisons, setSelectedComparisons] = useState<string[]>(["small_ngo", "city_survey", "national"]);
 
+  // Unmount guard
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   const timeline: SimPoint[] = useMemo(
     () => generateTimeline(infra, scenario),
-    [infra, scenario]
+    [infra, scenario],
   );
 
   const health = useMemo(() => computeHealth(timeline), [timeline]);
 
+  // Reset animation on param change
   useEffect(() => { setElapsed(0); }, [infra, scenario]);
 
+  // Animation timer with cleanup
   useEffect(() => {
     if (elapsed >= 120) return;
-    const id = setTimeout(() => setElapsed((e) => Math.min(e + 5, 120)), 150);
+    const id = setTimeout(() => {
+      if (mountedRef.current) setElapsed((e) => Math.min(e + 5, 120));
+    }, 150);
     return () => clearTimeout(id);
   }, [elapsed]);
 
@@ -82,14 +98,14 @@ export default function LoadSimulation() {
   const toggleComparison = useCallback((key: string) => {
     setSelectedComparisons((prev) => {
       if (prev.includes(key)) return prev.filter((k) => k !== key);
-      if (prev.length >= 3) return prev; // max 3
+      if (prev.length >= 3) return prev;
       return [...prev, key];
     });
   }, []);
 
   const visiblePoints = useMemo(
     () => timeline.filter((p) => p.minute <= elapsed),
-    [timeline, elapsed]
+    [timeline, elapsed],
   );
 
   const hasVisibleData = visiblePoints.length > 0;
@@ -97,34 +113,40 @@ export default function LoadSimulation() {
 
   const peak = useMemo<SimPoint | null>(
     () => hasData ? timeline.reduce((max, p) => (p.apiRps > max.apiRps ? p : max), timeline[0]) : null,
-    [timeline, hasData]
-  );
-  const totalApiRequests = useMemo(
-    () => hasData ? timeline.reduce((s, p) => s + p.apiRps * 5 * 60, 0) : 0,
-    [timeline, hasData]
-  );
-  const peakBacklog = useMemo(
-    () => hasData ? Math.max(...timeline.map((p) => p.eventQueueBacklog)) : 0,
-    [timeline, hasData]
-  );
-  const peakWorkerUtil = useMemo(
-    () => hasData ? Math.max(...timeline.map((p) => p.workerUtil)) : 0,
-    [timeline, hasData]
-  );
-  const peakError = useMemo(
-    () => hasData ? Math.max(...timeline.map((p) => p.errorRate)) : 0,
-    [timeline, hasData]
-  );
-  const peakP95 = useMemo(
-    () => hasData ? Math.max(...timeline.map((p) => p.p95)) : 0,
-    [timeline, hasData]
-  );
-  const peakP99 = useMemo(
-    () => hasData ? Math.max(...timeline.map((p) => p.p99)) : 0,
-    [timeline, hasData]
+    [timeline, hasData],
   );
 
-  // Cost estimation for single scenario
+  const totalApiRequests = useMemo(
+    () => hasData ? timeline.reduce((s, p) => s + p.apiRps * 5 * 60, 0) : 0,
+    [timeline, hasData],
+  );
+
+  const peakBacklog = useMemo(
+    () => hasData ? Math.max(...timeline.map((p) => p.eventQueueBacklog)) : 0,
+    [timeline, hasData],
+  );
+
+  const peakWorkerUtil = useMemo(
+    () => hasData ? Math.max(...timeline.map((p) => p.workerUtil)) : 0,
+    [timeline, hasData],
+  );
+
+  const peakError = useMemo(
+    () => hasData ? Math.max(...timeline.map((p) => p.errorRate)) : 0,
+    [timeline, hasData],
+  );
+
+  const peakP95 = useMemo(
+    () => hasData ? Math.max(...timeline.map((p) => p.p95)) : 0,
+    [timeline, hasData],
+  );
+
+  const peakP99 = useMemo(
+    () => hasData ? Math.max(...timeline.map((p) => p.p99)) : 0,
+    [timeline, hasData],
+  );
+
+  // Cost estimation — safe against invalid scenario
   const singleCost = useMemo(() => {
     const infEst = estimateInfra(scenario);
     return estimateCost(infEst, scenario);
@@ -132,10 +154,15 @@ export default function LoadSimulation() {
 
   const costHints = useMemo(() => getCostHints(singleCost, scenario), [singleCost, scenario]);
 
-  // Comparison summaries
+  // Comparison summaries — fault-tolerant
   const comparisonSummaries = useMemo<ScenarioSummary[]>(() => {
-    if (!comparisonMode) return [];
-    return selectedComparisons.map((key) => summarizeScenario(key));
+    if (!comparisonMode || selectedComparisons.length === 0) return [];
+    return selectedComparisons
+      .map((key) => {
+        try { return summarizeScenario(key); }
+        catch { return null; }
+      })
+      .filter((s): s is ScenarioSummary => s !== null);
   }, [comparisonMode, selectedComparisons]);
 
   const bottlenecks = useMemo(() => {
@@ -179,11 +206,7 @@ export default function LoadSimulation() {
             <div className="ml-auto flex items-center gap-2">
               <GitCompare className="h-4 w-4 text-muted-foreground" />
               <Label htmlFor="compare-toggle" className="text-xs text-muted-foreground cursor-pointer">Compare</Label>
-              <Switch
-                id="compare-toggle"
-                checked={comparisonMode}
-                onCheckedChange={setComparisonMode}
-              />
+              <Switch id="compare-toggle" checked={comparisonMode} onCheckedChange={setComparisonMode} />
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -412,7 +435,7 @@ export default function LoadSimulation() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {bottlenecks.map((b, i) => (
-                  <BottleneckItem key={`${b.severity}-${b.title}-${i}`} {...b} />
+                  <BottleneckItem key={`${b.severity}-${i}`} {...b} />
                 ))}
               </CardContent>
             </Card>
