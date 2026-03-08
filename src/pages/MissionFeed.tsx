@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search, Flag, Sparkles, MapPin, AlertTriangle, Globe, Loader2,
@@ -13,6 +13,8 @@ import { StatusDot, DifficultyBadge, type UniversalStatus } from "@/components/s
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useMarketplaceFeed } from "@/hooks/use-recommendations";
+import { useWalkthrough, hasCompletedWalkthrough } from "@/contexts/WalkthroughContext";
+import WalkthroughTrigger from "@/components/walkthrough/WalkthroughTrigger";
 
 // ── Mock data ──
 const mockFeed = {
@@ -55,6 +57,15 @@ export default function MissionFeed() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<FeedFilter>("recommended");
   const [search, setSearch] = useState("");
+  const { start: startWalkthrough, active: walkthroughActive } = useWalkthrough();
+
+  // Auto-start walkthrough for first-time users
+  useEffect(() => {
+    if (!hasCompletedWalkthrough() && !walkthroughActive) {
+      const timer = setTimeout(() => startWalkthrough(), 800);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const { data, isLoading } = useMarketplaceFeed({ passport: false });
   const feed = (data?.recommended?.length > 0) ? data : mockFeed;
@@ -68,7 +79,7 @@ export default function MissionFeed() {
   return (
     <AppShell>
       {/* ═══ HEADER — See: context + progress ═══ */}
-      <div className="px-4 pt-5 pb-2">
+      <div className="px-4 pt-5 pb-2" data-walkthrough="welcome">
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-xl font-bold leading-tight">Mission Board</h1>
@@ -85,6 +96,7 @@ export default function MissionFeed() {
 
       {/* ── Active Mission Banner (one-tap resume) ── */}
       <button
+        data-walkthrough="active-mission"
         onClick={() => navigate("/active")}
         className="mx-4 mb-3 bg-gradient-to-r from-secondary/15 via-secondary/10 to-primary/10 rounded-2xl p-3.5 border border-secondary/20 flex items-center gap-3 hover:border-secondary/40 transition-all"
       >
@@ -108,7 +120,7 @@ export default function MissionFeed() {
       </button>
 
       {/* ── Search (inline, fast) ── */}
-      <div className="px-4 pb-2">
+      <div className="px-4 pb-2" data-walkthrough="search">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
@@ -122,7 +134,7 @@ export default function MissionFeed() {
       </div>
 
       {/* ═══ CONTENT — Decide: filter + scan ═══ */}
-      <div className="px-4 mb-3">
+      <div className="px-4 mb-3" data-walkthrough="filters">
         <FilterChipsBar<FeedFilter> options={feedFilters} active={activeFilter} onChange={setActiveFilter} />
       </div>
 
@@ -140,50 +152,53 @@ export default function MissionFeed() {
             </div>
           )}
           {currentTasks.map((task: any, i: number) => (
-            <MissionTaskCard key={task.id} task={task} index={i} />
+            <MissionTaskCard key={task.id} task={task} index={i} isFirst={i === 0} />
           ))}
         </div>
       )}
 
       {/* ═══ BOTTOM — Act: persistent quick actions ═══ */}
-      <QuickActionBar
-        actions={[
-          {
-            icon: Zap,
-            label: "Resume Mission",
-            color: "text-secondary",
-            bg: "bg-secondary/10",
-            onClick: () => navigate("/active"),
-          },
-          {
-            icon: Flag,
-            label: "Initiatives",
-            color: "text-accent",
-            bg: "bg-accent/10",
-            onClick: () => navigate("/initiatives"),
-          },
-          {
-            icon: MapPin,
-            label: "Near Me",
-            color: "text-primary",
-            bg: "bg-primary/10",
-            onClick: () => setActiveFilter("nearby"),
-          },
-          {
-            icon: Globe,
-            label: "Online",
-            color: "text-muted-foreground",
-            bg: "bg-muted",
-            onClick: () => setActiveFilter("online"),
-          },
-        ]}
-      />
+      <div data-walkthrough="quick-actions">
+        <QuickActionBar
+          actions={[
+            {
+              icon: Zap,
+              label: "Resume Mission",
+              color: "text-secondary",
+              bg: "bg-secondary/10",
+              onClick: () => navigate("/active"),
+            },
+            {
+              icon: Flag,
+              label: "Initiatives",
+              color: "text-accent",
+              bg: "bg-accent/10",
+              onClick: () => navigate("/initiatives"),
+            },
+            {
+              icon: MapPin,
+              label: "Near Me",
+              color: "text-primary",
+              bg: "bg-primary/10",
+              onClick: () => setActiveFilter("nearby"),
+            },
+            {
+              icon: Globe,
+              label: "Online",
+              color: "text-muted-foreground",
+              bg: "bg-muted",
+              onClick: () => setActiveFilter("online"),
+            },
+          ]}
+        />
+      </div>
+      <WalkthroughTrigger />
     </AppShell>
   );
 }
 
 // ── Task Card with See→Decide→Act pattern ──
-function MissionTaskCard({ task, index }: { task: any; index: number }) {
+function MissionTaskCard({ task, index, isFirst }: { task: any; index: number; isFirst?: boolean }) {
   const navigate = useNavigate();
   const status: UniversalStatus = task.is_priority ? "in_progress" : "not_started";
 
@@ -192,6 +207,7 @@ function MissionTaskCard({ task, index }: { task: any; index: number }) {
       onClick={() => navigate(`/task/${task.id}`)}
       className="w-full bg-card rounded-xl border border-border p-3.5 text-left hover:border-primary/30 transition-all animate-fade-in min-h-[56px]"
       style={{ animationDelay: `${index * 30}ms` }}
+      {...(isFirst ? { "data-walkthrough": "task-card" } : {})}
     >
       <div className="flex items-center gap-3">
         <StatusDot status={status} />

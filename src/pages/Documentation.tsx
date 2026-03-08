@@ -59,6 +59,7 @@ const FAQ: { q: string; a: string }[] = [
   { q: "What is the Zero-AI baseline?", a: "The core coordination engine runs entirely on deterministic logic — no AI dependencies. An optional intelligence layer provides advisory outputs (campaign planning, task template generation) that always require human confirmation." },
   { q: "How do webhooks work?", a: "Create an API key, then register a webhook URL with event filters. Events are delivered as signed POST requests using HMAC-SHA256. Failed deliveries retry up to 10 times." },
   { q: "What are verifiable credentials?", a: "On-platform digital certificates issued when you complete tasks or milestones. They include metadata, are tied to your profile, and can be independently verified via the API." },
+  { q: "Is there a guided tour for new users?", a: "Yes! The interactive walkthrough starts automatically on your first visit. It highlights each part of the Mission Board, navigation, and key features with step-by-step tooltips. You can restart it anytime by tapping the help (?) button in the bottom-right corner of the home screen." },
 ];
 
 const API_SECTIONS = [
