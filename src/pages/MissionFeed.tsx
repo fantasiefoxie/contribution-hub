@@ -117,6 +117,15 @@ export default function MissionFeed() {
         </div>
       </div>
 
+      {/* Active Mission Banner */}
+      <ActiveMissionBanner
+        taskId="demo-1"
+        title="Community Garden Cleanup"
+        lockedUntil={new Date(Date.now() + 2.5 * 3600000).toISOString()}
+        updatesCount={2}
+        totalSteps={6}
+      />
+
       {/* Impact Banner */}
       <ImpactBanner />
 

@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { useAddTaskUpdate, useSubmitTask } from "@/hooks/use-tasks";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
+import TaskProgressBar from "@/components/mission/TaskProgressBar";
+import NextMissionCard from "@/components/mission/NextMissionCard";
+import MissionCompletionScreen from "@/components/mission/MissionCompletionScreen";
 
 // Mock active task for demo
 const mockActive = {
@@ -26,6 +29,7 @@ export default function ActiveWorkspace() {
   const [notes, setNotes] = useState("");
   const [submission, setSubmission] = useState("");
   const [tab, setTab] = useState<"instructions" | "progress" | "submit">("instructions");
+  const [showCompletion, setShowCompletion] = useState(false);
   const addUpdate = useAddTaskUpdate();
   const submitTask = useSubmitTask();
 
@@ -38,7 +42,6 @@ export default function ActiveWorkspace() {
       setNotes("");
       toast.success("Progress update saved");
     } catch {
-      // Using mock, just show success
       toast.success("Progress update saved");
       setNotes("");
     }
@@ -49,14 +52,32 @@ export default function ActiveWorkspace() {
     try {
       await submitTask.mutateAsync({ taskId: task.id, input: { content: submission.trim() } });
       setSubmission("");
-      toast.success("Work submitted for validation!");
+      setShowCompletion(true);
     } catch {
-      toast.success("Work submitted for validation!");
       setSubmission("");
+      setShowCompletion(true);
     }
   };
 
   const timeLeft = Math.max(0, Math.floor((new Date(task.lockedUntil).getTime() - Date.now()) / 60000));
+
+  if (showCompletion) {
+    return (
+      <MissionCompletionScreen
+        taskTitle={task.title}
+        impactMetrics={{ trees_maintained: 15, waste_removed_kg: 8 }}
+        initiativeTitle="Spring Cleanup Campaign"
+        initiativeProgress={43}
+        nextMission={{
+          id: "demo-3",
+          title: "Survey 15 households in Ward 3",
+          estimatedTime: "30 min",
+          distance: "1.2 km",
+        }}
+        onDismiss={() => setShowCompletion(false)}
+      />
+    );
+  }
 
   return (
     <AppShell>
@@ -87,8 +108,13 @@ export default function ActiveWorkspace() {
         </div>
       </div>
 
+      {/* Progress Bar */}
+      <div className="mt-4">
+        <TaskProgressBar updatesCount={task.updates.length} totalSteps={6} />
+      </div>
+
       {/* Tabs */}
-      <div className="flex gap-1 mx-4 mt-4 bg-muted rounded-xl p-1">
+      <div className="flex gap-1 mx-4 bg-muted rounded-xl p-1">
         {(["instructions", "progress", "submit"] as const).map((t) => (
           <button
             key={t}
@@ -105,7 +131,7 @@ export default function ActiveWorkspace() {
       </div>
 
       {/* Tab content */}
-      <div className="px-4 mt-4 space-y-3">
+      <div className="px-4 mt-4 space-y-3 pb-24">
         {tab === "instructions" && (
           <div className="bg-card rounded-xl border border-border p-4">
             <h3 className="font-display font-semibold text-sm mb-3 flex items-center gap-2">
@@ -114,9 +140,12 @@ export default function ActiveWorkspace() {
             </h3>
             <div className="space-y-2">
               {task.instructions.split("\n").map((line, i) => (
-                <p key={i} className="text-sm text-muted-foreground leading-relaxed">
-                  {line}
-                </p>
+                <div key={i} className="flex items-start gap-2">
+                  <CheckCircle2 className={`h-4 w-4 shrink-0 mt-0.5 ${i < task.updates.length ? "text-primary" : "text-muted"}`} />
+                  <p className={`text-sm leading-relaxed ${i < task.updates.length ? "text-foreground" : "text-muted-foreground"}`}>
+                    {line}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
@@ -124,7 +153,6 @@ export default function ActiveWorkspace() {
 
         {tab === "progress" && (
           <>
-            {/* Existing updates */}
             <div className="space-y-2">
               {task.updates.map((u) => (
                 <div key={u.id} className="bg-card rounded-xl border border-border p-3 flex items-start gap-3">
@@ -139,7 +167,6 @@ export default function ActiveWorkspace() {
               ))}
             </div>
 
-            {/* Add update */}
             <div className="bg-card rounded-xl border border-border p-3 space-y-3">
               <Textarea
                 placeholder="What have you done so far?"
@@ -198,6 +225,15 @@ export default function ActiveWorkspace() {
               <Send className="h-4 w-4 mr-2" />
               Submit Work
             </Button>
+
+            {/* Next mission suggestion */}
+            <NextMissionCard
+              id="demo-3"
+              title="Survey 15 households in Ward 3"
+              estimatedTime="30 min"
+              distance="1.2 km"
+              tags={["research", "community"]}
+            />
           </div>
         )}
       </div>
