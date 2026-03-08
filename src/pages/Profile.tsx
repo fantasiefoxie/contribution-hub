@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
 import ScreenHeader from "@/components/shared/ScreenHeader";
-import QuickActionBar from "@/components/shared/QuickActionBar";
+
 import InterestSelector from "@/components/recommendation/InterestSelector";
 import { useUserInterests, useUpdateInterests } from "@/hooks/use-recommendations";
 
@@ -188,7 +188,7 @@ export default function Profile() {
       </div>
 
       {/* Sign out */}
-      <div className="mx-4 mt-4 pb-44">
+      <div className="mx-4 mt-4 pb-24">
         <Button
           variant="outline"
           onClick={() => {
@@ -201,14 +201,6 @@ export default function Profile() {
         </Button>
       </div>
 
-      {/* ═══ BOTTOM — Act: persistent actions ═══ */}
-      <QuickActionBar
-        actions={[
-          { icon: Zap, label: "Active Task", color: "text-secondary", bg: "bg-secondary/10", onClick: () => navigate("/active") },
-          { icon: Target, label: "Find Task", color: "text-primary", bg: "bg-primary/10", onClick: () => navigate("/") },
-          { icon: Settings, label: "Edit Profile", color: "text-muted-foreground", bg: "bg-muted", onClick: () => toast.info("Profile editing coming soon") },
-        ]}
-      />
     </AppShell>
   );
 }
