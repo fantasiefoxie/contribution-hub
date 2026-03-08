@@ -85,7 +85,7 @@ export default function MissionFeed() {
   return (
     <AppShell>
       {/* ═══ HEADER — See: context + progress ═══ */}
-      <div className="px-4 pt-5 pb-2">
+      <div className="px-4 pt-5 pb-2" data-walkthrough="welcome">
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-xl font-bold leading-tight">Mission Board</h1>
