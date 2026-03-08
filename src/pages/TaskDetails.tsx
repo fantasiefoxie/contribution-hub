@@ -160,12 +160,22 @@ export default function TaskDetails() {
           <div className="bg-muted rounded-xl p-3 text-center">
             <Clock className="h-4 w-4 text-accent mx-auto mb-1" />
             <p className="text-[10px] text-muted-foreground">Est. Time</p>
-            <p className="font-display font-semibold text-sm">2h</p>
+            <p className="font-display font-semibold text-sm">{ctx.estTime}</p>
           </div>
           <div className="bg-muted rounded-xl p-3 text-center">
-            <MapPin className="h-4 w-4 text-primary mx-auto mb-1" />
-            <p className="text-[10px] text-muted-foreground">Distance</p>
-            <p className="font-display font-semibold text-sm">1.2 km</p>
+            {ctx.isOnline ? (
+              <>
+                <Wifi className="h-4 w-4 text-primary mx-auto mb-1" />
+                <p className="text-[10px] text-muted-foreground">Location</p>
+                <p className="font-display font-semibold text-sm">Online</p>
+              </>
+            ) : (
+              <>
+                <MapPin className="h-4 w-4 text-primary mx-auto mb-1" />
+                <p className="text-[10px] text-muted-foreground">Distance</p>
+                <p className="font-display font-semibold text-sm">{ctx.distance ?? "—"}</p>
+              </>
+            )}
           </div>
         </div>
 
