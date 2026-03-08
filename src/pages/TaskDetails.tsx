@@ -1,13 +1,14 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, Flame, MapPin, Building2, Bookmark, Loader2, Users } from "lucide-react";
+import { ArrowLeft, Clock, Flame, MapPin, Building2, Bookmark, Loader2, Users, Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTask, useReserveTask, useConfirmClaim } from "@/hooks/use-tasks";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
 import SocialSignals from "@/components/mission/SocialSignals";
 import TeamMissionPanel from "@/components/team/TeamMissionPanel";
+import { getMockTask, getMockOrg, getMockInitiative, getMockTaskImpact, getMockEstTime, getMockDistance } from "@/lib/mock-data";
 
 function DifficultyBar({ level }: { level: number }) {
   return (
@@ -32,6 +33,18 @@ export default function TaskDetails() {
   const [isReserved, setIsReserved] = useState(false);
 
   const task = data?.task;
+
+  // Derive contextual data from mock lookups
+  const ctx = useMemo(() => {
+    const t = task ?? getMockTask(id ?? "");
+    const org = getMockOrg(t?.org_id ?? null);
+    const initiative = getMockInitiative(t?.initiative_id ?? null);
+    const impact = getMockTaskImpact(id ?? "");
+    const estTime = getMockEstTime(id ?? "");
+    const distance = getMockDistance(id ?? "");
+    const isOnline = !t?.latitude && !t?.longitude;
+    return { org, initiative, impact, estTime, distance, isOnline };
+  }, [task, id]);
 
   useEffect(() => {
     if (reservationTimer !== null && reservationTimer > 0) {
@@ -130,8 +143,11 @@ export default function TaskDetails() {
           <h1 className="font-display text-xl font-bold leading-tight">{t.title}</h1>
           <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
             <Building2 className="h-3.5 w-3.5" />
-            <span>Green City Initiative</span>
+            <span>{ctx.org?.name ?? "Community Project"}</span>
           </div>
+          {ctx.initiative && (
+            <p className="text-xs text-muted-foreground mt-1">Part of <span className="font-medium text-foreground">{ctx.initiative.title}</span></p>
+          )}
         </div>
 
         {/* Meta cards */}
@@ -144,12 +160,22 @@ export default function TaskDetails() {
           <div className="bg-muted rounded-xl p-3 text-center">
             <Clock className="h-4 w-4 text-accent mx-auto mb-1" />
             <p className="text-[10px] text-muted-foreground">Est. Time</p>
-            <p className="font-display font-semibold text-sm">2h</p>
+            <p className="font-display font-semibold text-sm">{ctx.estTime}</p>
           </div>
           <div className="bg-muted rounded-xl p-3 text-center">
-            <MapPin className="h-4 w-4 text-primary mx-auto mb-1" />
-            <p className="text-[10px] text-muted-foreground">Distance</p>
-            <p className="font-display font-semibold text-sm">1.2 km</p>
+            {ctx.isOnline ? (
+              <>
+                <Wifi className="h-4 w-4 text-primary mx-auto mb-1" />
+                <p className="text-[10px] text-muted-foreground">Location</p>
+                <p className="font-display font-semibold text-sm">Online</p>
+              </>
+            ) : (
+              <>
+                <MapPin className="h-4 w-4 text-primary mx-auto mb-1" />
+                <p className="text-[10px] text-muted-foreground">Distance</p>
+                <p className="font-display font-semibold text-sm">{ctx.distance ?? "—"}</p>
+              </>
+            )}
           </div>
         </div>
 
@@ -171,7 +197,7 @@ export default function TaskDetails() {
         {/* Impact */}
         <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
           <p className="text-xs text-muted-foreground mb-1">Impact</p>
-          <p className="font-display font-semibold text-primary text-lg">🌱 50kg waste removed</p>
+          <p className="font-display font-semibold text-primary text-lg">{ctx.impact}</p>
         </div>
 
         {/* Description */}
