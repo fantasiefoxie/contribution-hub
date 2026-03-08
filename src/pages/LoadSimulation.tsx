@@ -372,6 +372,9 @@ export default function LoadSimulation() {
               </TabsContent>
             </Tabs>
 
+            {/* Cost Estimation */}
+            <SingleCostPanel breakdown={singleCost} hints={costHints} scenarioName={scenario.name} />
+
             {/* Infrastructure Topology */}
             <Card>
               <CardHeader className="pb-2">
