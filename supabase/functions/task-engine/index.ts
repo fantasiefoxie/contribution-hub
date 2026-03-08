@@ -566,6 +566,84 @@ async function resolveAppeal(req: Request, appealId: string) {
   return json({ success: true, decision });
 }
 
+// ══════════════════════════════════════════════════════
+// ── TEAM MISSION ENDPOINTS ──
+// ══════════════════════════════════════════════════════
+
+// ── POST /tasks/:id/team/join ──
+async function joinTeam(req: Request, taskId: string) {
+  const supabase = getSupabase(req);
+  const user = await getUser(supabase);
+  if (!user) return err("Unauthorized", 401);
+
+  const serviceDb = getServiceSupabase();
+  const { data: task } = await serviceDb.from("tasks").select("is_team, team_target").eq("id", taskId).single();
+  if (!task) return err("Task not found", 404);
+  if (!task.is_team) return err("This is not a team mission");
+
+  // Check team capacity
+  if (task.team_target) {
+    const { count } = await serviceDb.from("team_members").select("*", { count: "exact", head: true }).eq("task_id", taskId);
+    if ((count ?? 0) >= task.team_target) return err("Team is full");
+  }
+
+  const { error } = await supabase.from("team_members").insert({ task_id: taskId, user_id: user.id });
+  if (error) {
+    if (error.code === "23505") return err("Already on this team");
+    return err(error.message, 500);
+  }
+
+  return json({ joined: true });
+}
+
+// ── POST /tasks/:id/team/leave ──
+async function leaveTeam(req: Request, taskId: string) {
+  const supabase = getSupabase(req);
+  const user = await getUser(supabase);
+  if (!user) return err("Unauthorized", 401);
+
+  const { error } = await supabase.from("team_members").delete().eq("task_id", taskId).eq("user_id", user.id);
+  if (error) return err(error.message, 500);
+  return json({ left: true });
+}
+
+// ── GET /tasks/:id/team ──
+async function getTeam(req: Request, taskId: string) {
+  const serviceDb = getServiceSupabase();
+
+  const { data: task } = await serviceDb.from("tasks").select("is_team, team_target").eq("id", taskId).single();
+  if (!task) return err("Task not found", 404);
+
+  const { data: members } = await serviceDb
+    .from("team_members")
+    .select("id, user_id, joined_at")
+    .eq("task_id", taskId)
+    .order("joined_at");
+
+  const userIds = (members ?? []).map((m: any) => m.user_id);
+  const { data: profiles } = userIds.length > 0
+    ? await serviceDb.from("profiles").select("id, display_name, avatar_url").in("id", userIds)
+    : { data: [] };
+
+  const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
+  const enriched = (members ?? []).map((m: any) => ({
+    ...m,
+    profile: profileMap[m.user_id] || { display_name: "Volunteer", avatar_url: null },
+  }));
+
+  return json({
+    team_target: task.team_target,
+    member_count: enriched.length,
+    members: enriched,
+  });
+}
+
+// ── GET /tasks/:id/team/invite ──
+async function getInviteLink(_req: Request, taskId: string) {
+  const code = btoa(`team:${taskId}:${Date.now()}`).replace(/=/g, "");
+  return json({ invite_url: `${Deno.env.get("SUPABASE_URL")?.replace("supabase.co", "lovable.app") || ""}/task/${taskId}?invite=${code}`, code });
+}
+
 // ── Router ──
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -577,12 +655,10 @@ Deno.serve(async (req) => {
 
   try {
     // ── Validation routes ──
-    // GET /task-engine/validations/pending
     if (req.method === "GET" && pathParts[0] === "validations" && pathParts[1] === "pending") {
       return await listPendingValidations(req);
     }
 
-    // POST /task-engine/submissions/:id/approve|reject|request-clarification
     if (req.method === "POST" && pathParts[0] === "submissions" && pathParts.length === 3) {
       const subId = pathParts[1];
       switch (pathParts[2]) {
@@ -592,14 +668,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    // POST /task-engine/appeals
     if (req.method === "POST" && pathParts[0] === "appeals" && pathParts.length === 1) {
       return await createAppeal(req);
     }
 
-    // POST /task-engine/appeals/:id/resolve
     if (req.method === "POST" && pathParts[0] === "appeals" && pathParts.length === 3 && pathParts[2] === "resolve") {
       return await resolveAppeal(req, pathParts[1]);
+    }
+
+    // ── Team routes ──
+    if (pathParts.length >= 2 && pathParts[1] === "team") {
+      const taskId = pathParts[0];
+      if (req.method === "POST" && pathParts[2] === "join") return await joinTeam(req, taskId);
+      if (req.method === "POST" && pathParts[2] === "leave") return await leaveTeam(req, taskId);
+      if (req.method === "GET" && pathParts.length === 2) return await getTeam(req, taskId);
+      if (req.method === "GET" && pathParts[2] === "invite") return await getInviteLink(req, taskId);
     }
 
     // ── Task routes ──

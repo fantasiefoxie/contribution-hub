@@ -74,3 +74,42 @@ export function useTaskSubmissions(taskId: string) {
     enabled: !!taskId,
   });
 }
+
+// Team hooks
+export function useTeamMembers(taskId: string) {
+  return useQuery({
+    queryKey: ["team-members", taskId],
+    queryFn: () => taskApi.getTeam(taskId),
+    enabled: !!taskId,
+  });
+}
+
+export function useJoinTeam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => taskApi.joinTeam(taskId),
+    onSuccess: (_, taskId) => {
+      qc.invalidateQueries({ queryKey: ["team-members", taskId] });
+      qc.invalidateQueries({ queryKey: ["task", taskId] });
+    },
+  });
+}
+
+export function useLeaveTeam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => taskApi.leaveTeam(taskId),
+    onSuccess: (_, taskId) => {
+      qc.invalidateQueries({ queryKey: ["team-members", taskId] });
+      qc.invalidateQueries({ queryKey: ["task", taskId] });
+    },
+  });
+}
+
+export function useTeamInviteLink(taskId: string) {
+  return useQuery({
+    queryKey: ["team-invite", taskId],
+    queryFn: () => taskApi.getInviteLink(taskId),
+    enabled: !!taskId,
+  });
+}
