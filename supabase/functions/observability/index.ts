@@ -47,6 +47,8 @@ async function platformHealth() {
     { count: validationBacklog },
     { data: todayEvents },
     { data: recentContribs },
+    { count: credentialsIssuedToday },
+    { count: initiativeJoinsToday },
   ] = await Promise.all([
     db.from("profiles").select("*", { count: "exact", head: true }),
     db.from("tasks").select("*", { count: "exact", head: true }),
@@ -54,8 +56,10 @@ async function platformHealth() {
     db.from("initiatives").select("*", { count: "exact", head: true }).eq("status", "active"),
     db.from("contributions").select("*", { count: "exact", head: true }).gte("created_at", todayISO),
     db.from("task_submissions").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    db.from("events").select("type, created_at").gte("created_at", todayISO).order("created_at", { ascending: false }).limit(100),
+    db.from("events").select("type, created_at").gte("created_at", todayISO).order("created_at", { ascending: false }).limit(200),
     db.from("contributions").select("user_id").gte("created_at", todayISO),
+    db.from("credentials").select("*", { count: "exact", head: true }).gte("issued_at", todayISO),
+    db.from("initiative_participants").select("*", { count: "exact", head: true }).gte("joined_at", todayISO),
   ]);
 
   const activeVolunteersToday = new Set((recentContribs ?? []).map((c: any) => c.user_id)).size;
@@ -66,6 +70,9 @@ async function platformHealth() {
     eventCounts[e.type] = (eventCounts[e.type] || 0) + 1;
   }
 
+  // Count role grants today from events
+  const rolesGrantedToday = (todayEvents ?? []).filter((e: any) => e.type === "RoleGranted").length;
+
   return json({
     total_volunteers: totalVolunteers ?? 0,
     active_volunteers_today: activeVolunteersToday,
@@ -74,6 +81,9 @@ async function platformHealth() {
     total_initiatives: totalInitiatives ?? 0,
     active_initiatives: activeInitiatives ?? 0,
     validation_backlog: validationBacklog ?? 0,
+    credentials_issued_today: credentialsIssuedToday ?? 0,
+    roles_granted_today: rolesGrantedToday,
+    initiative_joins_today: initiativeJoinsToday ?? 0,
     event_breakdown_today: eventCounts,
   });
 }

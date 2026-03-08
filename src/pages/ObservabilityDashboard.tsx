@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Activity, Users, CheckCircle2, AlertTriangle, Shield, Eye, Radio, Loader2, ChevronRight } from "lucide-react";
+import { ArrowLeft, Activity, Users, CheckCircle2, AlertTriangle, Shield, Eye, Radio, Loader2, Award, TrendingUp, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import AppShell from "@/components/layout/AppShell";
@@ -10,7 +10,12 @@ import { usePlatformHealth, useValidatorMonitoring, useFraudSignals, useEventStr
 const mockHealth = {
   total_volunteers: 342, active_volunteers_today: 47, total_tasks: 891,
   tasks_completed_today: 23, total_initiatives: 12, active_initiatives: 8,
-  validation_backlog: 15, event_breakdown_today: { TaskSubmitted: 31, ValidationApproved: 23, TaskClaimed: 18, ContributionRecorded: 23 },
+  validation_backlog: 15,
+  credentials_issued_today: 8, roles_granted_today: 3, initiative_joins_today: 14,
+  event_breakdown_today: {
+    TaskSubmitted: 31, ValidationApproved: 23, TaskClaimed: 18, ContributionRecorded: 23,
+    CredentialIssued: 8, RoleGranted: 3, InitiativeJoined: 14, InitiativePriorityUpdated: 2,
+  },
 };
 
 const mockValidators = {
@@ -32,11 +37,14 @@ const mockFraud = {
 
 const mockEvents = {
   events: [
-    { id: "e-1", type: "TaskSubmitted", entity_type: "task", actor_name: "Rahul S.", created_at: new Date(Date.now() - 60000).toISOString() },
-    { id: "e-2", type: "ValidationApproved", entity_type: "validation", actor_name: "Sarah C.", created_at: new Date(Date.now() - 120000).toISOString() },
-    { id: "e-3", type: "ContributionRecorded", entity_type: "contribution", actor_name: "System", created_at: new Date(Date.now() - 180000).toISOString() },
-    { id: "e-4", type: "TaskClaimed", entity_type: "task", actor_name: "Priya P.", created_at: new Date(Date.now() - 300000).toISOString() },
-    { id: "e-5", type: "TaskCreated", entity_type: "task", actor_name: "Carlos R.", created_at: new Date(Date.now() - 600000).toISOString() },
+    { id: "e-1", type: "CredentialIssued", entity_type: "credential", actor_name: "System", created_at: new Date(Date.now() - 30000).toISOString() },
+    { id: "e-2", type: "RoleGranted", entity_type: "user", actor_name: "Admin", created_at: new Date(Date.now() - 60000).toISOString() },
+    { id: "e-3", type: "InitiativeJoined", entity_type: "initiative", actor_name: "Rahul S.", created_at: new Date(Date.now() - 90000).toISOString() },
+    { id: "e-4", type: "TaskSubmitted", entity_type: "task", actor_name: "Rahul S.", created_at: new Date(Date.now() - 120000).toISOString() },
+    { id: "e-5", type: "ValidationApproved", entity_type: "validation", actor_name: "Sarah C.", created_at: new Date(Date.now() - 180000).toISOString() },
+    { id: "e-6", type: "ContributionRecorded", entity_type: "contribution", actor_name: "System", created_at: new Date(Date.now() - 240000).toISOString() },
+    { id: "e-7", type: "InitiativePriorityUpdated", entity_type: "initiative", actor_name: "Admin", created_at: new Date(Date.now() - 300000).toISOString() },
+    { id: "e-8", type: "TaskClaimed", entity_type: "task", actor_name: "Priya P.", created_at: new Date(Date.now() - 400000).toISOString() },
   ],
 };
 
@@ -48,6 +56,13 @@ const eventTypeColors: Record<string, string> = {
   TaskClaimed: "bg-muted text-muted-foreground",
   TaskCreated: "bg-muted text-muted-foreground",
   BadgeAwarded: "bg-secondary/10 text-secondary",
+  CredentialIssued: "bg-primary/10 text-primary",
+  CredentialRevoked: "bg-destructive/10 text-destructive",
+  RoleGranted: "bg-accent/10 text-accent",
+  RoleRevoked: "bg-destructive/10 text-destructive",
+  InitiativeJoined: "bg-secondary/10 text-secondary",
+  InitiativePriorityUpdated: "bg-muted text-muted-foreground",
+  InitiativeCreated: "bg-accent/10 text-accent",
 };
 
 const severityColors: Record<string, string> = {
@@ -137,6 +152,28 @@ export default function ObservabilityDashboard() {
                       <p className="text-[10px] text-muted-foreground">{label}</p>
                     </div>
                   ))}
+                </div>
+
+                {/* New consolidated metrics */}
+                <div className="bg-card rounded-2xl border border-border p-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Consolidated Metrics</p>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <Award className="h-4 w-4 text-primary mx-auto mb-1" />
+                      <p className="font-display font-bold text-lg text-primary">{health.credentials_issued_today ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Credentials Today</p>
+                    </div>
+                    <div>
+                      <TrendingUp className="h-4 w-4 text-accent mx-auto mb-1" />
+                      <p className="font-display font-bold text-lg text-accent">{health.roles_granted_today ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Promotions Today</p>
+                    </div>
+                    <div>
+                      <UserPlus className="h-4 w-4 text-secondary mx-auto mb-1" />
+                      <p className="font-display font-bold text-lg text-secondary">{health.initiative_joins_today ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Joins Today</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Platform totals */}

@@ -214,6 +214,101 @@ export type Database = {
           },
         ]
       }
+      credential_metadata: {
+        Row: {
+          created_at: string
+          credential_id: string
+          id: string
+          key: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          credential_id: string
+          id?: string
+          key: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          credential_id?: string
+          id?: string
+          key?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credential_metadata_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: false
+            referencedRelation: "credentials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credentials: {
+        Row: {
+          description: string | null
+          id: string
+          initiative_id: string | null
+          is_active: boolean
+          issued_at: string
+          issued_by: string | null
+          metadata: Json | null
+          org_id: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          initiative_id?: string | null
+          is_active?: boolean
+          issued_at?: string
+          issued_by?: string | null
+          metadata?: Json | null
+          org_id?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          initiative_id?: string | null
+          is_active?: boolean
+          issued_at?: string
+          issued_by?: string | null
+          metadata?: Json | null
+          org_id?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credentials_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credentials_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           actor_id: string | null
@@ -1095,6 +1190,13 @@ export type Database = {
         | "ValidationRejected"
         | "ContributionRecorded"
         | "BadgeAwarded"
+        | "CredentialIssued"
+        | "CredentialRevoked"
+        | "RoleGranted"
+        | "RoleRevoked"
+        | "InitiativeJoined"
+        | "InitiativePriorityUpdated"
+        | "InitiativeCreated"
       initiative_status: "draft" | "active" | "completed" | "cancelled"
       org_role: "member" | "validator" | "moderator" | "admin"
       task_status:
@@ -1248,6 +1350,13 @@ export const Constants = {
         "ValidationRejected",
         "ContributionRecorded",
         "BadgeAwarded",
+        "CredentialIssued",
+        "CredentialRevoked",
+        "RoleGranted",
+        "RoleRevoked",
+        "InitiativeJoined",
+        "InitiativePriorityUpdated",
+        "InitiativeCreated",
       ],
       initiative_status: ["draft", "active", "completed", "cancelled"],
       org_role: ["member", "validator", "moderator", "admin"],
