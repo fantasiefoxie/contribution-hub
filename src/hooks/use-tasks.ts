@@ -17,14 +17,19 @@ export function useTasks(params?: { status?: string; visibility?: string }) {
   });
 }
 
+const isMockId = (id: string) => id.startsWith("demo-");
+
 export function useTask(taskId: string, options?: { retry?: boolean | number }) {
   return useQuery({
     queryKey: ["task", taskId],
     queryFn: async () => {
+      if (isMockId(taskId)) {
+        const mock = getMockTask(taskId);
+        return { task: mock ?? null };
+      }
       try {
         return await taskApi.get(taskId);
       } catch {
-        // Graceful fallback to mock data
         const mock = getMockTask(taskId);
         if (mock) return { task: mock };
         return { task: null };
@@ -90,6 +95,7 @@ export function useTaskSubmissions(taskId: string) {
   return useQuery({
     queryKey: ["task-submissions", taskId],
     queryFn: async () => {
+      if (isMockId(taskId)) return { submissions: getMockSubmissions(taskId) };
       try {
         return await taskApi.getSubmissions(taskId);
       } catch {
@@ -106,6 +112,7 @@ export function useTeamMembers(taskId: string) {
   return useQuery({
     queryKey: ["team-members", taskId],
     queryFn: async () => {
+      if (isMockId(taskId)) return getMockTeam(taskId);
       try {
         return await taskApi.getTeam(taskId);
       } catch {
