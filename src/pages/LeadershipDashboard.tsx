@@ -376,7 +376,8 @@ export default function LeadershipDashboard() {
             )}
           </div>
         )}
-      </div>
+      </div>}
+
     </AppShell>
   );
 }
