@@ -27,7 +27,13 @@ export default function TeamMissionPanel({ taskId, teamTarget, isTeam }: TeamMis
   const progressPct = target > 0 ? Math.min(100, Math.round((memberCount / target) * 100)) : 0;
   const isFull = target > 0 && memberCount >= target;
 
+  const isMock = taskId.startsWith("demo-");
+
   const handleJoin = async () => {
+    if (isMock) {
+      toast.success("You joined the team! 🎉");
+      return;
+    }
     try {
       await joinMutation.mutateAsync(taskId);
       toast.success("You joined the team! 🎉");
