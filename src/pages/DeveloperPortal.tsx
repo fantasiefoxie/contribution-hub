@@ -172,6 +172,10 @@ export default function DeveloperPortal() {
               Filter with <code className="font-mono text-foreground">?version=1</code>.
             </p>
           </div>
+
+          {/* Endpoints */}
+          <div className="bg-card rounded-xl border border-border p-4">
+            <h3 className="font-display font-semibold text-sm mb-3">Endpoints</h3>
             <div className="space-y-2">
               {(docs?.endpoints ?? []).map((ep: any, i: number) => (
                 <div key={i} className="flex items-start gap-2 bg-muted rounded-lg p-2.5">
@@ -191,14 +195,6 @@ export default function DeveloperPortal() {
               ))}
             </div>
           </div>
-
-          {/* Rate Limits */}
-          <div className="bg-card rounded-xl border border-border p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="h-4 w-4 text-secondary" />
-              <h3 className="font-display font-semibold text-sm">Rate Limits</h3>
-            </div>
-            <p className="text-xs text-muted-foreground">Default: <span className="font-medium text-foreground">60 requests/minute</span> per API key. Configurable per key.</p>
           </div>
         </TabsContent>
 
