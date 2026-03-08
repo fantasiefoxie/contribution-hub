@@ -308,3 +308,35 @@ Delivered as signed POST requests:
 | `observability` | Monitoring | System health and performance metrics |
 | `recommendation-engine` | Discovery | Personalized task/initiative recommendations |
 | `platform-worker` | System | Background processing and maintenance |
+
+---
+
+## Interactive Walkthrough
+
+The platform includes a built-in interactive walkthrough for first-time users.
+
+### How It Works
+
+- **Auto-start:** Launches automatically on first visit to the Mission Board
+- **11 guided steps:** Covers the header, active mission banner, search, filters, task cards, quick actions, and all 5 navigation tabs
+- **Spotlight highlighting:** Each step highlights the target element with a cutout overlay and animated ring
+- **Keyboard navigation:** Arrow keys, Enter to advance, Escape to skip
+- **Persistent state:** Completion stored in `localStorage` (`cos_walkthrough_completed`)
+- **Restart anytime:** Floating help button (?) in bottom-right corner of the home screen
+
+### Architecture
+
+| File | Purpose |
+|------|---------|
+| `src/contexts/WalkthroughContext.tsx` | State management, step definitions, localStorage persistence |
+| `src/components/walkthrough/WalkthroughOverlay.tsx` | SVG spotlight mask, tooltip positioning, keyboard handlers |
+| `src/components/walkthrough/WalkthroughTrigger.tsx` | Floating restart button |
+
+### Adding New Steps
+
+1. Add `data-walkthrough="your-key"` attribute to target element
+2. Add a step object to `WALKTHROUGH_STEPS` array in `WalkthroughContext.tsx`:
+   ```ts
+   { target: "[data-walkthrough='your-key']", title: "...", description: "...", placement: "bottom" }
+   ```
+3. Steps are shown in array order. Use `placement: "top" | "bottom" | "left" | "right"` to control tooltip position.
