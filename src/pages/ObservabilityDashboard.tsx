@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Activity, Users, CheckCircle2, AlertTriangle, Shield, Eye, Radio, Loader2, Award, TrendingUp, UserPlus } from "lucide-react";
+import { ArrowLeft, Activity, Users, CheckCircle2, AlertTriangle, Shield, Eye, Radio, Loader2, Award, TrendingUp, UserPlus, Brain, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import AppShell from "@/components/layout/AppShell";
-import { usePlatformHealth, useValidatorMonitoring, useFraudSignals, useEventStream } from "@/hooks/use-observability";
+import { usePlatformHealth, useValidatorMonitoring, useFraudSignals, useEventStream, useAiMetrics } from "@/hooks/use-observability";
 
 // ── Mock data ──
 const mockHealth = {
