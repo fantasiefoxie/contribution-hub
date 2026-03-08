@@ -124,6 +124,14 @@ export default function LoadSimulation() {
     [timeline, hasData]
   );
 
+  // Cost estimation for single scenario
+  const singleCost = useMemo(() => {
+    const infEst = estimateInfra(scenario);
+    return estimateCost(infEst, scenario);
+  }, [scenario]);
+
+  const costHints = useMemo(() => getCostHints(singleCost, scenario), [singleCost, scenario]);
+
   // Comparison summaries
   const comparisonSummaries = useMemo<ScenarioSummary[]>(() => {
     if (!comparisonMode) return [];
