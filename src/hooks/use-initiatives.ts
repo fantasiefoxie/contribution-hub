@@ -1,17 +1,39 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { initiativeApi, type CreateInitiativeInput, type GenerateTasksInput } from "@/lib/initiative-api";
+import { mockInitiatives, mockInitiativeProgress, mockTasks } from "@/lib/mock-data";
 
 export function useInitiatives(params?: { status?: string; is_micro?: string }) {
   return useQuery({
     queryKey: ["initiatives", params],
-    queryFn: () => initiativeApi.list(params),
+    queryFn: async () => {
+      try {
+        const data = await initiativeApi.list(params);
+        if (!data?.initiatives?.length) return { initiatives: mockInitiatives };
+        return data;
+      } catch {
+        return { initiatives: mockInitiatives };
+      }
+    },
+    retry: false,
   });
 }
 
 export function useInitiative(id: string) {
   return useQuery({
     queryKey: ["initiative", id],
-    queryFn: () => initiativeApi.get(id),
+    queryFn: async () => {
+      try {
+        return await initiativeApi.get(id);
+      } catch {
+        const mock = mockInitiatives.find((i) => i.id === id || i.slug === id);
+        if (mock) {
+          const progress = mockInitiativeProgress[mock.id];
+          const tasks = mockTasks.filter((t) => t.initiative_id === mock.id);
+          return { initiative: mock, progress, tasks, projects: [], regions: [] };
+        }
+        return { initiative: null };
+      }
+    },
     enabled: !!id,
     retry: false,
     meta: { suppressError: true },
