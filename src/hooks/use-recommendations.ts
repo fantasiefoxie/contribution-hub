@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "@/hooks/use-session";
+import { useAuth } from "@/contexts/AuthContext";
 import { recommendationApi } from "@/lib/recommendation-api";
 
 export function useMarketplaceFeed(params?: { passport?: boolean }) {
@@ -19,11 +19,11 @@ export function useNextMission(lastTaskId?: string) {
 }
 
 export function useUserInterests() {
-  const userId = useSession();
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["user-interests", userId],
+    queryKey: ["user-interests", user?.id],
     queryFn: () => recommendationApi.getInterests(),
-    enabled: !!userId,
+    enabled: !!user,
     retry: false,
     meta: { suppressError: true },
   });

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Star, ChevronRight, Users, CheckCircle2, Clock, Loader2, Crown, Award, Eye, Gavel, LogIn } from "lucide-react";
+import { ArrowLeft, Shield, Star, ChevronRight, Users, CheckCircle2, Clock, Loader2, Crown, Award, Eye, Gavel } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import AppShell from "@/components/layout/AppShell";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { useMyProgression, useLeadershipOpportunities, useLeaderboard, useRequestPromotion } from "@/hooks/use-leadership";
-import { useSession } from "@/hooks/use-session";
 
 const tierIcons: Record<string, typeof Shield> = {
   volunteer: Users,
@@ -97,7 +97,6 @@ type Tab = "progression" | "opportunities" | "leaderboard";
 
 export default function LeadershipDashboard() {
   const navigate = useNavigate();
-  const userId = useSession();
   const [tab, setTab] = useState<Tab>("progression");
   const { data: progData, isLoading: loadingProg } = useMyProgression();
   const { data: oppsData, isLoading: loadingOpps } = useLeadershipOpportunities();
@@ -133,20 +132,8 @@ export default function LeadershipDashboard() {
         </div>
       </div>
 
-      {!userId && (
-        <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <LogIn className="h-7 w-7 text-primary" />
-          </div>
-          <div>
-            <p className="font-display font-semibold text-base">Sign in to view your progression</p>
-            <p className="text-xs text-muted-foreground mt-1">Log in to track your leadership journey and claim promotions.</p>
-          </div>
-          <Button onClick={() => navigate("/")} className="rounded-xl">Sign In</Button>
-        </div>
-      )}
-
-      {userId && <div className="px-4 pt-5 pb-32">
+      <ProtectedRoute>
+      <div className="px-4 pt-5 pb-32">
         {/* Current Status */}
         <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl border border-primary/10 p-5 mb-5">
           <div className="flex items-center gap-3 mb-3">
@@ -376,7 +363,8 @@ export default function LeadershipDashboard() {
             )}
           </div>
         )}
-      </div>}
+      </div>
+      </ProtectedRoute>
 
     </AppShell>
   );

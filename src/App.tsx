@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import MissionFeed from "./pages/MissionFeed";
 import TaskDetails from "./pages/TaskDetails";
@@ -44,32 +45,34 @@ const App = () => (
   <ErrorBoundary>
     <ThemeProvider defaultTheme="system">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-            <Route path="/" element={<MissionFeed />} />
-            <Route path="/task/:id" element={<TaskDetails />} />
-            <Route path="/active" element={<ActiveWorkspace />} />
-            <Route path="/contributions" element={<Contributions />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/validate" element={<ValidationQueue />} />
-            <Route path="/validate/:id" element={<SubmissionReview />} />
-            <Route path="/initiatives" element={<InitiativeDiscovery />} />
-            <Route path="/initiatives/create" element={<InitiativeBuilder />} />
-            <Route path="/initiatives/:id" element={<InitiativeDashboard />} />
-            <Route path="/initiatives/:id/ops" element={<CampaignOps />} />
-            <Route path="/leadership" element={<LeadershipDashboard />} />
-            <Route path="/observability" element={<ObservabilityDashboard />} />
-            <Route path="/transparency" element={<TransparencyPage />} />
-            <Route path="/developers" element={<DeveloperPortal />} />
-            <Route path="/load-simulation" element={<LoadSimulation />} />
-            <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+              <Route path="/" element={<MissionFeed />} />
+              <Route path="/task/:id" element={<TaskDetails />} />
+              <Route path="/active" element={<ActiveWorkspace />} />
+              <Route path="/contributions" element={<Contributions />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/validate" element={<ValidationQueue />} />
+              <Route path="/validate/:id" element={<SubmissionReview />} />
+              <Route path="/initiatives" element={<InitiativeDiscovery />} />
+              <Route path="/initiatives/create" element={<InitiativeBuilder />} />
+              <Route path="/initiatives/:id" element={<InitiativeDashboard />} />
+              <Route path="/initiatives/:id/ops" element={<CampaignOps />} />
+              <Route path="/leadership" element={<LeadershipDashboard />} />
+              <Route path="/observability" element={<ObservabilityDashboard />} />
+              <Route path="/transparency" element={<TransparencyPage />} />
+              <Route path="/developers" element={<DeveloperPortal />} />
+              <Route path="/load-simulation" element={<LoadSimulation />} />
+              <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   </ErrorBoundary>
