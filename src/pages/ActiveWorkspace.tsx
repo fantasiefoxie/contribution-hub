@@ -180,7 +180,17 @@ export default function ActiveWorkspace() {
         </div>
       </div>
 
-      {/* ═══ SECTION 2: Focus Task ═══ */}
+      {/* ═══ SECTION 2: Quick Impact Micro-Missions ═══ */}
+      <QuickImpactFeed
+        missions={mockMicroMissions}
+        onComplete={(id) => {
+          const m = mockMicroMissions.find((mm) => mm.id === id);
+          if (m) setMicroPoints((p) => p + m.points);
+          triggerProgress();
+        }}
+      />
+
+      {/* ═══ SECTION 3: Focus Task ═══ */}
       <div className="px-4 mb-3">
         {focusTask ? (
           <FocusTaskCard
