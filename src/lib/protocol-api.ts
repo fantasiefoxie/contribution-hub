@@ -33,4 +33,28 @@ export const protocolApi = {
   listWebhooks: () => invoke("/webhooks", "GET"),
   createWebhook: (input: { api_key_id: string; url: string; events: string[] }) =>
     invoke("/webhooks", "POST", input),
+
+  // Credentials
+  listCredentials: (params?: { user_id?: string; type?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.user_id) qs.set("user_id", params.user_id);
+    if (params?.type) qs.set("type", params.type);
+    const q = qs.toString();
+    return invoke(`/credentials${q ? `?${q}` : ""}`, "GET");
+  },
+  getCredential: (id: string) => invoke(`/credentials/${id}`, "GET"),
+  issueCredential: (input: { target_user_id: string; title: string; type?: string; initiative_id?: string; org_id?: string; description?: string; metadata?: Record<string, unknown>; metadata_entries?: { key: string; value: string }[] }) =>
+    invoke("/credentials", "POST", input),
+  revokeCredential: (id: string) => invoke(`/credentials/${id}`, "DELETE"),
+
+  // Roles
+  listRoles: (userId?: string) => invoke(`/roles${userId ? `?user_id=${userId}` : ""}`, "GET"),
+  grantRole: (input: { target_user_id: string; role: string }) => invoke("/roles/grant", "POST", input),
+  revokeRole: (input: { target_user_id: string; role: string }) => invoke("/roles/revoke", "POST", input),
+
+  // Initiatives (extended)
+  joinInitiative: (initiativeId: string) => invoke(`/initiatives/${initiativeId}/join`, "POST"),
+  getInitiativePriority: (initiativeId: string) => invoke(`/initiatives/${initiativeId}/priority`, "GET"),
+  updateInitiativePriority: (initiativeId: string, input: { priority_score?: number; volunteer_target?: number; featured?: boolean }) =>
+    invoke(`/initiatives/${initiativeId}/priority`, "PUT", input),
 };
