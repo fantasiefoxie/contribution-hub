@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Settings, LogOut, ChevronRight, Shield, MapPin, Loader2, Crown, Star, Eye, Gavel, Users as UsersIcon } from "lucide-react";
+import { User, Settings, LogOut, ChevronRight, Shield, MapPin, Loader2, Crown, Star, Eye, Gavel, Users as UsersIcon, Bookmark, Building2, BellRing, Lock, HelpCircle, BarChart3, Globe, Code2, ShieldCheck } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
