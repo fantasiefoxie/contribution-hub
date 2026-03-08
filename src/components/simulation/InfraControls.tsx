@@ -47,9 +47,11 @@ function HealthDot({ status }: { status: "healthy" | "warning" | "critical" }) {
 
 const presetMeta: { key: string; label: string; icon: typeof Zap }[] = [
   { key: "small_ngo", label: "Small NGO", icon: Building2 },
-  { key: "city_survey", label: "City Survey", icon: Zap },
+  { key: "city_survey_10k", label: "City 10K", icon: Zap },
+  { key: "city_survey", label: "City 50K", icon: Zap },
   { key: "disaster_response", label: "Disaster Surge", icon: AlertTriangle },
   { key: "national", label: "National 200K", icon: Globe },
+  { key: "global_network", label: "Global 1M", icon: Globe },
 ];
 
 export default function InfraControls({
