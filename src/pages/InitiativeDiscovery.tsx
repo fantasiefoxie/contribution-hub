@@ -305,7 +305,7 @@ export default function InitiativeDiscovery() {
                 </h2>
                 {section.key === "featured" ? (
                   <div className="px-4">
-                    <FeaturedCarousel items={section.items} onSelect={(id) => navigate(`/initiatives/${id}`)} />
+                    <FeaturedCarousel items={section.items} onSelect={(id, slug) => navigate(`/initiatives/${slug || id}`)} />
                   </div>
                 ) : (
                   <div className="px-4 space-y-2">
