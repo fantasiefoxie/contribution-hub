@@ -5,8 +5,8 @@ const FUNCTION_NAME = "task-engine";
 async function invoke(path: string, method: string, body?: unknown) {
   const { data: { session } } = await supabase.auth.getSession();
   
-  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-  const url = `https://${projectId}.supabase.co/functions/v1/${FUNCTION_NAME}${path}`;
+  const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const url = `${baseUrl}/functions/v1/${FUNCTION_NAME}${path}`;
   
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
