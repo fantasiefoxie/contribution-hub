@@ -130,44 +130,8 @@ export default function ActiveWorkspace() {
     );
   }
 
-  // ── Bottom action bar ──
-  const bottomBar = (
-    <div className="bg-card/95 backdrop-blur-xl border-t border-border/60 px-4 py-3">
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          className="flex-1 h-12 rounded-2xl text-xs gap-1.5 border-accent/30 text-accent hover:bg-accent/5 transition-all duration-200 active:scale-95"
-          onClick={() => {
-            const t = tasks.find((t) => t.status === "in_progress") || tasks.find((t) => t.status === "open");
-            if (t) document.getElementById("focus-task")?.scrollIntoView({ behavior: "smooth" });
-            else toast.info("No open tasks");
-          }}
-        >
-          <BarChart3 className="h-4 w-4" /> Progress
-        </Button>
-        <Button
-          className="flex-1 h-12 rounded-2xl text-xs gap-1.5 bg-primary hover:bg-primary/90 shadow-card transition-all duration-200 active:scale-95"
-          onClick={() => {
-            const t = tasks.find((t) => t.status === "in_progress");
-            if (t) handleSubmit(t.id, "Task completed");
-            else toast.info("No tasks ready to submit");
-          }}
-        >
-          <Send className="h-4 w-4" /> Submit
-        </Button>
-        <Button
-          variant="outline"
-          className="h-12 w-12 rounded-2xl border-secondary/30 text-secondary hover:bg-secondary/5 p-0 transition-all duration-200 active:scale-95"
-          onClick={handlePhotoUpload}
-        >
-          <Camera className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-
   return (
-    <AppShell bottomBar={bottomBar}>
+    <AppShell>
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" />
 
       {/* Success flash */}
