@@ -195,7 +195,6 @@ export default function DeveloperPortal() {
               ))}
             </div>
           </div>
-          </div>
         </TabsContent>
 
         {/* ── API Keys Tab ── */}
