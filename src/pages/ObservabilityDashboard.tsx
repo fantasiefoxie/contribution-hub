@@ -80,7 +80,7 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(mins / 60)}h ago`;
 }
 
-type Tab = "health" | "validators" | "fraud" | "events";
+type Tab = "health" | "validators" | "fraud" | "events" | "ai";
 
 export default function ObservabilityDashboard() {
   const navigate = useNavigate();
@@ -89,6 +89,7 @@ export default function ObservabilityDashboard() {
   const { data: valData, isLoading: loadingVal } = useValidatorMonitoring();
   const { data: fraudData, isLoading: loadingFraud } = useFraudSignals();
   const { data: eventData, isLoading: loadingEvents } = useEventStream(30);
+  const { data: aiData, isLoading: loadingAi } = useAiMetrics();
 
   const health = healthData?.total_volunteers ? healthData : mockHealth;
   const validators = valData?.validators?.length > 0 ? valData : mockValidators;
