@@ -140,7 +140,7 @@ export default function MissionFeed() {
       </div>
 
       {/* ═══ CONTENT — Decide: filter + scan ═══ */}
-      <div className="px-4 mb-3">
+      <div className="px-4 mb-3" data-walkthrough="filters">
         <FilterChipsBar<FeedFilter> options={feedFilters} active={activeFilter} onChange={setActiveFilter} />
       </div>
 
