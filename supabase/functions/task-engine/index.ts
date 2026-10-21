@@ -325,6 +325,7 @@ async function approveSubmission(req: Request, submissionId: string) {
 
   const { data: submission } = await serviceDb.from("task_submissions").select("*, tasks(*)").eq("id", submissionId).single();
   if (!submission) return err("Submission not found", 404);
+  if (submission.status !== "pending") return err(`Submission is already ${submission.status}`, 409);
 
   const task = (submission as any).tasks;
   if (!task) return err("Task not found", 404);
@@ -333,13 +334,19 @@ async function approveSubmission(req: Request, submissionId: string) {
   if (submission.user_id === user.id) return err("Cannot validate your own submission", 403);
   if (task.created_by === user.id) return err("Cannot validate a task you created", 403);
 
-  // Verify validator is org member with appropriate role
+  // Verify validator is org member with appropriate role, or has global validator role for community tasks
   if (task.org_id) {
     const { data: membership } = await serviceDb
       .from("org_members").select("role")
       .eq("user_id", user.id).eq("org_id", task.org_id)
       .in("role", ["validator", "admin", "moderator"]).single();
     if (!membership) return err("Not authorized to validate for this organization", 403);
+  } else {
+    const { data: hasValidatorRole } = await serviceDb.rpc("has_role", { _user_id: user.id, _role: "validator" });
+    const { data: hasAdminRole } = await serviceDb.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    if (!hasValidatorRole && !hasAdminRole) {
+      return err("Not authorized to validate community tasks without organization", 403);
+    }
   }
 
   const body = await req.json().catch(() => ({}));
@@ -409,6 +416,7 @@ async function rejectSubmission(req: Request, submissionId: string) {
 
   const { data: submission } = await serviceDb.from("task_submissions").select("*, tasks(*)").eq("id", submissionId).single();
   if (!submission) return err("Submission not found", 404);
+  if (submission.status !== "pending") return err(`Submission is already ${submission.status}`, 409);
 
   const task = (submission as any).tasks;
   if (!task) return err("Task not found", 404);
@@ -422,6 +430,12 @@ async function rejectSubmission(req: Request, submissionId: string) {
       .eq("user_id", user.id).eq("org_id", task.org_id)
       .in("role", ["validator", "admin", "moderator"]).single();
     if (!membership) return err("Not authorized to validate for this organization", 403);
+  } else {
+    const { data: hasValidatorRole } = await serviceDb.rpc("has_role", { _user_id: user.id, _role: "validator" });
+    const { data: hasAdminRole } = await serviceDb.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    if (!hasValidatorRole && !hasAdminRole) {
+      return err("Not authorized to validate community tasks without organization", 403);
+    }
   }
 
   const body = await req.json().catch(() => ({}));
@@ -459,9 +473,26 @@ async function requestClarification(req: Request, submissionId: string) {
 
   const { data: submission } = await serviceDb.from("task_submissions").select("*, tasks(*)").eq("id", submissionId).single();
   if (!submission) return err("Submission not found", 404);
+  if (submission.status !== "pending") return err(`Submission is already ${submission.status}`, 409);
 
   const task = (submission as any).tasks;
+  if (!task) return err("Task not found", 404);
   if (submission.user_id === user.id) return err("Cannot request clarification on your own submission", 403);
+  if (task.created_by === user.id) return err("Cannot validate a task you created", 403);
+
+  if (task.org_id) {
+    const { data: membership } = await serviceDb
+      .from("org_members").select("role")
+      .eq("user_id", user.id).eq("org_id", task.org_id)
+      .in("role", ["validator", "admin", "moderator"]).single();
+    if (!membership) return err("Not authorized to validate for this organization", 403);
+  } else {
+    const { data: hasValidatorRole } = await serviceDb.rpc("has_role", { _user_id: user.id, _role: "validator" });
+    const { data: hasAdminRole } = await serviceDb.rpc("has_role", { _user_id: user.id, _role: "admin" });
+    if (!hasValidatorRole && !hasAdminRole) {
+      return err("Not authorized to validate community tasks without organization", 403);
+    }
+  }
 
   const body = await req.json().catch(() => ({}));
   const feedback = body.feedback?.trim() || null;
