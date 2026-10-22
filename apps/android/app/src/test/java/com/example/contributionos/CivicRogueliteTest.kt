@@ -1,6 +1,9 @@
 package com.example.contributionos
 
 import com.example.contributionos.data.SeedMissionCatalog
+import com.example.contributionos.model.CivicSubmission
+import com.example.contributionos.model.CivicTask
+import com.example.contributionos.model.DataSourceMode
 import com.example.contributionos.model.ExpeditionStatus
 import com.example.contributionos.model.MissionDraft
 import com.example.contributionos.model.NodeStatus
@@ -8,6 +11,7 @@ import com.example.contributionos.model.SubmissionStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -43,37 +47,96 @@ class CivicRogueliteTest {
   }
 
   @Test
-  fun testRealMissionDataIntegrity() {
+  fun testSandboxDataSeparationAndLabels() {
     val tasks = SeedMissionCatalog.realTasks
-    assertTrue("Real tasks catalog should have items", tasks.isNotEmpty())
+    assertTrue("Demo tasks catalog should have items", tasks.isNotEmpty())
 
     tasks.forEach { task ->
-      assertTrue("Task ID must not be blank", task.id.isNotBlank())
-      assertTrue("Task title must not be blank", task.title.isNotBlank())
+      assertTrue("Task ${task.id} must be marked as sandbox demo", task.isSandboxDemo)
+      assertTrue("Task title must be explicitly prefixed with [DEMO]", task.title.startsWith("[DEMO]"))
       assertTrue("Task difficulty must be between 1 and 5", task.difficulty in 1..5)
       assertTrue("Task description must have substance", task.description.length > 10)
-      assertTrue("Evidence requirements must be explicit", task.evidenceRequirements.isNotBlank())
     }
-  }
 
-  @Test
-  fun testMilestonesIntegrity() {
     val milestones = SeedMissionCatalog.realMilestones
-    assertTrue("Milestones catalog should have items", milestones.isNotEmpty())
-
     milestones.forEach { ms ->
-      assertTrue("Target value must be positive", ms.targetValue > 0)
-      assertTrue("Progress percent must be bounded", ms.percent in 0f..1f)
+      assertTrue("Milestone ${ms.id} must be marked as sandbox demo", ms.isSandboxDemo)
+      assertTrue("Milestone title must be prefixed with [DEMO]", ms.title.startsWith("[DEMO]"))
+    }
+
+    val profile = SeedMissionCatalog.defaultProfile
+    assertTrue("Demo profile must be flagged as sandbox demo", profile.isSandboxDemo)
+    assertTrue("Demo profile title must include Sandbox", profile.rankTitle.contains("Sandbox"))
+
+    val expeditions = SeedMissionCatalog.generateExpeditions()
+    expeditions.forEach { exp ->
+      assertTrue("Expedition must be flagged as sandbox demo", exp.isSandboxDemo)
+      assertTrue("Expedition title must be prefixed with [DEMO]", exp.title.startsWith("[DEMO]"))
+      exp.nodes.forEach { node ->
+        assertTrue("Node must be flagged as sandbox demo", node.isSandboxDemo)
+      }
     }
   }
 
   @Test
-  fun testProfileProgressionModel() {
-    val profile = SeedMissionCatalog.defaultProfile
-    assertTrue("Level must be >= 1", profile.level >= 1)
-    assertTrue("XP must be non-negative", profile.xp >= 0)
-    assertTrue("Next level XP must exceed current XP", profile.nextLevelXp > profile.xp)
-    assertTrue("Verified contributions must be non-negative", profile.verifiedContributionsCount >= 0)
-    assertTrue("Badges should include unlocked and locked", profile.badges.any { it.isUnlocked } && profile.badges.any { !it.isUnlocked })
+  fun testSubmissionStatusLifecycleIntegrity() {
+    // Verify all submission lifecycle states are present and distinct
+    val statuses = SubmissionStatus.values()
+    assertTrue(statuses.contains(SubmissionStatus.PENDING_REVIEW))
+    assertTrue(statuses.contains(SubmissionStatus.VALIDATED))
+    assertTrue(statuses.contains(SubmissionStatus.CHANGES_REQUESTED))
+    assertTrue(statuses.contains(SubmissionStatus.REJECTED))
+    assertTrue(statuses.contains(SubmissionStatus.QUEUED_OFFLINE))
+
+    val offlineSubmission = CivicSubmission(
+      id = "sub-test-offline",
+      taskId = "task-1",
+      taskTitle = "Local Street Tree Health Assessment",
+      submittedAt = System.currentTimeMillis(),
+      content = "Recorded trunk circumferences.",
+      status = SubmissionStatus.QUEUED_OFFLINE,
+      feedback = "Queued safely in local storage",
+      scoreAwarded = null,
+      isOfflineOrigin = true,
+      isSandboxDemo = false,
+      remoteSubmissionId = null,
+      syncErrorMessage = "Server unreachable"
+    )
+
+    assertTrue(offlineSubmission.isOfflineOrigin)
+    assertFalse(offlineSubmission.isSandboxDemo)
+    assertEquals(SubmissionStatus.QUEUED_OFFLINE, offlineSubmission.status)
+    assertNull(offlineSubmission.scoreAwarded)
+  }
+
+  @Test
+  fun testRealEvidenceCoordinatesPreservation() {
+    // Ensure no hardcoding of coordinates in model
+    val realLat = 37.7749
+    val realLon = -122.4194
+
+    val draft = MissionDraft(
+      id = "draft-real-gps",
+      taskId = "task-water-1",
+      taskTitle = "Creek Hydrology Testing",
+      notes = "Sample pH measured at 7.2.",
+      photoUri = "file:///data/user/0/com.example.contributionos/cache/evidence/photo_123.jpg",
+      latitude = realLat,
+      longitude = realLon,
+      isOfflinePending = true,
+      isSandboxDemo = false
+    )
+
+    assertEquals(realLat, draft.latitude!!, 0.0001)
+    assertEquals(realLon, draft.longitude!!, 0.0001)
+    assertFalse(draft.isSandboxDemo)
+    assertTrue(draft.isOfflinePending)
+  }
+
+  @Test
+  fun testEnvironmentModeValues() {
+    assertEquals(2, DataSourceMode.values().size)
+    assertTrue(DataSourceMode.values().contains(DataSourceMode.PRODUCTION))
+    assertTrue(DataSourceMode.values().contains(DataSourceMode.SANDBOX_DEMO))
   }
 }

@@ -228,13 +228,29 @@ async function submitTask(req: Request, taskId: string) {
   const { content, attachments } = body;
   if (!content || typeof content !== "string" || content.trim().length === 0) return err("Submission content is required");
 
+  // Atomically transition task to validation_pending to prevent duplicate concurrent submissions
+  const { data: updatedTask, error: updateTaskErr } = await supabase
+    .from("tasks")
+    .update({ status: "validation_pending" })
+    .eq("id", taskId)
+    .in("status", ["claimed", "in_progress"])
+    .select()
+    .maybeSingle();
+
+  if (updateTaskErr || !updatedTask) {
+    return err("Task is not in a submittable state or has already been submitted", 409);
+  }
+
   const { data: submission, error } = await supabase
     .from("task_submissions")
     .insert({ task_id: taskId, user_id: user.id, content: content.trim(), attachments: attachments || [] })
     .select().single();
 
-  if (error) return err(error.message, 500);
-  await supabase.from("tasks").update({ status: "validation_pending" }).eq("id", taskId);
+  if (error) {
+    // Rollback task status if submission insertion failed
+    await supabase.from("tasks").update({ status: task.status }).eq("id", taskId);
+    return err(error.message, 500);
+  }
   await emitEvent(supabase, "TaskSubmitted", user.id, "task", taskId, { submission_id: submission.id });
   return json({ submission }, 201);
 }
@@ -352,16 +368,30 @@ async function approveSubmission(req: Request, submissionId: string) {
   const body = await req.json().catch(() => ({}));
   const feedback = body.feedback?.trim() || null;
 
+  // Atomically claim this submission for validation transition to prevent double-approval race conditions
+  const { data: updatedSub, error: updateSubErr } = await serviceDb
+    .from("task_submissions")
+    .update({ status: "approved" })
+    .eq("id", submissionId)
+    .eq("status", "pending")
+    .select()
+    .maybeSingle();
+
+  if (updateSubErr || !updatedSub) {
+    return err("Submission is no longer pending or has already been reviewed", 409);
+  }
+
   // Create validation record
   const { data: validation, error: valErr } = await supabase
     .from("validations")
     .insert({ submission_id: submissionId, validator_id: user.id, decision: "approved", feedback })
     .select().single();
 
-  if (valErr) return err(valErr.message, 500);
-
-  // Update submission status
-  await serviceDb.from("task_submissions").update({ status: "approved" }).eq("id", submissionId);
+  if (valErr) {
+    // Rollback submission status if validation insertion failed
+    await serviceDb.from("task_submissions").update({ status: "pending" }).eq("id", submissionId);
+    return err(valErr.message, 500);
+  }
 
   // Update task status to validated
   await serviceDb.from("tasks").update({ status: "validated" }).eq("id", task.id);
@@ -442,14 +472,29 @@ async function rejectSubmission(req: Request, submissionId: string) {
   const feedback = body.feedback?.trim() || null;
   if (!feedback) return err("Feedback is required when rejecting");
 
+  // Atomically claim this submission for rejection to prevent race conditions
+  const { data: updatedSub, error: updateSubErr } = await serviceDb
+    .from("task_submissions")
+    .update({ status: "rejected" })
+    .eq("id", submissionId)
+    .eq("status", "pending")
+    .select()
+    .maybeSingle();
+
+  if (updateSubErr || !updatedSub) {
+    return err("Submission is no longer pending or has already been reviewed", 409);
+  }
+
   const { data: validation, error: valErr } = await supabase
     .from("validations")
     .insert({ submission_id: submissionId, validator_id: user.id, decision: "rejected", feedback })
     .select().single();
 
-  if (valErr) return err(valErr.message, 500);
+  if (valErr) {
+    await serviceDb.from("task_submissions").update({ status: "pending" }).eq("id", submissionId);
+    return err(valErr.message, 500);
+  }
 
-  await serviceDb.from("task_submissions").update({ status: "rejected" }).eq("id", submissionId);
   await serviceDb.from("tasks").update({ status: "rejected" }).eq("id", task.id);
 
   await emitEvent(supabase, "ValidationRejected", user.id, "validation", validation.id, {
@@ -498,14 +543,28 @@ async function requestClarification(req: Request, submissionId: string) {
   const feedback = body.feedback?.trim() || null;
   if (!feedback) return err("Feedback message is required");
 
+  // Atomically claim this submission for clarification requested to prevent race conditions
+  const { data: updatedSub, error: updateSubErr } = await serviceDb
+    .from("task_submissions")
+    .update({ status: "clarification_requested" })
+    .eq("id", submissionId)
+    .eq("status", "pending")
+    .select()
+    .maybeSingle();
+
+  if (updateSubErr || !updatedSub) {
+    return err("Submission is no longer pending or has already been reviewed", 409);
+  }
+
   const { data: validation, error: valErr } = await supabase
     .from("validations")
     .insert({ submission_id: submissionId, validator_id: user.id, decision: "clarification_requested", feedback })
     .select().single();
 
-  if (valErr) return err(valErr.message, 500);
-
-  await serviceDb.from("task_submissions").update({ status: "clarification_requested" }).eq("id", submissionId);
+  if (valErr) {
+    await serviceDb.from("task_submissions").update({ status: "pending" }).eq("id", submissionId);
+    return err(valErr.message, 500);
+  }
 
   await auditLog(supabase, "clarification_requested", user.id, "submission", submissionId, {
     task_id: task?.id, feedback,

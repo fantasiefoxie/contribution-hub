@@ -2,6 +2,7 @@ package com.example.contributionos.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,11 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,13 +24,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.contributionos.model.DataSourceMode
+import com.example.contributionos.theme.CivicAmber
 import com.example.contributionos.theme.CivicBorderSubtle
+import com.example.contributionos.theme.CivicCyan
 import com.example.contributionos.theme.CivicEmerald
 import com.example.contributionos.theme.CivicMidnightNavy
 import com.example.contributionos.theme.CivicSurfaceCard
 import com.example.contributionos.theme.CivicSurfaceDark
 import com.example.contributionos.theme.CivicSurfacePanel
-import com.example.contributionos.theme.NodeInProgress
 import com.example.contributionos.theme.TextMuted
 import com.example.contributionos.theme.TextPrimary
 import com.example.contributionos.theme.TextSecondary
@@ -44,57 +42,129 @@ fun CivicHeader(
   districtName: String,
   seed: Long,
   isLive: Boolean,
+  environmentMode: DataSourceMode = DataSourceMode.PRODUCTION,
+  onToggleMode: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
-  Row(
+  Column(
     modifier = modifier
       .fillMaxWidth()
       .background(CivicSurfaceDark)
-      .padding(horizontal = 16.dp, vertical = 10.dp),
-    horizontalArrangement = Arrangement.SpaceBetween,
-    verticalAlignment = Alignment.CenterVertically
   ) {
-    Column {
-      Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-          modifier = Modifier
-            .size(8.dp)
-            .clip(CircleShape)
-            .background(if (isLive) CivicEmerald else NodeInProgress)
-        )
-        Spacer(modifier = Modifier.width(6.dp))
+    // Mode Banner if in Sandbox Demo mode
+    if (environmentMode == DataSourceMode.SANDBOX_DEMO) {
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .background(CivicAmber.copy(alpha = 0.2f))
+          .padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
         Text(
-          text = if (isLive) "LIVE SUPABASE" else "DEV SANDBOX",
+          "⚠️ SANDBOX / DEMO SIMULATION (FIXTURE DATA)",
           fontSize = 11.sp,
-          fontWeight = FontWeight.Bold,
-          letterSpacing = 1.sp,
-          color = if (isLive) CivicEmerald else NodeInProgress
+          fontWeight = FontWeight.ExtraBold,
+          letterSpacing = 0.5.sp,
+          color = CivicAmber
         )
+        if (onToggleMode != null) {
+          Text(
+            "Switch to Live",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = CivicCyan,
+            modifier = Modifier
+              .clip(RoundedCornerShape(4.dp))
+              .clickable { onToggleMode() }
+              .padding(horizontal = 6.dp, vertical = 2.dp)
+          )
+        }
       }
-      Spacer(modifier = Modifier.height(2.dp))
-      Text(
-        text = districtName.uppercase(),
-        fontSize = 16.sp,
-        fontWeight = FontWeight.ExtraBold,
-        letterSpacing = 0.5.sp,
-        color = TextPrimary
-      )
     }
 
     Row(
-      verticalAlignment = Alignment.CenterVertically,
       modifier = Modifier
-        .clip(RoundedCornerShape(8.dp))
-        .background(CivicSurfacePanel)
-        .border(1.dp, CivicBorderSubtle, RoundedCornerShape(8.dp))
-        .padding(horizontal = 10.dp, vertical = 5.dp)
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 10.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
     ) {
-      Text(
-        text = "SEED #$seed",
-        fontSize = 12.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = TextSecondary
-      )
+      Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          val dotColor = if (environmentMode == DataSourceMode.SANDBOX_DEMO) {
+            CivicAmber
+          } else if (isLive) {
+            CivicEmerald
+          } else {
+            TextMuted
+          }
+
+          val statusLabel = if (environmentMode == DataSourceMode.SANDBOX_DEMO) {
+            "DEV SANDBOX"
+          } else if (isLive) {
+            "CIVIC REGISTRY (CONNECTED)"
+          } else {
+            "CIVIC REGISTRY (OFFLINE DRAFT)"
+          }
+
+          Box(
+            modifier = Modifier
+              .size(8.dp)
+              .clip(CircleShape)
+              .background(dotColor)
+          )
+          Spacer(modifier = Modifier.width(6.dp))
+          Text(
+            text = statusLabel,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp,
+            color = dotColor
+          )
+        }
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+          text = districtName.uppercase(),
+          fontSize = 16.sp,
+          fontWeight = FontWeight.ExtraBold,
+          letterSpacing = 0.5.sp,
+          color = TextPrimary
+        )
+      }
+
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+      ) {
+        if (onToggleMode != null && environmentMode == DataSourceMode.PRODUCTION) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(6.dp))
+              .background(CivicSurfacePanel)
+              .border(1.dp, CivicBorderSubtle, RoundedCornerShape(6.dp))
+              .clickable { onToggleMode() }
+              .padding(horizontal = 8.dp, vertical = 5.dp)
+          ) {
+            Text("Sandbox", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+          }
+        }
+
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(CivicSurfacePanel)
+            .border(1.dp, CivicBorderSubtle, RoundedCornerShape(6.dp))
+            .padding(horizontal = 8.dp, vertical = 5.dp)
+        ) {
+          Text(
+            text = "SEED #$seed",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextSecondary
+          )
+        }
+      }
     }
   }
 }

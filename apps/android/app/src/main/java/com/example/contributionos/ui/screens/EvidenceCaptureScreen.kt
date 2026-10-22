@@ -1,9 +1,16 @@
 package com.example.contributionos.ui.screens
 
 import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.location.Location
+import android.location.LocationManager
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,9 +31,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,17 +46,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.contributionos.model.CivicSubmission
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.example.contributionos.model.CivicTask
 import com.example.contributionos.model.MissionDraft
 import com.example.contributionos.theme.CivicAmber
@@ -66,7 +75,7 @@ import com.example.contributionos.theme.TextMuted
 import com.example.contributionos.theme.TextPrimary
 import com.example.contributionos.theme.TextSecondary
 import com.example.contributionos.ui.components.LayeredPanel
-import kotlinx.coroutines.launch
+import java.io.File
 import java.util.UUID
 
 @Composable
@@ -82,30 +91,121 @@ fun EvidenceCaptureScreen(
   val scrollState = rememberScrollState()
 
   var notes by remember { mutableStateOf(existingDraft?.notes ?: "") }
-  var photoUri by remember { mutableStateOf(existingDraft?.photoUri) }
-  var hasGps by remember { mutableStateOf(existingDraft?.latitude != null) }
+  var photoUriString by remember { mutableStateOf(existingDraft?.photoUri) }
+  var currentLatitude by remember { mutableStateOf(existingDraft?.latitude) }
+  var currentLongitude by remember { mutableStateOf(existingDraft?.longitude) }
+  var isLocating by remember { mutableStateOf(false) }
   var isSubmitting by remember { mutableStateOf(false) }
 
-  // Permission Launchers
-  val cameraLauncher = rememberLauncherForActivityResult(
-    ActivityResultContracts.RequestPermission()
-  ) { isGranted ->
-    if (isGranted) {
-      photoUri = "content://media/external/images/media/captured_${System.currentTimeMillis()}"
-      Toast.makeText(context, "Field evidence photo attached", Toast.LENGTH_SHORT).show()
-    } else {
-      Toast.makeText(context, "Camera permission optional; attach from gallery or continue with notes", Toast.LENGTH_SHORT).show()
+  // Pending camera target file URI
+  var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+  val takePictureLauncher = rememberLauncherForActivityResult(
+    ActivityResultContracts.TakePicture()
+  ) { success ->
+    if (success && tempCameraUri != null) {
+      photoUriString = tempCameraUri.toString()
+      Toast.makeText(context, "Field evidence photo captured and attached", Toast.LENGTH_SHORT).show()
     }
   }
 
-  val locationLauncher = rememberLauncherForActivityResult(
+  val pickImageLauncher = rememberLauncherForActivityResult(
+    ActivityResultContracts.GetContent()
+  ) { uri ->
+    if (uri != null) {
+      photoUriString = uri.toString()
+      Toast.makeText(context, "Field evidence image attached from gallery", Toast.LENGTH_SHORT).show()
+    }
+  }
+
+  val cameraPermissionLauncher = rememberLauncherForActivityResult(
     ActivityResultContracts.RequestPermission()
   ) { isGranted ->
     if (isGranted) {
-      hasGps = true
-      Toast.makeText(context, "GPS waypoint tagged: 19.033° N, 73.029° E", Toast.LENGTH_SHORT).show()
+      try {
+        val evidenceDir = File(context.cacheDir, "evidence")
+        if (!evidenceDir.exists()) evidenceDir.mkdirs()
+        val photoFile = File(evidenceDir, "evidence_${System.currentTimeMillis()}.jpg")
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+        tempCameraUri = uri
+        takePictureLauncher.launch(uri)
+      } catch (e: Exception) {
+        Toast.makeText(context, "Error opening camera storage: ${e.message}", Toast.LENGTH_SHORT).show()
+      }
     } else {
-      Toast.makeText(context, "Location permission denied; manual district entry used", Toast.LENGTH_SHORT).show()
+      Toast.makeText(context, "Camera permission denied. You can select an image from gallery.", Toast.LENGTH_LONG).show()
+    }
+  }
+
+  fun requestRealLocation() {
+    val fineGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    val coarseGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    if (!fineGranted && !coarseGranted) return
+
+    isLocating = true
+    try {
+      val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+      if (locationManager == null) {
+        Toast.makeText(context, "Location service unavailable on this device", Toast.LENGTH_SHORT).show()
+        isLocating = false
+        return
+      }
+
+      val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+      val isNetEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+
+      if (!isGpsEnabled && !isNetEnabled) {
+        Toast.makeText(context, "GPS/Location is turned off in device settings", Toast.LENGTH_LONG).show()
+        isLocating = false
+        return
+      }
+
+      var bestLocation: Location? = null
+      if (isGpsEnabled) {
+        bestLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+      }
+      if (bestLocation == null && isNetEnabled) {
+        bestLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+      }
+
+      if (bestLocation != null) {
+        currentLatitude = bestLocation.latitude
+        currentLongitude = bestLocation.longitude
+        Toast.makeText(context, "Waypoint acquired: %.4f° N, %.4f° E".format(bestLocation.latitude, bestLocation.longitude), Toast.LENGTH_SHORT).show()
+      } else {
+        Toast.makeText(context, "Acquiring GPS fix... Keep device near open sky or use manual notes.", Toast.LENGTH_LONG).show()
+      }
+    } catch (e: Exception) {
+      Toast.makeText(context, "Location reading error: ${e.message}", Toast.LENGTH_SHORT).show()
+    } finally {
+      isLocating = false
+    }
+  }
+
+  val locationPermissionLauncher = rememberLauncherForActivityResult(
+    ActivityResultContracts.RequestMultiplePermissions()
+  ) { permissions ->
+    val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+    val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+    if (fineGranted || coarseGranted) {
+      requestRealLocation()
+    } else {
+      Toast.makeText(context, "Location permission declined. Geotag will be omitted.", Toast.LENGTH_SHORT).show()
+    }
+  }
+
+  // Load preview bitmap safely
+  val previewBitmap = remember(photoUriString) {
+    photoUriString?.let { uriStr ->
+      try {
+        val uri = Uri.parse(uriStr)
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+          BitmapFactory.decodeStream(stream)
+        }
+      } catch (e: Exception) {
+        null
+      }
     }
   }
 
@@ -161,9 +261,49 @@ fun EvidenceCaptureScreen(
       // 1. Photo Evidence Section
       LayeredPanel(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-          Text("1. PHOTOGRAPHIC EVIDENCE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text("1. PHOTOGRAPHIC EVIDENCE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+            if (photoUriString != null) {
+              Text(
+                "Remove",
+                fontSize = 11.sp,
+                color = Color(0xFFEF4444),
+                modifier = Modifier
+                  .clip(RoundedCornerShape(4.dp))
+                  .clickable { photoUriString = null }
+                  .padding(4.dp)
+              )
+            }
+          }
 
-          if (photoUri != null) {
+          if (previewBitmap != null) {
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .border(1.dp, CivicEmerald, RoundedCornerShape(8.dp))
+            ) {
+              Image(
+                bitmap = previewBitmap.asImageBitmap(),
+                contentDescription = "Attached Field Evidence",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+              )
+              Box(
+                modifier = Modifier
+                  .align(Alignment.BottomStart)
+                  .background(CivicSurfaceDark.copy(alpha = 0.85f))
+                  .padding(horizontal = 8.dp, vertical = 4.dp)
+              ) {
+                Text("Field Evidence Attached", fontSize = 11.sp, color = CivicEmerald, fontWeight = FontWeight.Bold)
+              }
+            }
+          } else if (photoUriString != null) {
             Row(
               modifier = Modifier
                 .fillMaxWidth()
@@ -171,26 +311,47 @@ fun EvidenceCaptureScreen(
                 .background(CivicMidnightNavy)
                 .border(1.dp, CivicEmerald, RoundedCornerShape(8.dp))
                 .padding(10.dp),
-              horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically
             ) {
-              Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Check, contentDescription = null, tint = CivicEmerald, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Photo evidence attached", fontSize = 13.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
-              }
-              Text("Replace", fontSize = 12.sp, color = CivicCyan, modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable {
-                cameraLauncher.launch(Manifest.permission.CAMERA)
-              }.padding(4.dp))
+              Icon(Icons.Default.Check, contentDescription = null, tint = CivicEmerald, modifier = Modifier.size(18.dp))
+              Spacer(modifier = Modifier.width(8.dp))
+              Text("Evidence file attached", fontSize = 13.sp, color = TextPrimary)
             }
-          } else {
+          }
+
+          // Camera & Gallery action buttons
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
             Button(
-              onClick = { cameraLauncher.launch(Manifest.permission.CAMERA) },
+              onClick = {
+                val hasCam = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                if (hasCam) {
+                  val evidenceDir = File(context.cacheDir, "evidence")
+                  if (!evidenceDir.exists()) evidenceDir.mkdirs()
+                  val photoFile = File(evidenceDir, "evidence_${System.currentTimeMillis()}.jpg")
+                  val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+                  tempCameraUri = uri
+                  takePictureLauncher.launch(uri)
+                } else {
+                  cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }
+              },
               colors = ButtonDefaults.buttonColors(containerColor = CivicSurfacePanel),
-              modifier = Modifier.fillMaxWidth(),
+              modifier = Modifier.weight(1f),
               shape = RoundedCornerShape(8.dp)
             ) {
-              Text("📷 Take Field Photo / Attach", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+              Text("📷 Take Photo", color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+            }
+
+            Button(
+              onClick = { pickImageLauncher.launch("image/*") },
+              colors = ButtonDefaults.buttonColors(containerColor = CivicSurfacePanel),
+              modifier = Modifier.weight(1f),
+              shape = RoundedCornerShape(8.dp)
+            ) {
+              Text("🖼 From Gallery", color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
             }
           }
         }
@@ -199,9 +360,29 @@ fun EvidenceCaptureScreen(
       // 2. Geotagging Section
       LayeredPanel(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-          Text("2. GEOTAG WAYPOINT", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text("2. GEOTAG WAYPOINT (OPTIONAL)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+            if (currentLatitude != null && currentLongitude != null) {
+              Text(
+                "Clear",
+                fontSize = 11.sp,
+                color = Color(0xFFEF4444),
+                modifier = Modifier
+                  .clip(RoundedCornerShape(4.dp))
+                  .clickable {
+                    currentLatitude = null
+                    currentLongitude = null
+                  }
+                  .padding(4.dp)
+              )
+            }
+          }
 
-          if (hasGps) {
+          if (currentLatitude != null && currentLongitude != null) {
             Row(
               modifier = Modifier
                 .fillMaxWidth()
@@ -213,16 +394,42 @@ fun EvidenceCaptureScreen(
             ) {
               Icon(Icons.Default.LocationOn, contentDescription = null, tint = CivicEmerald, modifier = Modifier.size(18.dp))
               Spacer(modifier = Modifier.width(8.dp))
-              Text("Coordinates Verified: 19.033° N, 73.029° E", fontSize = 13.sp, color = TextPrimary)
+              Text(
+                "Verified GPS: %.4f°, %.4f°".format(currentLatitude, currentLongitude),
+                fontSize = 13.sp,
+                color = TextPrimary,
+                fontWeight = FontWeight.Medium
+              )
             }
           } else {
             Button(
-              onClick = { locationLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) },
+              onClick = {
+                val fineGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                val coarseGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+                if (fineGranted || coarseGranted) {
+                  requestRealLocation()
+                } else {
+                  locationPermissionLauncher.launch(
+                    arrayOf(
+                      Manifest.permission.ACCESS_FINE_LOCATION,
+                      Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                  )
+                }
+              },
               colors = ButtonDefaults.buttonColors(containerColor = CivicSurfacePanel),
               modifier = Modifier.fillMaxWidth(),
-              shape = RoundedCornerShape(8.dp)
+              shape = RoundedCornerShape(8.dp),
+              enabled = !isLocating
             ) {
-              Text("📍 Tag Current Coordinates", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+              if (isLocating) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = CivicCyan)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Acquiring GPS...", color = TextPrimary)
+              } else {
+                Text("📍 Capture Real Coordinates", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+              }
             }
           }
         }
@@ -265,10 +472,11 @@ fun EvidenceCaptureScreen(
               taskId = task.id,
               taskTitle = task.title,
               notes = notes,
-              photoUri = photoUri,
-              latitude = if (hasGps) 19.033 else null,
-              longitude = if (hasGps) 73.029 else null,
-              isOfflinePending = true
+              photoUri = photoUriString,
+              latitude = currentLatitude,
+              longitude = currentLongitude,
+              isOfflinePending = true,
+              isSandboxDemo = task.isSandboxDemo
             )
             onSaveDraft(draft)
             Toast.makeText(context, "Offline draft saved successfully", Toast.LENGTH_SHORT).show()
@@ -293,10 +501,11 @@ fun EvidenceCaptureScreen(
               taskId = task.id,
               taskTitle = task.title,
               notes = notes,
-              photoUri = photoUri,
-              latitude = if (hasGps) 19.033 else null,
-              longitude = if (hasGps) 73.029 else null,
-              isOfflinePending = false
+              photoUri = photoUriString,
+              latitude = currentLatitude,
+              longitude = currentLongitude,
+              isOfflinePending = false,
+              isSandboxDemo = task.isSandboxDemo
             )
             onSubmit(draft)
           },

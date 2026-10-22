@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.contributionos.model.CivicSubmission
 import com.example.contributionos.model.CommunityMilestone
+import com.example.contributionos.model.DataSourceMode
 import com.example.contributionos.model.SubmissionStatus
 import com.example.contributionos.theme.CivicAmber
 import com.example.contributionos.theme.CivicBorderActive
@@ -57,6 +58,8 @@ fun ImpactScreen(
   milestones: List<CommunityMilestone>,
   submissions: List<CivicSubmission>,
   isLive: Boolean,
+  environmentMode: DataSourceMode = DataSourceMode.PRODUCTION,
+  onToggleMode: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val scrollState = rememberScrollState()
@@ -70,7 +73,9 @@ fun ImpactScreen(
     CivicHeader(
       districtName = "Collective Impact Ledger",
       seed = 42L,
-      isLive = isLive
+      isLive = isLive,
+      environmentMode = environmentMode,
+      onToggleMode = onToggleMode
     )
 
     Column(
@@ -112,58 +117,69 @@ fun ImpactScreen(
         color = TextMuted
       )
 
-      milestones.forEach { milestone ->
-        Card(
-          modifier = Modifier.fillMaxWidth(),
-          colors = CardDefaults.cardColors(containerColor = CivicSurfaceCard),
-          shape = RoundedCornerShape(10.dp),
-          border = androidx.compose.foundation.BorderStroke(1.dp, CivicBorderSubtle)
-        ) {
-          Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                milestone.category.uppercase(),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = CivicEmerald
-              )
-              Text(
-                "${milestone.currentValue} / ${milestone.targetValue} ${milestone.unit}",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextSecondary
-              )
-            }
+      if (milestones.isEmpty()) {
+        LayeredPanel(modifier = Modifier.fillMaxWidth()) {
+          Text(
+            "No collective civic milestones currently loaded from the registry. Active initiative goals will appear here as community actions are aggregated.",
+            fontSize = 13.sp,
+            color = TextMuted,
+            lineHeight = 18.sp
+          )
+        }
+      } else {
+        milestones.forEach { milestone ->
+          Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = CivicSurfaceCard),
+            shape = RoundedCornerShape(10.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, CivicBorderSubtle)
+          ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Text(
+                  milestone.category.uppercase(),
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = CivicEmerald
+                )
+                Text(
+                  "${milestone.currentValue} / ${milestone.targetValue} ${milestone.unit}",
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = TextSecondary
+                )
+              }
 
-            Text(milestone.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-            Text(milestone.description, fontSize = 12.sp, color = TextMuted)
+              Text(milestone.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+              Text(milestone.description, fontSize = 12.sp, color = TextMuted)
 
-            LinearProgressIndicator(
-              progress = { milestone.percent },
-              modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp)),
-              color = if (milestone.isAchieved) CivicEmerald else CivicCyan,
-              trackColor = CivicSurfaceDark
-            )
-
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-              Text(
-                "${(milestone.percent * 100).toInt()}% Met",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = CivicCyan
+              LinearProgressIndicator(
+                progress = { milestone.percent },
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .height(6.dp)
+                  .clip(RoundedCornerShape(3.dp)),
+                color = if (milestone.isAchieved) CivicEmerald else CivicCyan,
+                trackColor = CivicSurfaceDark
               )
-              if (milestone.isAchieved) {
-                Text("✓ Goal Achieved", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CivicEmerald)
+
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+              ) {
+                Text(
+                  "${(milestone.percent * 100).toInt()}% Met",
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = CivicCyan
+                )
+                if (milestone.isAchieved) {
+                  Text("✓ Goal Achieved", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CivicEmerald)
+                }
               }
             }
           }
@@ -182,9 +198,10 @@ fun ImpactScreen(
       if (verifiedSubmissions.isEmpty()) {
         LayeredPanel(modifier = Modifier.fillMaxWidth()) {
           Text(
-            "No verified contributions yet. Submit evidence on an active route node to receive trusted backend approval.",
+            "No verified contributions recorded on-chain yet. Submit field evidence for an open task to receive accredited validator approval.",
             fontSize = 13.sp,
-            color = TextMuted
+            color = TextMuted,
+            lineHeight = 18.sp
           )
         }
       } else {

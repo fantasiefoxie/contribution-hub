@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.contributionos.model.CivicSubmission
 import com.example.contributionos.model.CivicTask
+import com.example.contributionos.model.DataSourceMode
 import com.example.contributionos.model.ExpeditionNode
 import com.example.contributionos.model.MissionDraft
 import com.example.contributionos.model.NodeStatus
@@ -71,6 +72,8 @@ fun MissionsScreen(
   activeNodes: List<ExpeditionNode>,
   submissions: List<CivicSubmission>,
   isLive: Boolean,
+  environmentMode: DataSourceMode = DataSourceMode.PRODUCTION,
+  onToggleMode: () -> Unit = {},
   onResumeDraft: (MissionDraft) -> Unit,
   onDeleteDraft: (String) -> Unit,
   onSelectNode: (ExpeditionNode) -> Unit,
@@ -87,7 +90,9 @@ fun MissionsScreen(
     CivicHeader(
       districtName = "Field Mission Depot",
       seed = 42L,
-      isLive = isLive
+      isLive = isLive,
+      environmentMode = environmentMode,
+      onToggleMode = onToggleMode
     )
 
     TabRow(
@@ -229,58 +234,7 @@ private fun ActiveWorkTab(
         shape = RoundedCornerShape(10.dp),
         border = androidx.compose.foundation.BorderStroke(
           1.dp,
-          if (node.status == NodeStatus.IN_PROGRESS) NodeInProgress else NodeAvailable
-        )
-      ) {
-        Row(
-          modifier = Modifier
-            .padding(14.dp)
-            .fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Column(modifier = Modifier.weight(1f)) {
-            Text(node.category.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = CivicCyan)
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(node.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("★".repeat(node.difficulty) + " • Step ${node.step}", fontSize = 11.sp, color = TextMuted)
-          }
-          Text("+${node.xpReward} XP", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CivicAmber)
-        }
-      }
-    }
-  }
-}
-
-@Composable
-private fun SubmissionsTab(
-  submissions: List<CivicSubmission>
-) {
-  if (submissions.isEmpty()) {
-    EmptyStateBox(message = "No submissions in review. Once evidence is submitted, accredited civic stewards inspect and validate the field outcome.")
-    return
-  }
-
-  LazyColumn(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(16.dp),
-    verticalArrangement = Arrangement.spacedBy(12.dp)
-  ) {
-    items(submissions, key = { it.id }) { sub ->
-      Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = CivicSurfaceCard),
-        shape = RoundedCornerShape(10.dp),
-        border = androidx.compose.foundation.BorderStroke(
-          1.dp,
-          when (sub.status) {
-            SubmissionStatus.VALIDATED -> CivicEmerald
-            SubmissionStatus.PENDING_REVIEW -> CivicAmber
-            SubmissionStatus.CHANGES_REQUESTED -> CivicAmber
-            SubmissionStatus.REJECTED -> Color(0xFFEF4444)
-          }
+          if (node.status == NodeStatus.IN_PROGRESS) NodeInProgress else CivicBorderSubtle
         )
       ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -294,31 +248,94 @@ private fun SubmissionsTab(
                 modifier = Modifier
                   .size(8.dp)
                   .clip(CircleShape)
-                  .background(
-                    when (sub.status) {
-                      SubmissionStatus.VALIDATED -> CivicEmerald
-                      SubmissionStatus.PENDING_REVIEW -> CivicAmber
-                      SubmissionStatus.CHANGES_REQUESTED -> CivicAmber
-                      SubmissionStatus.REJECTED -> Color(0xFFEF4444)
-                    }
-                  )
+                  .background(if (node.status == NodeStatus.IN_PROGRESS) NodeInProgress else NodeAvailable)
               )
               Spacer(modifier = Modifier.width(6.dp))
               Text(
-                when (sub.status) {
-                  SubmissionStatus.VALIDATED -> "VERIFIED & APPROVED"
-                  SubmissionStatus.PENDING_REVIEW -> "IN VALIDATOR QUEUE"
-                  SubmissionStatus.CHANGES_REQUESTED -> "CLARIFICATION NEEDED"
-                  SubmissionStatus.REJECTED -> "REJECTED"
-                },
+                if (node.status == NodeStatus.IN_PROGRESS) "IN PROGRESS" else "READY TO CLAIM",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (node.status == NodeStatus.IN_PROGRESS) NodeInProgress else NodeAvailable
+              )
+            }
+            Text("+${node.xpReward} XP", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CivicAmber)
+          }
+
+          Text(node.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text("Tier ${node.difficulty} • ${node.category}", fontSize = 12.sp, color = TextMuted)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(Icons.Default.PlayArrow, contentDescription = null, tint = CivicEmerald, modifier = Modifier.size(14.dp))
+              Spacer(modifier = Modifier.width(4.dp))
+              Text("Log Evidence", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CivicEmerald)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun SubmissionsTab(submissions: List<CivicSubmission>) {
+  if (submissions.isEmpty()) {
+    EmptyStateBox(message = "No submissions in review. Once evidence is submitted, accredited civic stewards inspect and validate the field outcome.")
+    return
+  }
+
+  LazyColumn(
+    modifier = Modifier
+      .fillMaxSize()
+      .padding(16.dp),
+    verticalArrangement = Arrangement.spacedBy(12.dp)
+  ) {
+    items(submissions, key = { it.id }) { sub ->
+      val statusColor = when (sub.status) {
+        SubmissionStatus.VALIDATED -> CivicEmerald
+        SubmissionStatus.PENDING_REVIEW -> CivicAmber
+        SubmissionStatus.CHANGES_REQUESTED -> CivicAmber
+        SubmissionStatus.REJECTED -> Color(0xFFEF4444)
+        SubmissionStatus.QUEUED_OFFLINE -> CivicCyan
+      }
+
+      val statusLabel = when (sub.status) {
+        SubmissionStatus.VALIDATED -> "VERIFIED & APPROVED"
+        SubmissionStatus.PENDING_REVIEW -> "IN VALIDATOR QUEUE"
+        SubmissionStatus.CHANGES_REQUESTED -> "CLARIFICATION NEEDED"
+        SubmissionStatus.REJECTED -> "REJECTED"
+        SubmissionStatus.QUEUED_OFFLINE -> "QUEUED OFFLINE (AWAITING SYNC)"
+      }
+
+      Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = CivicSurfaceCard),
+        shape = RoundedCornerShape(10.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, statusColor)
+      ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Box(
+                modifier = Modifier
+                  .size(8.dp)
+                  .clip(CircleShape)
+                  .background(statusColor)
+              )
+              Spacer(modifier = Modifier.width(6.dp))
+              Text(
+                statusLabel,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = when (sub.status) {
-                  SubmissionStatus.VALIDATED -> CivicEmerald
-                  SubmissionStatus.PENDING_REVIEW -> CivicAmber
-                  SubmissionStatus.CHANGES_REQUESTED -> CivicAmber
-                  SubmissionStatus.REJECTED -> Color(0xFFEF4444)
-                }
+                color = statusColor
               )
             }
 
@@ -329,7 +346,11 @@ private fun SubmissionsTab(
                   .background(CivicMidnightNavy)
                   .padding(horizontal = 6.dp, vertical = 2.dp)
               ) {
-                Text("Offline Synced", fontSize = 10.sp, color = CivicCyan)
+                Text(
+                  if (sub.status == SubmissionStatus.QUEUED_OFFLINE) "Local Cache" else "Offline Synced",
+                  fontSize = 10.sp,
+                  color = CivicCyan
+                )
               }
             }
           }

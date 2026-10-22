@@ -2,6 +2,7 @@ package com.example.contributionos.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,22 +18,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.contributionos.model.CivicProfile
+import com.example.contributionos.model.DataSourceMode
 import com.example.contributionos.theme.CivicAmber
 import com.example.contributionos.theme.CivicBorderActive
 import com.example.contributionos.theme.CivicBorderSubtle
@@ -56,6 +57,8 @@ fun ProfileScreen(
   draftCount: Int,
   submissionCount: Int,
   isLive: Boolean,
+  environmentMode: DataSourceMode = DataSourceMode.PRODUCTION,
+  onSetEnvironmentMode: (DataSourceMode) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val scrollState = rememberScrollState()
@@ -68,7 +71,8 @@ fun ProfileScreen(
     CivicHeader(
       districtName = "Contributor Dossier",
       seed = 42L,
-      isLive = isLive
+      isLive = isLive,
+      environmentMode = environmentMode
     )
 
     Column(
@@ -113,7 +117,7 @@ fun ProfileScreen(
               Text("${profile.xp} / ${profile.nextLevelXp} XP", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CivicAmber)
             }
             LinearProgressIndicator(
-              progress = { profile.xp.toFloat() / profile.nextLevelXp.toFloat() },
+              progress = { if (profile.nextLevelXp == 0) 0f else profile.xp.toFloat() / profile.nextLevelXp.toFloat() },
               modifier = Modifier
                 .fillMaxWidth()
                 .height(6.dp)
@@ -123,28 +127,79 @@ fun ProfileScreen(
             )
           }
 
-          // Stats Grid
+          // Lifetime Stats
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
           ) {
-            StatBox(label = "Verified Actions", value = profile.verifiedContributionsCount.toString())
-            StatBox(label = "Expeditions", value = profile.completedExpeditionsCount.toString())
-            StatBox(label = "Active Streak", value = "${profile.activeStreakDays} Days")
+            StatBox(label = "Verified Actions", value = "${profile.verifiedContributionsCount}")
+            StatBox(label = "Expeditions", value = "${profile.completedExpeditionsCount}")
+            StatBox(label = "Active Streak", value = "${profile.activeStreakDays}d")
           }
         }
       }
 
-      // Civic Specialization
-      LayeredPanel(modifier = Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-          Text("CIVIC SPECIALIZATION", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMuted)
-          Text(profile.specialization, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = CivicEmerald)
+      // ENVIRONMENT MODE TOGGLE
+      LayeredPanel(
+        modifier = Modifier.fillMaxWidth(),
+        borderColor = if (environmentMode == DataSourceMode.SANDBOX_DEMO) CivicAmber else CivicEmerald.copy(alpha = 0.5f)
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
           Text(
-            "Focused branch mastery unlocks specialized route waypoints and regional audit initiatives.",
-            fontSize = 12.sp,
-            color = TextSecondary
+            "DATA ENVIRONMENT CONFIGURATION",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 0.5.sp,
+            color = if (environmentMode == DataSourceMode.SANDBOX_DEMO) CivicAmber else CivicEmerald
           )
+
+          Text(
+            if (environmentMode == DataSourceMode.PRODUCTION) {
+              "CURRENT: PRODUCTION REGISTRY\nConnected to live Supabase backend. Displays authentic community tasks and verified on-chain contributions only."
+            } else {
+              "CURRENT: ISOLATED SANDBOX / DEMO SIMULATION\nUsing illustrative mock fixtures to demonstrate the roguelite route tree. Submissions in sandbox mode are isolated from production."
+            },
+            fontSize = 12.sp,
+            color = TextSecondary,
+            lineHeight = 17.sp
+          )
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+          ) {
+            Button(
+              onClick = { onSetEnvironmentMode(DataSourceMode.PRODUCTION) },
+              colors = ButtonDefaults.buttonColors(
+                containerColor = if (environmentMode == DataSourceMode.PRODUCTION) CivicEmerald else CivicSurfacePanel
+              ),
+              modifier = Modifier.weight(1f),
+              shape = RoundedCornerShape(8.dp)
+            ) {
+              Text(
+                "Production Mode",
+                color = if (environmentMode == DataSourceMode.PRODUCTION) Color.Black else TextPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+              )
+            }
+
+            Button(
+              onClick = { onSetEnvironmentMode(DataSourceMode.SANDBOX_DEMO) },
+              colors = ButtonDefaults.buttonColors(
+                containerColor = if (environmentMode == DataSourceMode.SANDBOX_DEMO) CivicAmber else CivicSurfacePanel
+              ),
+              modifier = Modifier.weight(1f),
+              shape = RoundedCornerShape(8.dp)
+            ) {
+              Text(
+                "Sandbox Demo",
+                color = if (environmentMode == DataSourceMode.SANDBOX_DEMO) Color.Black else TextPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+              )
+            }
+          }
         }
       }
 

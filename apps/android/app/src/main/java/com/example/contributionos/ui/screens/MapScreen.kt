@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.contributionos.model.CivicExpedition
+import com.example.contributionos.model.DataSourceMode
 import com.example.contributionos.model.ExpeditionNode
 import com.example.contributionos.model.NodeStatus
 import com.example.contributionos.theme.CivicAmber
@@ -66,17 +68,19 @@ import com.example.contributionos.ui.components.LayeredPanel
 
 @Composable
 fun MapScreen(
-  expedition: CivicExpedition,
+  expedition: CivicExpedition?,
   isLive: Boolean,
+  environmentMode: DataSourceMode = DataSourceMode.PRODUCTION,
+  onToggleMode: () -> Unit = {},
   onNodeSelected: (ExpeditionNode) -> Unit,
   modifier: Modifier = Modifier
 ) {
   var selectedNode by remember {
-    mutableStateOf(expedition.nodes.firstOrNull { it.status == NodeStatus.AVAILABLE })
+    mutableStateOf(expedition?.nodes?.firstOrNull { it.status == NodeStatus.AVAILABLE })
   }
 
   val districts = listOf("Greenway District", "Harbor Basin", "Civic Core")
-  var activeDistrict by remember { mutableStateOf(expedition.district) }
+  var activeDistrict by remember { mutableStateOf(expedition?.district ?: "Civic Core") }
 
   Box(
     modifier = modifier
@@ -86,8 +90,10 @@ fun MapScreen(
     Column(modifier = Modifier.fillMaxSize()) {
       CivicHeader(
         districtName = activeDistrict,
-        seed = expedition.activeRunSeed,
-        isLive = isLive
+        seed = expedition?.activeRunSeed ?: 42L,
+        isLive = isLive,
+        environmentMode = environmentMode,
+        onToggleMode = onToggleMode
       )
 
       // District Filter Chips
@@ -110,80 +116,119 @@ fun MapScreen(
                 RoundedCornerShape(6.dp)
               )
               .clickable { activeDistrict = dist }
-              .padding(horizontal = 10.dp, vertical = 5.dp)
+              .padding(horizontal = 10.dp, vertical = 6.dp)
           ) {
             Text(
-              dist,
+              text = dist,
               fontSize = 11.sp,
               fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-              color = if (isSelected) CivicEmerald else TextMuted
+              color = if (isSelected) CivicEmerald else TextSecondary
             )
           }
         }
       }
 
-      // Interactive Illustrated Isometric Map Canvas
-      Box(
-        modifier = Modifier
-          .fillMaxWidth()
-          .weight(1f)
-      ) {
-        IsometricWorldCanvas(
-          nodes = expedition.nodes,
-          selectedNodeId = selectedNode?.id,
-          onNodeClick = { node ->
-            selectedNode = node
-          },
-          modifier = Modifier.fillMaxSize()
-        )
-
-        // Overlay Legend
-        Row(
+      if (expedition == null || expedition.nodes.isEmpty()) {
+        Box(
           modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(12.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(CivicSurfaceDark.copy(alpha = 0.85f))
-            .border(1.dp, CivicBorderSubtle, RoundedCornerShape(8.dp))
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-          horizontalArrangement = Arrangement.spacedBy(10.dp),
-          verticalAlignment = Alignment.CenterVertically
+            .fillMaxSize()
+            .padding(24.dp),
+          contentAlignment = Alignment.Center
         ) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).clip(CircleShape).background(NodeAvailable))
-            Spacer(Modifier.width(4.dp))
-            Text("Open", fontSize = 10.sp, color = TextSecondary)
+          LayeredPanel(modifier = Modifier.fillMaxWidth()) {
+            Column(
+              modifier = Modifier.fillMaxWidth().padding(10.dp),
+              horizontalAlignment = Alignment.CenterHorizontally,
+              verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+              Icon(Icons.Default.Info, contentDescription = null, tint = CivicCyan, modifier = Modifier.size(36.dp))
+              Text(
+                "NO EXPEDITIONS IN ACTIVE REGISTRY",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+              )
+              Text(
+                "There are no active multi-station initiatives configured on the Supabase backend for $activeDistrict. You can switch to Sandbox Mode to test the roguelite route tree.",
+                fontSize = 12.sp,
+                color = TextSecondary,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                lineHeight = 17.sp
+              )
+              Button(
+                onClick = onToggleMode,
+                colors = ButtonDefaults.buttonColors(containerColor = CivicEmerald),
+                shape = RoundedCornerShape(8.dp)
+              ) {
+                Text("Launch Sandbox Map", fontWeight = FontWeight.Bold)
+              }
+            }
           }
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).clip(CircleShape).background(NodeValidated))
-            Spacer(Modifier.width(4.dp))
-            Text("Verified", fontSize = 10.sp, color = TextSecondary)
-          }
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).clip(CircleShape).background(NodeLocked))
-            Spacer(Modifier.width(4.dp))
-            Text("Locked", fontSize = 10.sp, color = TextMuted)
+        }
+      } else {
+        // Interactive Isometric World Canvas
+        Box(
+          modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth()
+        ) {
+          IsometricWorldCanvas(
+            nodes = expedition.nodes,
+            selectedNodeId = selectedNode?.id,
+            onNodeClick = { clickedNode ->
+              selectedNode = clickedNode
+            },
+            modifier = Modifier.fillMaxSize()
+          )
+
+          // Legend Overlay
+          Box(
+            modifier = Modifier
+              .align(Alignment.TopStart)
+              .padding(12.dp)
+              .clip(RoundedCornerShape(8.dp))
+              .background(CivicSurfaceDark.copy(alpha = 0.85f))
+              .border(1.dp, CivicBorderSubtle, RoundedCornerShape(8.dp))
+              .padding(horizontal = 10.dp, vertical = 6.dp)
+          ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(NodeAvailable))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Available", fontSize = 10.sp, color = TextMuted)
+              }
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(NodeInProgress))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("In Progress", fontSize = 10.sp, color = TextMuted)
+              }
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(NodeValidated))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Validated", fontSize = 10.sp, color = TextMuted)
+              }
+            }
           }
         }
       }
     }
 
-    // Slide-up Node Inspector Drawer
+    // Node Inspect Drawer
     AnimatedVisibility(
       visible = selectedNode != null,
       enter = slideInVertically(initialOffsetY = { it }),
       exit = slideOutVertically(targetOffsetY = { it }),
-      modifier = Modifier
-        .align(Alignment.BottomCenter)
-        .padding(16.dp)
+      modifier = Modifier.align(Alignment.BottomCenter)
     ) {
       selectedNode?.let { node ->
         LayeredPanel(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
           borderColor = when (node.status) {
-            NodeStatus.AVAILABLE -> CivicEmerald
-            NodeStatus.IN_PROGRESS -> CivicAmber
-            NodeStatus.VALIDATED -> CivicCyan
+            NodeStatus.AVAILABLE -> NodeAvailable
+            NodeStatus.IN_PROGRESS -> NodeInProgress
+            NodeStatus.VALIDATED -> NodeValidated
             NodeStatus.LOCKED -> CivicBorderSubtle
           }
         ) {
@@ -196,7 +241,7 @@ fun MapScreen(
               Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                   modifier = Modifier
-                    .size(10.dp)
+                    .size(8.dp)
                     .clip(CircleShape)
                     .background(
                       when (node.status) {
@@ -209,14 +254,20 @@ fun MapScreen(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                  text = node.status.name.replace("_", " "),
+                  text = when (node.status) {
+                    NodeStatus.AVAILABLE -> "MISSION STATION READY"
+                    NodeStatus.IN_PROGRESS -> "WORK IN PROGRESS"
+                    NodeStatus.VALIDATED -> "COMPLETED & VERIFIED"
+                    NodeStatus.LOCKED -> "PREREQUISITES REQUIRED"
+                  },
                   fontSize = 11.sp,
-                  fontWeight = FontWeight.Bold,
+                  fontWeight = FontWeight.ExtraBold,
+                  letterSpacing = 0.5.sp,
                   color = when (node.status) {
                     NodeStatus.AVAILABLE -> NodeAvailable
                     NodeStatus.IN_PROGRESS -> NodeInProgress
                     NodeStatus.VALIDATED -> NodeValidated
-                    NodeStatus.LOCKED -> NodeLocked
+                    NodeStatus.LOCKED -> TextMuted
                   }
                 )
                 Spacer(modifier = Modifier.width(8.dp))

@@ -16,6 +16,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.example.contributionos.data.DefaultCivicRepository
+import com.example.contributionos.model.DataSourceMode
 import com.example.contributionos.theme.CivicForestDark
 import com.example.contributionos.ui.CivicViewModel
 import com.example.contributionos.ui.components.AppDestination
@@ -54,6 +55,15 @@ fun MainNavigation() {
     currentKey is NavMissions ||
     currentKey is NavImpact ||
     currentKey is NavProfile
+
+  val toggleMode = {
+    val newMode = if (uiState.environmentMode == DataSourceMode.PRODUCTION) {
+      DataSourceMode.SANDBOX_DEMO
+    } else {
+      DataSourceMode.PRODUCTION
+    }
+    viewModel.setEnvironmentMode(newMode)
+  }
 
   Scaffold(
     bottomBar = {
@@ -96,32 +106,37 @@ fun MainNavigation() {
           entry<NavHome> {
             val exp = uiState.activeExpedition
             val prof = uiState.profile
-            if (exp != null && prof != null) {
+            if (prof != null) {
               HomeScreen(
                 expedition = exp,
                 profile = prof,
                 featuredMilestone = uiState.milestones.firstOrNull(),
                 isLive = uiState.isLiveConnected,
+                environmentMode = uiState.environmentMode,
+                onToggleMode = toggleMode,
                 onExploreMap = { backStack.add(NavMap) },
                 onOpenExpeditionDetails = { backStack.add(NavExpeditionDetails) },
                 onSelectNode = { node ->
                   backStack.add(NavMissionDetails(taskId = node.taskId, nodeId = node.id))
+                },
+                onGoToMissions = {
+                  backStack.clear()
+                  backStack.add(NavMissions)
                 }
               )
             }
           }
 
           entry<NavMap> {
-            val exp = uiState.activeExpedition
-            if (exp != null) {
-              MapScreen(
-                expedition = exp,
-                isLive = uiState.isLiveConnected,
-                onNodeSelected = { node ->
-                  backStack.add(NavMissionDetails(taskId = node.taskId, nodeId = node.id))
-                }
-              )
-            }
+            MapScreen(
+              expedition = uiState.activeExpedition,
+              isLive = uiState.isLiveConnected,
+              environmentMode = uiState.environmentMode,
+              onToggleMode = toggleMode,
+              onNodeSelected = { node ->
+                backStack.add(NavMissionDetails(taskId = node.taskId, nodeId = node.id))
+              }
+            )
           }
 
           entry<NavExpeditionDetails> {
@@ -150,7 +165,8 @@ fun MainNavigation() {
                   difficulty = node.difficulty,
                   status = "open",
                   tags = listOf(node.category.lowercase()),
-                  district = uiState.activeExpedition?.district ?: "Civic Core"
+                  district = uiState.activeExpedition?.district ?: "Civic Core",
+                  isSandboxDemo = node.isSandboxDemo
                 )
               }
 
@@ -176,7 +192,8 @@ fun MainNavigation() {
                   title = node.title,
                   description = "Field verification task.",
                   difficulty = node.difficulty,
-                  status = "open"
+                  status = "open",
+                  isSandboxDemo = node.isSandboxDemo
                 )
               }
 
@@ -209,6 +226,8 @@ fun MainNavigation() {
               activeNodes = uiState.activeExpedition?.nodes ?: emptyList(),
               submissions = uiState.submissions,
               isLive = uiState.isLiveConnected,
+              environmentMode = uiState.environmentMode,
+              onToggleMode = toggleMode,
               onResumeDraft = { draft ->
                 backStack.add(NavEvidenceCapture(taskId = draft.taskId, draftId = draft.id))
               },
@@ -225,7 +244,9 @@ fun MainNavigation() {
             ImpactScreen(
               milestones = uiState.milestones,
               submissions = uiState.submissions,
-              isLive = uiState.isLiveConnected
+              isLive = uiState.isLiveConnected,
+              environmentMode = uiState.environmentMode,
+              onToggleMode = toggleMode
             )
           }
 
@@ -236,7 +257,9 @@ fun MainNavigation() {
                 profile = prof,
                 draftCount = uiState.drafts.size,
                 submissionCount = uiState.submissions.size,
-                isLive = uiState.isLiveConnected
+                isLive = uiState.isLiveConnected,
+                environmentMode = uiState.environmentMode,
+                onSetEnvironmentMode = { mode -> viewModel.setEnvironmentMode(mode) }
               )
             }
           }

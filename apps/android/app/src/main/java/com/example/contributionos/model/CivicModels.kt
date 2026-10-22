@@ -13,7 +13,13 @@ enum class SubmissionStatus {
   PENDING_REVIEW,
   VALIDATED,
   CHANGES_REQUESTED,
-  REJECTED
+  REJECTED,
+  QUEUED_OFFLINE
+}
+
+enum class DataSourceMode {
+  PRODUCTION,
+  SANDBOX_DEMO
 }
 
 enum class ExpeditionStatus {
@@ -35,7 +41,8 @@ data class CivicTask(
   val initiativeId: String? = null,
   val district: String = "Civic Core",
   val locationLabel: String = "Metropolitan Area",
-  val evidenceRequirements: String = "Photo of completed action and geotagged field notes"
+  val evidenceRequirements: String = "Photo of completed action and geotagged field notes",
+  val isSandboxDemo: Boolean = false
 )
 
 @Serializable
@@ -51,7 +58,8 @@ data class ExpeditionNode(
   val status: NodeStatus,
   val isoX: Float,
   val isoY: Float,
-  val childNodeIds: List<String> = emptyList()
+  val childNodeIds: List<String> = emptyList(),
+  val isSandboxDemo: Boolean = false
 )
 
 @Serializable
@@ -64,7 +72,8 @@ data class CivicExpedition(
   val targetMilestone: String,
   val nodes: List<ExpeditionNode>,
   val activeRunSeed: Long,
-  val status: ExpeditionStatus = ExpeditionStatus.ACTIVE
+  val status: ExpeditionStatus = ExpeditionStatus.ACTIVE,
+  val isSandboxDemo: Boolean = false
 ) {
   val completedNodes: Int get() = nodes.count { it.status == NodeStatus.VALIDATED }
   val totalNodes: Int get() = nodes.size
@@ -81,7 +90,8 @@ data class MissionDraft(
   val latitude: Double? = null,
   val longitude: Double? = null,
   val timestamp: Long = System.currentTimeMillis(),
-  val isOfflinePending: Boolean = false
+  val isOfflinePending: Boolean = false,
+  val isSandboxDemo: Boolean = false
 )
 
 @Serializable
@@ -94,7 +104,10 @@ data class CivicSubmission(
   val status: SubmissionStatus,
   val feedback: String? = null,
   val scoreAwarded: Int? = null,
-  val isOfflineOrigin: Boolean = false
+  val isOfflineOrigin: Boolean = false,
+  val isSandboxDemo: Boolean = false,
+  val remoteSubmissionId: String? = null,
+  val syncErrorMessage: String? = null
 )
 
 @Serializable
@@ -106,7 +119,8 @@ data class CommunityMilestone(
   val targetValue: Int,
   val unit: String,
   val category: String,
-  val isAchieved: Boolean = currentValue >= targetValue
+  val isAchieved: Boolean = currentValue >= targetValue,
+  val isSandboxDemo: Boolean = false
 ) {
   val percent: Float get() = (currentValue.toFloat() / targetValue.toFloat()).coerceIn(0f, 1f)
 }
@@ -133,5 +147,6 @@ data class CivicProfile(
   val completedExpeditionsCount: Int,
   val activeStreakDays: Int,
   val specialization: String,
-  val badges: List<CivicBadge>
+  val badges: List<CivicBadge>,
+  val isSandboxDemo: Boolean = false
 )

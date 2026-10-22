@@ -17,7 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.contributionos.model.CivicSubmission
+import com.example.contributionos.model.SubmissionStatus
 import com.example.contributionos.theme.CivicAmber
 import com.example.contributionos.theme.CivicBorderActive
 import com.example.contributionos.theme.CivicBorderSubtle
@@ -52,6 +53,23 @@ fun SubmissionStatusScreen(
   onViewMissions: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isOffline = submission.status == SubmissionStatus.QUEUED_OFFLINE
+  val isDemo = submission.isSandboxDemo
+
+  val headerTitle = when {
+    isDemo -> "SANDBOX EVIDENCE LOGGED"
+    isOffline -> "EVIDENCE QUEUED OFFLINE"
+    submission.status == SubmissionStatus.VALIDATED -> "EVIDENCE VALIDATED & MINTED"
+    else -> "EVIDENCE SUBMITTED TO SERVER"
+  }
+
+  val accentColor = when {
+    isDemo -> CivicAmber
+    isOffline -> CivicCyan
+    submission.status == SubmissionStatus.VALIDATED -> CivicEmerald
+    else -> CivicEmerald
+  }
+
   Column(
     modifier = modifier
       .fillMaxSize()
@@ -65,13 +83,13 @@ fun SubmissionStatusScreen(
         .size(68.dp)
         .clip(CircleShape)
         .background(CivicSurfaceDark)
-        .border(2.dp, CivicEmerald, CircleShape),
+        .border(2.dp, accentColor, CircleShape),
       contentAlignment = Alignment.Center
     ) {
       Icon(
-        Icons.Default.Check,
+        if (isOffline) Icons.Default.Info else Icons.Default.Check,
         contentDescription = null,
-        tint = CivicEmerald,
+        tint = accentColor,
         modifier = Modifier.size(36.dp)
       )
     }
@@ -79,8 +97,8 @@ fun SubmissionStatusScreen(
     Spacer(modifier = Modifier.height(16.dp))
 
     Text(
-      "EVIDENCE SUBMITTED",
-      fontSize = 20.sp,
+      headerTitle,
+      fontSize = 18.sp,
       fontWeight = FontWeight.ExtraBold,
       letterSpacing = 1.sp,
       color = TextPrimary
@@ -89,7 +107,13 @@ fun SubmissionStatusScreen(
     Spacer(modifier = Modifier.height(6.dp))
 
     Text(
-      "Submission #${submission.id} has been logged to the verification queue.",
+      if (isOffline) {
+        "Submission #${submission.id} is stored in secure local storage and will sync when network connectivity is available."
+      } else if (isDemo) {
+        "Submission #${submission.id} recorded in isolated sandbox demo mode (non-civic simulation)."
+      } else {
+        "Submission #${submission.id} has been logged to the civic validation queue."
+      },
       fontSize = 13.sp,
       color = TextSecondary,
       textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -104,19 +128,22 @@ fun SubmissionStatusScreen(
           stepNumber = "1",
           title = "Field Evidence Encrypted & Logged",
           subtitle = "Notes and coordinates stored in client-signed ledger",
-          isDone = true
+          isDone = true,
+          accentColor = accentColor
         )
         TimelineItem(
           stepNumber = "2",
-          title = "Awaiting Peer Validator Review",
-          subtitle = "Assigned to accredited district reviewer for audit",
-          isDone = false
+          title = if (isOffline) "Server Transmission" else "Peer Validator Review",
+          subtitle = if (isOffline) "Awaiting internet connection to upload to Supabase" else "Assigned to accredited district reviewer for audit",
+          isDone = submission.status != SubmissionStatus.QUEUED_OFFLINE && submission.status != SubmissionStatus.PENDING_REVIEW,
+          accentColor = accentColor
         )
         TimelineItem(
           stepNumber = "3",
           title = "Server-Authoritative Progression",
-          subtitle = "XP and badge progression awarded upon approval",
-          isDone = false
+          subtitle = "XP and badge progression awarded only upon server approval",
+          isDone = submission.status == SubmissionStatus.VALIDATED,
+          accentColor = accentColor
         )
       }
     }
@@ -138,7 +165,7 @@ fun SubmissionStatusScreen(
 
       Button(
         onClick = onViewMissions,
-        colors = ButtonDefaults.buttonColors(containerColor = CivicEmerald),
+        colors = ButtonDefaults.buttonColors(containerColor = accentColor),
         modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(8.dp)
       ) {
@@ -153,15 +180,16 @@ private fun TimelineItem(
   stepNumber: String,
   title: String,
   subtitle: String,
-  isDone: Boolean
+  isDone: Boolean,
+  accentColor: Color = CivicEmerald
 ) {
   Row(verticalAlignment = Alignment.Top) {
     Box(
       modifier = Modifier
         .size(24.dp)
         .clip(CircleShape)
-        .background(if (isDone) CivicEmerald else CivicSurfaceDark)
-        .border(1.dp, if (isDone) CivicEmerald else CivicBorderSubtle, CircleShape),
+        .background(if (isDone) accentColor else CivicSurfaceDark)
+        .border(1.dp, if (isDone) accentColor else CivicBorderSubtle, CircleShape),
       contentAlignment = Alignment.Center
     ) {
       Text(
@@ -173,7 +201,7 @@ private fun TimelineItem(
     }
     Spacer(modifier = Modifier.width(10.dp))
     Column {
-      Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (isDone) CivicEmerald else TextPrimary)
+      Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (isDone) accentColor else TextPrimary)
       Text(subtitle, fontSize = 11.sp, color = TextMuted)
     }
   }
