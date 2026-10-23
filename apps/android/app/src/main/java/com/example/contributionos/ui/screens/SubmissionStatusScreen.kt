@@ -1,5 +1,6 @@
 package com.example.contributionos.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -13,11 +14,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -27,182 +35,441 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.contributionos.model.CivicSubmission
 import com.example.contributionos.model.SubmissionStatus
 import com.example.contributionos.theme.CivicAmber
-import com.example.contributionos.theme.CivicBorderActive
-import com.example.contributionos.theme.CivicBorderSubtle
-import com.example.contributionos.theme.CivicCyan
-import com.example.contributionos.theme.CivicEmerald
-import com.example.contributionos.theme.CivicForestDark
-import com.example.contributionos.theme.CivicMidnightNavy
-import com.example.contributionos.theme.CivicSurfaceDark
-import com.example.contributionos.theme.CivicSurfacePanel
+import com.example.contributionos.theme.DarkSoilVariant
+import com.example.contributionos.theme.ForestFloor
+import com.example.contributionos.theme.GrassNeon
+import com.example.contributionos.theme.MutedLichen
+import com.example.contributionos.theme.MutedMoss
+import com.example.contributionos.theme.SoilSurfacePanel
+import com.example.contributionos.theme.SoilVoid
+import com.example.contributionos.theme.SunGold
 import com.example.contributionos.theme.TextMuted
 import com.example.contributionos.theme.TextPrimary
 import com.example.contributionos.theme.TextSecondary
-import com.example.contributionos.ui.components.LayeredPanel
+import com.example.contributionos.theme.WaypointTeal
+import com.example.contributionos.theme.WeatheredPaper
+import com.example.contributionos.ui.components.SegmentedProgressBar
+import com.example.contributionos.ui.components.TactileCard
 
 @Composable
 fun SubmissionStatusScreen(
   submission: CivicSubmission,
   onReturnHome: () -> Unit,
   onViewMissions: () -> Unit,
+  onRetry: () -> Unit = {},
+  task: com.example.contributionos.model.CivicTask? = null,
   modifier: Modifier = Modifier
 ) {
+  val context = LocalContext.current
+  val scrollState = rememberScrollState()
+
+  val resolvedTask = task ?: com.example.contributionos.data.SeedMissionCatalog.findTask(submission.taskId)
+  val xpReward = resolvedTask?.xpReward ?: 50
+
   val isOffline = submission.status == SubmissionStatus.QUEUED_OFFLINE
   val isDemo = submission.isSandboxDemo
-
-  val headerTitle = when {
-    isDemo -> "SANDBOX EVIDENCE LOGGED"
-    isOffline -> "EVIDENCE QUEUED OFFLINE"
-    submission.status == SubmissionStatus.VALIDATED -> "EVIDENCE VALIDATED & MINTED"
-    else -> "EVIDENCE SUBMITTED TO SERVER"
-  }
-
-  val accentColor = when {
-    isDemo -> CivicAmber
-    isOffline -> CivicCyan
-    submission.status == SubmissionStatus.VALIDATED -> CivicEmerald
-    else -> CivicEmerald
-  }
+  val isRetryable = submission.status == SubmissionStatus.RETRYABLE_FAILURE
+  val isPermanentFail = submission.status == SubmissionStatus.PERMANENT_FAILURE
 
   Column(
     modifier = modifier
       .fillMaxSize()
-      .background(CivicForestDark)
-      .padding(20.dp),
-    verticalArrangement = Arrangement.Center,
-    horizontalAlignment = Alignment.CenterHorizontally
+      .background(SoilVoid)
+      .verticalScroll(scrollState)
+      .padding(horizontal = 16.dp, vertical = 14.dp),
+    verticalArrangement = Arrangement.spacedBy(14.dp)
   ) {
+    // 1. Top Status & Victory Bar
     Box(
       modifier = Modifier
-        .size(68.dp)
-        .clip(CircleShape)
-        .background(CivicSurfaceDark)
-        .border(2.dp, accentColor, CircleShape),
-      contentAlignment = Alignment.Center
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(8.dp))
+        .background(ForestFloor)
+        .border(1.5.dp, MutedMoss, RoundedCornerShape(8.dp))
+        .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-      Icon(
-        if (isOffline) Icons.Default.Info else Icons.Default.Check,
-        contentDescription = null,
-        tint = accentColor,
-        modifier = Modifier.size(36.dp)
-      )
-    }
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Box(
+            modifier = Modifier
+              .size(8.dp)
+              .clip(CircleShape)
+              .background(GrassNeon)
+          )
+          Spacer(modifier = Modifier.width(8.dp))
+          Text(
+            "EXPEDITION LOGGED // SUCCESS",
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.ExtraBold,
+            color = GrassNeon
+          )
+        }
 
-    Spacer(modifier = Modifier.height(16.dp))
-
-    Text(
-      headerTitle,
-      fontSize = 18.sp,
-      fontWeight = FontWeight.ExtraBold,
-      letterSpacing = 1.sp,
-      color = TextPrimary
-    )
-
-    Spacer(modifier = Modifier.height(6.dp))
-
-    Text(
-      if (isOffline) {
-        "Submission #${submission.id} is stored in secure local storage and will sync when network connectivity is available."
-      } else if (isDemo) {
-        "Submission #${submission.id} recorded in isolated sandbox demo mode (non-civic simulation)."
-      } else {
-        "Submission #${submission.id} has been logged to the civic validation queue."
-      },
-      fontSize = 13.sp,
-      color = TextSecondary,
-      textAlign = androidx.compose.ui.text.style.TextAlign.Center
-    )
-
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // Lifecycle Timeline
-    LayeredPanel(modifier = Modifier.fillMaxWidth(), borderColor = CivicBorderActive) {
-      Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        TimelineItem(
-          stepNumber = "1",
-          title = "Field Evidence Encrypted & Logged",
-          subtitle = "Notes and coordinates stored in client-signed ledger",
-          isDone = true,
-          accentColor = accentColor
-        )
-        TimelineItem(
-          stepNumber = "2",
-          title = if (isOffline) "Server Transmission" else "Peer Validator Review",
-          subtitle = if (isOffline) "Awaiting internet connection to upload to Supabase" else "Assigned to accredited district reviewer for audit",
-          isDone = submission.status != SubmissionStatus.QUEUED_OFFLINE && submission.status != SubmissionStatus.PENDING_REVIEW,
-          accentColor = accentColor
-        )
-        TimelineItem(
-          stepNumber = "3",
-          title = "Server-Authoritative Progression",
-          subtitle = "XP and badge progression awarded only upon server approval",
-          isDone = submission.status == SubmissionStatus.VALIDATED,
-          accentColor = accentColor
-        )
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(3.dp))
+            .background(DarkSoilVariant)
+            .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Lock, contentDescription = null, tint = SunGold, modifier = Modifier.size(11.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+              "Local Verified Draft",
+              fontSize = 9.sp,
+              fontFamily = FontFamily.Monospace,
+              color = TextSecondary
+            )
+          }
+        }
       }
     }
 
-    Spacer(modifier = Modifier.height(24.dp))
-
-    Row(
+    // 2. Hero Reward & Level-Up Progression Card
+    TactileCard(
       modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(12.dp)
+      borderColor = GrassNeon.copy(alpha = 0.7f),
+      backgroundColor = ForestFloor
+    ) {
+      Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Tag Index
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            "QUEST CLEARED // EXPEDITION COMPLETE",
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp,
+            color = TextSecondary
+          )
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(3.dp))
+              .background(DarkSoilVariant)
+              .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
+              .padding(horizontal = 5.dp, vertical = 1.dp)
+          ) {
+            Text(
+              "#LOG-${submission.id.takeLast(4)}",
+              fontSize = 9.sp,
+              fontFamily = FontFamily.Monospace,
+              fontWeight = FontWeight.Bold,
+              color = SunGold
+            )
+          }
+        }
+
+        // Quest Title & Category
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+          Text(
+            text = submission.taskTitle,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = WeatheredPaper
+          )
+          Text(
+            text = "Field Biome Survey • Offline Log Verified",
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Serif,
+            fontStyle = FontStyle.Italic,
+            color = TextMuted
+          )
+        }
+
+        // Reward Callout Plate
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(SoilVoid)
+            .border(1.dp, MutedMoss, RoundedCornerShape(8.dp))
+            .padding(12.dp)
+        ) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Column {
+              Text(
+                "DISCOVERED YIELD",
+                fontSize = 9.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = TextMuted
+              )
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("✨", fontSize = 16.sp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                  "+$xpReward Exploration XP",
+                  fontSize = 18.sp,
+                  fontFamily = FontFamily.Monospace,
+                  fontWeight = FontWeight.ExtraBold,
+                  color = GrassNeon
+                )
+              }
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(3.dp))
+                  .background(SunGold.copy(alpha = 0.2f))
+                  .border(0.75.dp, SunGold, RoundedCornerShape(3.dp))
+                  .padding(horizontal = 6.dp, vertical = 2.dp)
+              ) {
+                Text(
+                  "STREAK +1",
+                  fontSize = 9.sp,
+                  fontFamily = FontFamily.Monospace,
+                  fontWeight = FontWeight.Bold,
+                  color = SunGold
+                )
+              }
+              Spacer(modifier = Modifier.height(2.dp))
+              Text(
+                "Off-Grid Multiplier",
+                fontSize = 8.sp,
+                fontFamily = FontFamily.Monospace,
+                color = TextMuted
+              )
+            }
+          }
+        }
+
+        // Segmented Progress Bar
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text(
+              "EXPEDITION XP PROGRESSION",
+              fontSize = 9.sp,
+              fontFamily = FontFamily.Monospace,
+              fontWeight = FontWeight.Bold,
+              color = TextSecondary
+            )
+            Text(
+              "Level Advanced",
+              fontSize = 9.sp,
+              fontFamily = FontFamily.Monospace,
+              fontWeight = FontWeight.Bold,
+              color = GrassNeon
+            )
+          }
+
+          SegmentedProgressBar(
+            progressPercent = 1.0f,
+            totalSegments = 10,
+            activeColor = GrassNeon,
+            inactiveColor = DarkSoilVariant
+          )
+
+          Text(
+            "0 Civic Credits • Exploration XP is separate from Civic Impact",
+            fontSize = 9.sp,
+            fontFamily = FontFamily.Monospace,
+            color = TextMuted
+          )
+        }
+      }
+    }
+
+    // 3. Collectible Field Specimen Discovery Card
+    TactileCard(
+      modifier = Modifier.fillMaxWidth(),
+      borderColor = MutedMoss,
+      backgroundColor = ForestFloor
+    ) {
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("🌱", fontSize = 14.sp)
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              "FIELD SPECIMEN DISCOVERY // TOUCH GRASS",
+              fontSize = 10.sp,
+              fontFamily = FontFamily.Monospace,
+              fontWeight = FontWeight.ExtraBold,
+              letterSpacing = 0.5.sp,
+              color = GrassNeon
+            )
+          }
+
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(3.dp))
+              .background(DarkSoilVariant)
+              .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
+              .padding(horizontal = 6.dp, vertical = 2.dp)
+          ) {
+            Text(
+              "LOCAL LORE",
+              fontSize = 9.sp,
+              fontFamily = FontFamily.Monospace,
+              fontWeight = FontWeight.Bold,
+              color = GrassNeon
+            )
+          }
+        }
+
+        val fieldQuote = if (submission.content.isNotBlank()) {
+          "\"${submission.content}\""
+        } else {
+          "\"Side quest complete. Biome lore logged from the field or window. Character development.\""
+        }
+
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .background(DarkSoilVariant)
+            .padding(10.dp)
+        ) {
+          Text(
+            text = fieldQuote,
+            fontSize = 12.sp,
+            fontFamily = FontFamily.Serif,
+            fontStyle = FontStyle.Italic,
+            color = WeatheredPaper,
+            lineHeight = 17.sp
+          )
+        }
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            "🌱 Local Lore (+${xpReward} XP)",
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = GrassNeon
+          )
+          Text(
+            "🛡️ Privacy-Safe: Zero PII Exposed",
+            fontSize = 9.sp,
+            fontFamily = FontFamily.Monospace,
+            color = TextMuted
+          )
+        }
+
+        Button(
+          onClick = {
+            val shareSnippet = submission.toShareableSnippet()
+            val sendIntent = Intent().apply {
+              action = Intent.ACTION_SEND
+              putExtra(Intent.EXTRA_TEXT, shareSnippet)
+              type = "text/plain"
+            }
+            val chooser = Intent.createChooser(sendIntent, "Share Touch Grass Quest")
+            context.startActivity(chooser)
+          },
+          colors = ButtonDefaults.buttonColors(containerColor = SoilSurfacePanel),
+          modifier = Modifier.fillMaxWidth(),
+          shape = RoundedCornerShape(6.dp)
+        ) {
+          Icon(Icons.Default.Send, contentDescription = null, tint = WeatheredPaper, modifier = Modifier.size(13.dp))
+          Spacer(modifier = Modifier.width(6.dp))
+          Text(
+            "Share Discovery Card",
+            color = WeatheredPaper,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp
+          )
+        }
+      }
+    }
+
+    // 4. Sleek Local Security & Storage Seal
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(8.dp))
+        .background(DarkSoilVariant)
+        .border(1.dp, MutedMoss, RoundedCornerShape(8.dp))
+        .padding(10.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Icon(Icons.Default.Lock, contentDescription = null, tint = WaypointTeal, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Column {
+          Text(
+            "ENCRYPTED LOCALLY (AES-256-GCM)",
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = WaypointTeal
+          )
+          Text(
+            "Self-guided quest completed on-device. Notes secured in local vault.",
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Serif,
+            color = TextMuted
+          )
+        }
+      }
+    }
+
+    // Actions
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(top = 4.dp, bottom = 16.dp),
+      horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
       Button(
         onClick = onReturnHome,
-        colors = ButtonDefaults.buttonColors(containerColor = CivicSurfacePanel),
+        colors = ButtonDefaults.buttonColors(
+          containerColor = GrassNeon,
+          contentColor = SoilVoid
+        ),
         modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(8.dp)
       ) {
-        Text("Home Base", color = TextPrimary, fontWeight = FontWeight.Bold)
+        Text("Base Camp", color = SoilVoid, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 12.sp)
       }
 
       Button(
         onClick = onViewMissions,
-        colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+        colors = ButtonDefaults.buttonColors(containerColor = SoilSurfacePanel),
         modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(8.dp)
       ) {
-        Text("View in Missions", color = Color.Black, fontWeight = FontWeight.Bold)
+        Text("View Quests", color = WeatheredPaper, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 12.sp)
       }
-    }
-  }
-}
-
-@Composable
-private fun TimelineItem(
-  stepNumber: String,
-  title: String,
-  subtitle: String,
-  isDone: Boolean,
-  accentColor: Color = CivicEmerald
-) {
-  Row(verticalAlignment = Alignment.Top) {
-    Box(
-      modifier = Modifier
-        .size(24.dp)
-        .clip(CircleShape)
-        .background(if (isDone) accentColor else CivicSurfaceDark)
-        .border(1.dp, if (isDone) accentColor else CivicBorderSubtle, CircleShape),
-      contentAlignment = Alignment.Center
-    ) {
-      Text(
-        stepNumber,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Bold,
-        color = if (isDone) Color.Black else TextMuted
-      )
-    }
-    Spacer(modifier = Modifier.width(10.dp))
-    Column {
-      Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (isDone) accentColor else TextPrimary)
-      Text(subtitle, fontSize = 11.sp, color = TextMuted)
     }
   }
 }

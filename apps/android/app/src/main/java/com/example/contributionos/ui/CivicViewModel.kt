@@ -2,6 +2,8 @@ package com.example.contributionos.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.contributionos.auth.AuthResult
+import com.example.contributionos.auth.AuthSession
 import com.example.contributionos.data.CivicRepository
 import com.example.contributionos.data.DefaultCivicRepository
 import com.example.contributionos.model.CivicExpedition
@@ -23,6 +25,7 @@ data class CivicUiState(
   val isLoading: Boolean = false,
   val isLiveConnected: Boolean = false,
   val environmentMode: DataSourceMode = DataSourceMode.PRODUCTION,
+  val authSession: AuthSession? = null,
   val syncStatusMessage: String? = null,
   val activeExpedition: CivicExpedition? = null,
   val tasks: List<CivicTask> = emptyList(),
@@ -31,19 +34,9 @@ data class CivicUiState(
   val milestones: List<CommunityMilestone> = emptyList(),
   val profile: CivicProfile? = null,
   val errorMessage: String? = null
-)
-
-internal data class RepositoryBundle(
-  val envMode: DataSourceMode,
-  val isLive: Boolean,
-  val syncMsg: String?,
-  val expedition: CivicExpedition?,
-  val tasks: List<CivicTask>,
-  val drafts: List<MissionDraft>,
-  val submissions: List<CivicSubmission>,
-  val milestones: List<CommunityMilestone>,
-  val profile: CivicProfile
-)
+) {
+  val isAuthenticated: Boolean get() = authSession != null
+}
 
 class CivicViewModel(private val repository: CivicRepository) : ViewModel() {
 
@@ -53,34 +46,35 @@ class CivicViewModel(private val repository: CivicRepository) : ViewModel() {
   val uiState: StateFlow<CivicUiState> = combine(
     repository.environmentMode,
     repository.isLiveConnected,
+    repository.authSession,
     repository.syncStatusMessage,
-    repository.activeExpedition,
-    repository.tasks
-  ) { envMode, isLive, syncMsg, expedition, tasks ->
-    Tuple5(envMode, isLive, syncMsg, expedition, tasks)
+    repository.activeExpedition
+  ) { envMode, isLive, authSession, syncMsg, expedition ->
+    Tuple5(envMode, isLive, authSession, syncMsg, expedition)
   }.let { part1Flow ->
     combine(
       part1Flow,
       combine(
+        repository.tasks,
         repository.drafts,
         repository.submissions,
-        repository.milestones,
-        repository.profile
-      ) { drafts, submissions, milestones, profile ->
-        Tuple4(drafts, submissions, milestones, profile)
+        combine(repository.milestones, repository.profile) { ms, prof -> Pair(ms, prof) }
+      ) { tasks, drafts, submissions, pair ->
+        Tuple4(tasks, drafts, submissions, pair)
       }
     ) { part1, part2 ->
       CivicUiState(
         isLoading = false,
-        isLiveConnected = part1.second,
         environmentMode = part1.first,
-        syncStatusMessage = part1.third,
-        activeExpedition = part1.fourth,
-        tasks = part1.fifth,
-        drafts = part2.first,
-        submissions = part2.second,
-        milestones = part2.third,
-        profile = part2.fourth,
+        isLiveConnected = part1.second,
+        authSession = part1.third,
+        syncStatusMessage = part1.fourth,
+        activeExpedition = part1.fifth,
+        tasks = part2.first,
+        drafts = part2.second,
+        submissions = part2.third,
+        milestones = part2.fourth.first,
+        profile = part2.fourth.second,
         errorMessage = null
       )
     }
@@ -115,6 +109,32 @@ class CivicViewModel(private val repository: CivicRepository) : ViewModel() {
     }
   }
 
+  fun signIn(email: String, pass: String, onResult: (AuthResult<AuthSession>) -> Unit) {
+    viewModelScope.launch {
+      val result = repository.signIn(email, pass)
+      onResult(result)
+    }
+  }
+
+  fun signUp(email: String, pass: String, onResult: (AuthResult<AuthSession>) -> Unit) {
+    viewModelScope.launch {
+      val result = repository.signUp(email, pass)
+      onResult(result)
+    }
+  }
+
+  fun signOut() {
+    viewModelScope.launch {
+      repository.signOut()
+    }
+  }
+
+  fun retryPendingSubmissions() {
+    viewModelScope.launch {
+      repository.retryPendingSubmissions()
+    }
+  }
+
   fun saveDraft(draft: MissionDraft) {
     viewModelScope.launch {
       repository.saveDraft(draft)
@@ -137,6 +157,18 @@ class CivicViewModel(private val repository: CivicRepository) : ViewModel() {
   fun resetRun(expeditionId: String) {
     viewModelScope.launch {
       repository.resetRun(expeditionId)
+    }
+  }
+
+  fun abandonExpedition(expeditionId: String) {
+    viewModelScope.launch {
+      repository.abandonExpedition(expeditionId)
+    }
+  }
+
+  fun recordWaypointDiscovery(nodeId: String, xpReward: Int) {
+    viewModelScope.launch {
+      repository.recordWaypointDiscovery(nodeId, xpReward)
     }
   }
 }

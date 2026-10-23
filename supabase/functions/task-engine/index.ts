@@ -225,8 +225,32 @@ async function submitTask(req: Request, taskId: string) {
   if (!["claimed", "in_progress"].includes(task.status)) return err("Task must be claimed or in progress");
 
   const body = await req.json();
-  const { content, attachments } = body;
+  const { content, attachments, client_submission_id } = body;
   if (!content || typeof content !== "string" || content.trim().length === 0) return err("Submission content is required");
+
+  // Idempotency: Check if client_submission_id was already processed
+  if (client_submission_id && typeof client_submission_id === "string") {
+    const { data: existing } = await supabase
+      .from("task_submissions")
+      .select("*")
+      .eq("task_id", taskId)
+      .eq("user_id", user.id)
+      .eq("client_submission_id", client_submission_id)
+      .maybeSingle();
+
+    if (existing) {
+      return json({ submission: existing, deduplicated: true }, 200);
+    }
+  }
+
+  // Verify attachments do not contain raw local device paths
+  if (attachments && Array.isArray(attachments)) {
+    for (const att of attachments) {
+      if (typeof att === "string" && (att.startsWith("file://") || att.startsWith("content://"))) {
+        return err("Local device URI not permitted as attachment. Upload to Supabase Storage first.", 400);
+      }
+    }
+  }
 
   // Atomically transition task to validation_pending to prevent duplicate concurrent submissions
   const { data: updatedTask, error: updateTaskErr } = await supabase
@@ -241,9 +265,19 @@ async function submitTask(req: Request, taskId: string) {
     return err("Task is not in a submittable state or has already been submitted", 409);
   }
 
+  const insertPayload: Record<string, unknown> = {
+    task_id: taskId,
+    user_id: user.id,
+    content: content.trim(),
+    attachments: attachments || []
+  };
+  if (client_submission_id && typeof client_submission_id === "string") {
+    insertPayload.client_submission_id = client_submission_id;
+  }
+
   const { data: submission, error } = await supabase
     .from("task_submissions")
-    .insert({ task_id: taskId, user_id: user.id, content: content.trim(), attachments: attachments || [] })
+    .insert(insertPayload)
     .select().single();
 
   if (error) {
@@ -368,7 +402,43 @@ async function approveSubmission(req: Request, submissionId: string) {
   const body = await req.json().catch(() => ({}));
   const feedback = body.feedback?.trim() || null;
 
-  // Atomically claim this submission for validation transition to prevent double-approval race conditions
+  // Attempt atomic database transaction RPC first if available
+  const { data: rpcResult, error: rpcErr } = await serviceDb.rpc("validate_submission_tx", {
+    p_submission_id: submissionId,
+    p_validator_id: user.id,
+    p_decision: "approved",
+    p_feedback: feedback,
+    p_score: task.difficulty * 10,
+    p_impact_metrics: { difficulty: task.difficulty, tags: task.tags },
+  });
+
+  if (!rpcErr && rpcResult) {
+    const val = rpcResult.validation;
+    const contrib = rpcResult.contribution;
+    await emitEvent(supabase, "ValidationApproved", user.id, "validation", val.id, {
+      submission_id: submissionId, task_id: task.id,
+    });
+    if (contrib) {
+      await emitEvent(supabase, "ContributionRecorded", user.id, "contribution", contrib.id, {
+        user_id: submission.user_id, score: contrib.score,
+      });
+      fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/impact-worker/process-validation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          "apikey": Deno.env.get("SUPABASE_ANON_KEY")!,
+        },
+        body: JSON.stringify({ contribution_id: contrib.id }),
+      }).catch(console.error);
+    }
+    await auditLog(supabase, "submission_approved", user.id, "submission", submissionId, {
+      task_id: task.id, validation_id: val.id,
+    });
+    return json({ validation: val, contribution: contrib });
+  }
+
+  // Fallback to strict atomic lock and full compensatory rollback if RPC is not installed
   const { data: updatedSub, error: updateSubErr } = await serviceDb
     .from("task_submissions")
     .update({ status: "approved" })
@@ -394,16 +464,29 @@ async function approveSubmission(req: Request, submissionId: string) {
   }
 
   // Update task status to validated
-  await serviceDb.from("tasks").update({ status: "validated" }).eq("id", task.id);
+  const { error: taskUpdateErr } = await serviceDb.from("tasks").update({ status: "validated" }).eq("id", task.id);
+  if (taskUpdateErr) {
+    await serviceDb.from("validations").delete().eq("id", validation.id);
+    await serviceDb.from("task_submissions").update({ status: "pending" }).eq("id", submissionId);
+    return err(taskUpdateErr.message, 500);
+  }
 
   // Create contribution record
-  const { data: contribution } = await serviceDb.from("contributions").insert({
+  const { data: contribution, error: contribErr } = await serviceDb.from("contributions").insert({
     task_id: task.id,
     user_id: submission.user_id,
     validation_id: validation.id,
     score: task.difficulty * 10,
     impact_metrics: { difficulty: task.difficulty, tags: task.tags },
   }).select().single();
+
+  if (contribErr || !contribution) {
+    // Rollback all prior writes to maintain complete transactional consistency
+    await serviceDb.from("validations").delete().eq("id", validation.id);
+    await serviceDb.from("tasks").update({ status: "validation_pending" }).eq("id", task.id);
+    await serviceDb.from("task_submissions").update({ status: "pending" }).eq("id", submissionId);
+    return err("Failed to record contribution ledger entry. Transaction rolled back.", 500);
+  }
 
   // Emit events
   await emitEvent(supabase, "ValidationApproved", user.id, "validation", validation.id, {

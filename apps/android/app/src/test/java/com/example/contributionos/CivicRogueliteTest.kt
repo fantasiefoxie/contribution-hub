@@ -139,4 +139,59 @@ class CivicRogueliteTest {
     assertTrue(DataSourceMode.values().contains(DataSourceMode.PRODUCTION))
     assertTrue(DataSourceMode.values().contains(DataSourceMode.SANDBOX_DEMO))
   }
+
+  @Test
+  fun testTouchGrassBrandShellIntegrity() {
+    val profile = SeedMissionCatalog.defaultProfile
+    assertTrue("Demo profile rank must reflect meme-native identity", profile.rankTitle.contains("Actually Useful Human"))
+    assertTrue("Demo profile rank must retain Sandbox distinction", profile.rankTitle.contains("Sandbox"))
+    assertEquals("Touch Grass Explorer (Demo)", profile.displayName)
+    assertEquals("Grasshopper-01", profile.callsign)
+
+    val firstBadge = profile.badges.first()
+    assertEquals("Touched real grass for the first time.", firstBadge.description)
+    assertEquals("🌱", firstBadge.iconGlyph)
+  }
+
+  @Test
+  fun testAppDestinationNavigationLabels() {
+    val destinations = com.example.contributionos.ui.components.AppDestination.values()
+    assertEquals(5, destinations.size)
+    assertEquals("Camp", com.example.contributionos.ui.components.AppDestination.HOME.title)
+    assertEquals("Map", com.example.contributionos.ui.components.AppDestination.MAP.title)
+    assertEquals("Quests", com.example.contributionos.ui.components.AppDestination.MISSIONS.title)
+    assertEquals("Impact", com.example.contributionos.ui.components.AppDestination.IMPACT.title)
+    assertEquals("Profile", com.example.contributionos.ui.components.AppDestination.PROFILE.title)
+  }
+
+  @Test
+  fun testExpeditionDossierIdentifierFormatting() {
+    assertEquals("SQ-01", com.example.contributionos.ui.screens.formatDossierId("task-1"))
+    assertEquals("SQ-12", com.example.contributionos.ui.screens.formatDossierId("task-12"))
+    assertEquals("SQ-01", com.example.contributionos.ui.screens.formatDossierId("no-digits"))
+    assertEquals("SQ-01", com.example.contributionos.ui.screens.formatDossierId(""))
+    assertEquals("SQ-01", com.example.contributionos.ui.screens.formatDossierId("self-guided-groundwork-1"))
+    assertEquals("SQ-02", com.example.contributionos.ui.screens.formatDossierId("self-guided-bioswale-2"))
+    assertEquals("SQ-99", com.example.contributionos.ui.screens.formatDossierId("task-999"))
+  }
+
+  @Test
+  fun testTaskModelAuthoritativeXpReward() {
+    val defaultTask = CivicTask(
+      id = "test-task-default",
+      title = "Test Default XP Task",
+      description = "Verifying default 50 XP reward",
+      difficulty = 1,
+      status = "open"
+    )
+    assertEquals("Default task xpReward must be 50", 50, defaultTask.xpReward)
+
+    val customTask = defaultTask.copy(xpReward = 100)
+    assertEquals("Custom task xpReward must be preserved", 100, customTask.xpReward)
+
+    // Check all self-guided starter quests in catalog have authoritative xpReward
+    SeedMissionCatalog.selfGuidedQuests.forEach { quest ->
+      assertEquals("Self-guided quest ${quest.id} must offer 50 XP", 50, quest.xpReward)
+    }
+  }
 }

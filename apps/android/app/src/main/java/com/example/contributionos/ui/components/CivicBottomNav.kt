@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Badge
@@ -21,21 +21,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.contributionos.theme.CivicBorderSubtle
-import com.example.contributionos.theme.CivicEmerald
-import com.example.contributionos.theme.CivicSurfaceDark
-import com.example.contributionos.theme.CivicSurfacePanel
-import com.example.contributionos.theme.NodeInProgress
-import com.example.contributionos.theme.TextMuted
-import com.example.contributionos.theme.TextPrimary
+import com.example.contributionos.theme.DarkSoilVariant
+import com.example.contributionos.theme.ForestFloor
+import com.example.contributionos.theme.GrassNeon
+import com.example.contributionos.theme.MutedLichen
+import com.example.contributionos.theme.MutedMoss
+import com.example.contributionos.theme.SoilSurfacePanel
+import com.example.contributionos.theme.SunGold
+import com.example.contributionos.theme.WeatheredPaper
 
 enum class AppDestination(val title: String, val icon: ImageVector) {
-  HOME("Home", Icons.Default.Home),
+  HOME("Camp", Icons.Default.Home),
   MAP("Map", Icons.Default.LocationOn),
-  MISSIONS("Missions", Icons.Default.Menu),
+  MISSIONS("Quests", Icons.Default.Menu),
   IMPACT("Impact", Icons.Default.Star),
   PROFILE("Profile", Icons.Default.Person)
 }
@@ -49,11 +51,11 @@ fun CivicBottomNav(
 ) {
   NavigationBar(
     modifier = modifier
-      .background(CivicSurfaceDark)
-      .border(0.75.dp, CivicBorderSubtle),
-    containerColor = CivicSurfaceDark,
-    contentColor = TextPrimary,
-    tonalElevation = 8.dp
+      .background(ForestFloor)
+      .border(1.dp, MutedMoss),
+    containerColor = ForestFloor,
+    contentColor = WeatheredPaper,
+    tonalElevation = 0.dp
   ) {
     AppDestination.values().forEach { destination ->
       val selected = destination == currentDestination
@@ -63,21 +65,27 @@ fun CivicBottomNav(
         icon = {
           if (destination == AppDestination.MISSIONS && draftCount > 0) {
             BadgedBox(badge = {
-              Badge(containerColor = NodeInProgress) {
-                Text(draftCount.toString(), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+              Badge(containerColor = SunGold) {
+                Text(
+                  draftCount.toString(),
+                  fontSize = 10.sp,
+                  fontFamily = FontFamily.Monospace,
+                  fontWeight = FontWeight.Bold,
+                  color = ForestFloor
+                )
               }
             }) {
               Icon(
                 imageVector = destination.icon,
                 contentDescription = destination.title,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(22.dp)
               )
             }
           } else {
             Icon(
               imageVector = destination.icon,
               contentDescription = destination.title,
-              modifier = Modifier.size(24.dp)
+              modifier = Modifier.size(22.dp)
             )
           }
         },
@@ -85,15 +93,16 @@ fun CivicBottomNav(
           Text(
             text = destination.title,
             fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
           )
         },
         colors = NavigationBarItemDefaults.colors(
-          selectedIconColor = CivicEmerald,
-          selectedTextColor = CivicEmerald,
-          indicatorColor = CivicSurfacePanel,
-          unselectedIconColor = TextMuted,
-          unselectedTextColor = TextMuted
+          selectedIconColor = GrassNeon,
+          selectedTextColor = GrassNeon,
+          indicatorColor = DarkSoilVariant,
+          unselectedIconColor = MutedLichen,
+          unselectedTextColor = MutedLichen
         )
       )
     }

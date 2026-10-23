@@ -21,21 +21,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.contributionos.model.DataSourceMode
-import com.example.contributionos.theme.CivicAmber
-import com.example.contributionos.theme.CivicBorderSubtle
-import com.example.contributionos.theme.CivicCyan
-import com.example.contributionos.theme.CivicEmerald
-import com.example.contributionos.theme.CivicMidnightNavy
-import com.example.contributionos.theme.CivicSurfaceCard
-import com.example.contributionos.theme.CivicSurfaceDark
-import com.example.contributionos.theme.CivicSurfacePanel
+import com.example.contributionos.theme.DarkSoilVariant
+import com.example.contributionos.theme.ForestFloor
+import com.example.contributionos.theme.GrassNeon
+import com.example.contributionos.theme.HardShadowDark
+import com.example.contributionos.theme.MutedMoss
+import com.example.contributionos.theme.SoilSurfacePanel
+import com.example.contributionos.theme.SoilVoid
+import com.example.contributionos.theme.SunGold
 import com.example.contributionos.theme.TextMuted
 import com.example.contributionos.theme.TextPrimary
 import com.example.contributionos.theme.TextSecondary
+import com.example.contributionos.theme.WaypointTeal
 
 @Composable
 fun CivicHeader(
@@ -49,35 +54,40 @@ fun CivicHeader(
   Column(
     modifier = modifier
       .fillMaxWidth()
-      .background(CivicSurfaceDark)
+      .background(ForestFloor)
+      .bottomBorder(1.dp, MutedMoss)
   ) {
     // Mode Banner if in Sandbox Demo mode
     if (environmentMode == DataSourceMode.SANDBOX_DEMO) {
       Row(
         modifier = Modifier
           .fillMaxWidth()
-          .background(CivicAmber.copy(alpha = 0.2f))
+          .background(SunGold.copy(alpha = 0.15f))
+          .bottomBorder(1.dp, SunGold.copy(alpha = 0.4f))
           .padding(horizontal = 16.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
         Text(
-          "⚠️ SANDBOX / DEMO SIMULATION (FIXTURE DATA)",
+          "⚠️ ASTROTURF SANDBOX (FIXTURE DATA)",
           fontSize = 11.sp,
+          fontFamily = FontFamily.Monospace,
           fontWeight = FontWeight.ExtraBold,
           letterSpacing = 0.5.sp,
-          color = CivicAmber
+          color = SunGold
         )
         if (onToggleMode != null) {
           Text(
-            "Switch to Live",
+            "Touch Real Grass",
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = CivicCyan,
+            color = WaypointTeal,
             modifier = Modifier
               .clip(RoundedCornerShape(4.dp))
+              .background(DarkSoilVariant)
+              .border(1.dp, MutedMoss, RoundedCornerShape(4.dp))
               .clickable { onToggleMode() }
-              .padding(horizontal = 6.dp, vertical = 2.dp)
+              .padding(horizontal = 8.dp, vertical = 3.dp)
           )
         }
       }
@@ -93,31 +103,32 @@ fun CivicHeader(
       Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
           val dotColor = if (environmentMode == DataSourceMode.SANDBOX_DEMO) {
-            CivicAmber
+            SunGold
           } else if (isLive) {
-            CivicEmerald
+            GrassNeon
           } else {
-            TextMuted
+            WaypointTeal
           }
 
           val statusLabel = if (environmentMode == DataSourceMode.SANDBOX_DEMO) {
-            "DEV SANDBOX"
+            "ASTROTURF SIMULATION"
           } else if (isLive) {
-            "CIVIC REGISTRY (CONNECTED)"
+            "🌱 TOUCHING GRASS (LIVE)"
           } else {
-            "CIVIC REGISTRY (OFFLINE DRAFT)"
+            "🌱 TOUCHING GRASS (OFFLINE SAFE)"
           }
 
           Box(
             modifier = Modifier
-              .size(8.dp)
+              .size(7.dp)
               .clip(CircleShape)
               .background(dotColor)
           )
           Spacer(modifier = Modifier.width(6.dp))
           Text(
             text = statusLabel,
-            fontSize = 11.sp,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.5.sp,
             color = dotColor
@@ -126,7 +137,7 @@ fun CivicHeader(
         Spacer(modifier = Modifier.height(2.dp))
         Text(
           text = districtName.uppercase(),
-          fontSize = 16.sp,
+          fontSize = 14.sp,
           fontWeight = FontWeight.ExtraBold,
           letterSpacing = 0.5.sp,
           color = TextPrimary
@@ -140,28 +151,29 @@ fun CivicHeader(
         if (onToggleMode != null && environmentMode == DataSourceMode.PRODUCTION) {
           Box(
             modifier = Modifier
-              .clip(RoundedCornerShape(6.dp))
-              .background(CivicSurfacePanel)
-              .border(1.dp, CivicBorderSubtle, RoundedCornerShape(6.dp))
+              .clip(RoundedCornerShape(4.dp))
+              .background(DarkSoilVariant)
+              .border(1.dp, MutedMoss, RoundedCornerShape(4.dp))
               .clickable { onToggleMode() }
-              .padding(horizontal = 8.dp, vertical = 5.dp)
+              .padding(horizontal = 7.dp, vertical = 3.dp)
           ) {
-            Text("Sandbox", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+            Text("Astroturf", fontSize = 10.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, color = TextSecondary)
           }
         }
 
         Box(
           modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(CivicSurfacePanel)
-            .border(1.dp, CivicBorderSubtle, RoundedCornerShape(6.dp))
-            .padding(horizontal = 8.dp, vertical = 5.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(DarkSoilVariant)
+            .border(1.dp, MutedMoss, RoundedCornerShape(4.dp))
+            .padding(horizontal = 7.dp, vertical = 3.dp)
         ) {
           Text(
             text = "SEED #$seed",
-            fontSize = 11.sp,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.SemiBold,
-            color = TextSecondary
+            color = SunGold
           )
         }
       }
@@ -169,19 +181,88 @@ fun CivicHeader(
   }
 }
 
+fun Modifier.bottomBorder(strokeWidth: Dp, color: Color): Modifier = this.drawBehind {
+  val stroke = strokeWidth.toPx()
+  drawLine(
+    color = color,
+    start = Offset(0f, size.height - stroke / 2),
+    end = Offset(size.width, size.height - stroke / 2),
+    strokeWidth = stroke
+  )
+}
+
+fun Modifier.topBorder(strokeWidth: Dp, color: Color): Modifier = this.drawBehind {
+  val stroke = strokeWidth.toPx()
+  drawLine(
+    color = color,
+    start = Offset(0f, stroke / 2),
+    end = Offset(size.width, stroke / 2),
+    strokeWidth = stroke
+  )
+}
+
 @Composable
-fun LayeredPanel(
+fun TactileCard(
   modifier: Modifier = Modifier,
-  borderColor: Color = CivicBorderSubtle,
+  borderColor: Color = MutedMoss,
+  backgroundColor: Color = ForestFloor,
+  shape: RoundedCornerShape = RoundedCornerShape(10.dp),
+  padding: Dp = 14.dp,
   content: @Composable () -> Unit
 ) {
   Box(
     modifier = modifier
-      .clip(RoundedCornerShape(12.dp))
-      .background(CivicSurfaceCard)
-      .border(1.dp, borderColor, RoundedCornerShape(12.dp))
-      .padding(14.dp)
+      .clip(shape)
+      .background(backgroundColor)
+      .border(1.5.dp, borderColor, shape)
+      .padding(padding)
   ) {
     content()
+  }
+}
+
+@Composable
+fun LayeredPanel(
+  modifier: Modifier = Modifier,
+  borderColor: Color = MutedMoss,
+  backgroundColor: Color = ForestFloor,
+  content: @Composable () -> Unit
+) {
+  TactileCard(
+    modifier = modifier,
+    borderColor = borderColor,
+    backgroundColor = backgroundColor,
+    shape = RoundedCornerShape(8.dp),
+    padding = 14.dp,
+    content = content
+  )
+}
+
+@Composable
+fun SegmentedProgressBar(
+  progressPercent: Float,
+  modifier: Modifier = Modifier,
+  totalSegments: Int = 10,
+  activeColor: Color = GrassNeon,
+  inactiveColor: Color = DarkSoilVariant,
+  borderColor: Color = MutedMoss
+) {
+  val filledSegments = (progressPercent * totalSegments).toInt().coerceIn(0, totalSegments)
+  Row(
+    modifier = modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(3.dp),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    for (i in 0 until totalSegments) {
+      val isFilled = i < filledSegments
+      Box(
+        modifier = Modifier
+          .weight(1f)
+          .height(6.dp)
+          .clip(RoundedCornerShape(1.dp))
+          .background(if (isFilled) activeColor else inactiveColor)
+          .border(0.75.dp, if (isFilled) activeColor.copy(alpha = 0.5f) else borderColor, RoundedCornerShape(1.dp))
+      )
+    }
   }
 }

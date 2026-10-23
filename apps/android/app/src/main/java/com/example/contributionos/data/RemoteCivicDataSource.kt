@@ -130,8 +130,16 @@ class RemoteCivicDataSource(
     taskId: String,
     content: String,
     attachments: List<String>,
-    userAuthToken: String? = null
+    userAuthToken: String?,
+    clientSubmissionId: String? = null
   ): RemoteResult<CivicSubmission> = withContext(Dispatchers.IO) {
+    if (userAuthToken.isNullOrBlank()) {
+      return@withContext RemoteResult.Failure(
+        message = "Authentication required: Please sign in to submit verified contributions.",
+        statusCode = 401
+      )
+    }
+
     try {
       val endpoint = "$baseUrl/functions/v1/task-engine/$taskId/submit"
       val requestBody = buildString {
@@ -139,7 +147,11 @@ class RemoteCivicDataSource(
         append("\"content\":").append(kotlinx.serialization.json.JsonPrimitive(content).toString()).append(",")
         append("\"attachments\":[")
         append(attachments.joinToString(",") { kotlinx.serialization.json.JsonPrimitive(it).toString() })
-        append("]}")
+        append("]")
+        if (clientSubmissionId != null) {
+          append(",\"client_submission_id\":").append(kotlinx.serialization.json.JsonPrimitive(clientSubmissionId).toString())
+        }
+        append("}")
       }
 
       val (code, body) = executeHttpRequest(endpoint, "POST", requestBody, userAuthToken)
@@ -153,19 +165,21 @@ class RemoteCivicDataSource(
           taskTitle = "Remote Verified Task",
           submittedAt = System.currentTimeMillis(),
           content = content,
-          status = SubmissionStatus.PENDING_REVIEW,
-          feedback = "Received by Civic Registry. Awaiting accredited validator.",
+          status = SubmissionStatus.SERVER_ACCEPTED,
+          feedback = "Acknowledged by Civic Registry. Awaiting accredited validator review.",
           scoreAwarded = null,
           isOfflineOrigin = false,
           isSandboxDemo = false,
-          remoteSubmissionId = id
+          remoteSubmissionId = id,
+          clientSubmissionId = clientSubmissionId,
+          remoteStoragePath = attachments.firstOrNull()
         )
         RemoteResult.Success(submission)
       } else {
         RemoteResult.Failure("Submission rejected by server ($code): $body", code)
       }
     } catch (e: Exception) {
-      RemoteResult.Failure("Network transmission failure: ${e.localizedMessage}", isOffline = true)
+      RemoteResult.Failure("Network transmission failure: ${e.localizedMessage ?: e.message}", isOffline = true)
     }
   }
 

@@ -1,5 +1,6 @@
 package com.example.contributionos
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.example.contributionos.data.DefaultCivicRepository
+import com.example.contributionos.data.SeedMissionCatalog
+import com.example.contributionos.model.CivicTask
 import com.example.contributionos.model.DataSourceMode
 import com.example.contributionos.theme.CivicForestDark
 import com.example.contributionos.ui.CivicViewModel
@@ -95,10 +98,25 @@ fun MainNavigation() {
         .background(CivicForestDark)
         .padding(paddingValues)
     ) {
+      val navigateBackFromCompletion: () -> Unit = {
+        while (backStack.size > 1 && (
+            backStack.lastOrNull() is NavSubmissionStatus ||
+            backStack.lastOrNull() is NavEvidenceCapture ||
+            backStack.lastOrNull() is NavMissionDetails
+        )) {
+          backStack.removeLastOrNull()
+        }
+        if (backStack.isEmpty()) {
+          backStack.add(NavHome)
+        }
+      }
+
       NavDisplay(
         backStack = backStack,
         onBack = {
-          if (backStack.size > 1) {
+          if (backStack.lastOrNull() is NavSubmissionStatus) {
+            navigateBackFromCompletion()
+          } else if (backStack.size > 1) {
             backStack.removeLastOrNull()
           }
         },
@@ -122,6 +140,10 @@ fun MainNavigation() {
                 onGoToMissions = {
                   backStack.clear()
                   backStack.add(NavMissions)
+                },
+                availableTasks = uiState.tasks,
+                onSelectTask = { task ->
+                  backStack.add(NavMissionDetails(taskId = task.id))
                 }
               )
             }
@@ -130,11 +152,18 @@ fun MainNavigation() {
           entry<NavMap> {
             MapScreen(
               expedition = uiState.activeExpedition,
+              rewardedWaypointIds = uiState.profile?.rewardedWaypointIds ?: emptySet(),
               isLive = uiState.isLiveConnected,
               environmentMode = uiState.environmentMode,
               onToggleMode = toggleMode,
               onNodeSelected = { node ->
                 backStack.add(NavMissionDetails(taskId = node.taskId, nodeId = node.id))
+              },
+              onSelectQuest = { taskId ->
+                backStack.add(NavMissionDetails(taskId = taskId))
+              },
+              onRecordDiscovery = { waypointId, xpReward ->
+                viewModel.recordWaypointDiscovery(waypointId, xpReward)
               }
             )
           }
@@ -150,6 +179,10 @@ fun MainNavigation() {
                 onResetRun = {
                   viewModel.resetRun(exp.id)
                 },
+                onAbandonRun = {
+                  viewModel.abandonExpedition(exp.id)
+                  backStack.removeLastOrNull()
+                },
                 onBack = { backStack.removeLastOrNull() }
               )
             }
@@ -157,6 +190,7 @@ fun MainNavigation() {
 
           entry<NavMissionDetails> { key ->
             val task = uiState.tasks.find { it.id == key.taskId }
+              ?: SeedMissionCatalog.findTask(key.taskId)
               ?: uiState.activeExpedition?.nodes?.find { it.taskId == key.taskId }?.let { node ->
                 com.example.contributionos.model.CivicTask(
                   id = node.taskId,
@@ -186,6 +220,7 @@ fun MainNavigation() {
 
           entry<NavEvidenceCapture> { key ->
             val task = uiState.tasks.find { it.id == key.taskId }
+              ?: SeedMissionCatalog.findTask(key.taskId)
               ?: uiState.activeExpedition?.nodes?.find { it.taskId == key.taskId }?.let { node ->
                 com.example.contributionos.model.CivicTask(
                   id = node.taskId,
@@ -207,6 +242,8 @@ fun MainNavigation() {
               EvidenceCaptureScreen(
                 task = task,
                 existingDraft = existingDraft,
+                isAuthenticated = uiState.isAuthenticated,
+                isProduction = uiState.environmentMode == DataSourceMode.PRODUCTION,
                 onSaveDraft = { draft ->
                   viewModel.saveDraft(draft)
                 },
@@ -225,6 +262,7 @@ fun MainNavigation() {
               drafts = uiState.drafts,
               activeNodes = uiState.activeExpedition?.nodes ?: emptyList(),
               submissions = uiState.submissions,
+              tasks = uiState.tasks,
               isLive = uiState.isLiveConnected,
               environmentMode = uiState.environmentMode,
               onToggleMode = toggleMode,
@@ -236,6 +274,12 @@ fun MainNavigation() {
               },
               onSelectNode = { node ->
                 backStack.add(NavMissionDetails(taskId = node.taskId, nodeId = node.id))
+              },
+              onSelectTask = { task ->
+                backStack.add(NavMissionDetails(taskId = task.id))
+              },
+              onSelectSubmission = { sub ->
+                backStack.add(NavSubmissionStatus(sub.id))
               }
             )
           }
@@ -259,7 +303,12 @@ fun MainNavigation() {
                 submissionCount = uiState.submissions.size,
                 isLive = uiState.isLiveConnected,
                 environmentMode = uiState.environmentMode,
-                onSetEnvironmentMode = { mode -> viewModel.setEnvironmentMode(mode) }
+                onSetEnvironmentMode = { mode -> viewModel.setEnvironmentMode(mode) },
+                authSession = uiState.authSession,
+                onSignIn = { email, pass, cb -> viewModel.signIn(email, pass, cb) },
+                onSignUp = { email, pass, cb -> viewModel.signUp(email, pass, cb) },
+                onSignOut = { viewModel.signOut() },
+                onRetryPending = { viewModel.retryPendingSubmissions() }
               )
             }
           }
@@ -267,10 +316,19 @@ fun MainNavigation() {
           entry<NavSubmissionStatus> { key ->
             val submission = uiState.submissions.find { it.id == key.submissionId }
               ?: uiState.submissions.firstOrNull()
+            val task = submission?.let { sub ->
+              uiState.tasks.find { it.id == sub.taskId }
+                ?: com.example.contributionos.data.SeedMissionCatalog.findTask(sub.taskId)
+            }
+
+            BackHandler {
+              navigateBackFromCompletion()
+            }
 
             if (submission != null) {
               SubmissionStatusScreen(
                 submission = submission,
+                task = task,
                 onReturnHome = {
                   backStack.clear()
                   backStack.add(NavHome)
@@ -278,6 +336,9 @@ fun MainNavigation() {
                 onViewMissions = {
                   backStack.clear()
                   backStack.add(NavMissions)
+                },
+                onRetry = {
+                  viewModel.retryPendingSubmissions()
                 }
               )
             }

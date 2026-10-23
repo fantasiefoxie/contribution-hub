@@ -37,6 +37,10 @@ android {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
       }
     }
+
+    testOptions {
+      unitTests.isReturnDefaultValues = true
+    }
 }
 
 kotlin {
@@ -83,4 +87,10 @@ dependencies {
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.lifecycle.viewmodel.navigation3)
   implementation(libs.kotlinx.serialization.json)
+
+  // WorkManager for reliable offline queue
+  implementation(libs.androidx.work.runtime.ktx)
+
+  // MapLibre Native Android SDK for real geographic vector maps
+  implementation(libs.maplibre.android)
 }

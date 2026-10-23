@@ -1,19 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
--->
+<?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- Exclude local encrypted civic drafts, offline queues, and session secrets from cloud backup -->
+        <exclude domain="file" path="civic_secure_drafts.enc" />
+        <exclude domain="file" path="civic_secure_submissions.enc" />
+        <exclude domain="file" path="civic_auth_session.enc" />
+        <exclude domain="file" path="evidence" />
+        <exclude domain="sharedpref" path="civic_secure_prefs.xml" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <!-- Device-to-device transfer can optionally include local items if desired, but exclude session secrets -->
+        <exclude domain="file" path="civic_auth_session.enc" />
     </device-transfer>
-    -->
 </data-extraction-rules>

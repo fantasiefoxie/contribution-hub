@@ -71,10 +71,12 @@ fun ExpeditionDetailScreen(
   expedition: CivicExpedition,
   onNodeClick: (ExpeditionNode) -> Unit,
   onResetRun: () -> Unit,
+  onAbandonRun: () -> Unit = {},
   onBack: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   var showResetDialog by remember { mutableStateOf(false) }
+  var showAbandonDialog by remember { mutableStateOf(false) }
   val scrollState = rememberScrollState()
 
   Column(
@@ -246,15 +248,30 @@ fun ExpeditionDetailScreen(
             color = TextMuted,
             lineHeight = 16.sp
           )
-          Button(
-            onClick = { showResetDialog = true },
-            colors = ButtonDefaults.buttonColors(containerColor = CivicSurfacePanel),
+          Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            Icon(Icons.Default.Refresh, contentDescription = null, tint = CivicAmber, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Re-Roll Route Branches", color = CivicAmber, fontWeight = FontWeight.Bold)
+            Button(
+              onClick = { showResetDialog = true },
+              colors = ButtonDefaults.buttonColors(containerColor = CivicSurfacePanel),
+              modifier = Modifier.weight(1f),
+              shape = RoundedCornerShape(8.dp)
+            ) {
+              Icon(Icons.Default.Refresh, contentDescription = null, tint = CivicAmber, modifier = Modifier.size(16.dp))
+              Spacer(modifier = Modifier.width(6.dp))
+              Text("Re-Roll", color = CivicAmber, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+            Button(
+              onClick = { showAbandonDialog = true },
+              colors = ButtonDefaults.buttonColors(containerColor = CivicSurfacePanel),
+              modifier = Modifier.weight(1f),
+              shape = RoundedCornerShape(8.dp)
+            ) {
+              Icon(Icons.Default.Warning, contentDescription = null, tint = TextMuted, modifier = Modifier.size(16.dp))
+              Spacer(modifier = Modifier.width(6.dp))
+              Text("Abandon", color = TextMuted, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
           }
         }
       }
@@ -290,6 +307,40 @@ fun ExpeditionDetailScreen(
       dismissButton = {
         TextButton(onClick = { showResetDialog = false }) {
           Text("Cancel", color = TextMuted)
+        }
+      }
+    )
+  }
+
+  // Abandon Expedition Confirmation Dialog
+  if (showAbandonDialog) {
+    AlertDialog(
+      onDismissRequest = { showAbandonDialog = false },
+      containerColor = CivicSurfaceDark,
+      title = {
+        Text("Abandon Active Expedition?", fontWeight = FontWeight.Bold, color = TextPrimary)
+      },
+      text = {
+        Text(
+          "Abandoning this expedition frees your focus. No shame, no penalties, and every single verified contribution and proof you've already completed is safely kept forever.",
+          fontSize = 13.sp,
+          color = TextSecondary
+        )
+      },
+      confirmButton = {
+        Button(
+          onClick = {
+            showAbandonDialog = false
+            onAbandonRun()
+          },
+          colors = ButtonDefaults.buttonColors(containerColor = CivicAmber)
+        ) {
+          Text("Abandon Run", color = Color.Black, fontWeight = FontWeight.Bold)
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showAbandonDialog = false }) {
+          Text("Keep Going", color = TextMuted)
         }
       }
     )

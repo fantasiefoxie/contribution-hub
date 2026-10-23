@@ -14,6 +14,12 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
+    try {
+      org.maplibre.android.MapLibre.getInstance(this)
+    } catch (e: Exception) {
+      android.util.Log.w("MainActivity", "MapLibre initialization note: ${e.message}")
+    }
+
     enableEdgeToEdge()
     setContent {
       ContributionOSTheme { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { MainNavigation() } }
