@@ -12,6 +12,7 @@ import com.example.contributionos.model.CivicSubmission
 import com.example.contributionos.model.CivicTask
 import com.example.contributionos.model.CommunityMilestone
 import com.example.contributionos.model.DataSourceMode
+import com.example.contributionos.model.EncounterChoice
 import com.example.contributionos.model.ExpeditionNode
 import com.example.contributionos.model.ExpeditionStatus
 import com.example.contributionos.model.MissionDraft
@@ -49,14 +50,20 @@ interface CivicRepository {
   suspend fun resetRun(expeditionId: String)
   suspend fun abandonExpedition(expeditionId: String)
   suspend fun recordWaypointDiscovery(nodeId: String, xpReward: Int)
+  suspend fun completeExpedition(expeditionId: String, bonusXp: Int = 100): Boolean
+  suspend fun advanceExpeditionNode(expeditionId: String, completedNodeId: String)
+  suspend fun setExpeditionStance(stance: String)
+  suspend fun startExpeditionRun(expeditionId: String, stance: String = "TREK"): CivicExpedition
+  suspend fun commitToBranch(expeditionId: String, targetNodeId: String): CivicExpedition
+  suspend fun resolveEncounterChoice(expeditionId: String, nodeId: String, choiceId: String): Boolean
 }
 
 class DefaultCivicRepository(
-  private val context: Context,
-  private val localDraftStore: LocalDraftStore = LocalDraftStore(context),
+  private val context: Context? = null,
+  private val localDraftStore: LocalDraftStore = LocalDraftStore(context!!),
   private val remoteDataSource: RemoteCivicDataSource = RemoteCivicDataSource(),
-  private val authManager: SupabaseAuthManager = SupabaseAuthManager(context),
-  private val storageUploader: SupabaseStorageUploader = SupabaseStorageUploader(context)
+  private val authManager: SupabaseAuthManager = SupabaseAuthManager(context!!),
+  private val storageUploader: SupabaseStorageUploader = SupabaseStorageUploader(context!!)
 ) : CivicRepository {
 
   private val _environmentMode = MutableStateFlow(DataSourceMode.PRODUCTION)
@@ -116,6 +123,7 @@ class DefaultCivicRepository(
   // Anti-grind guard: track which waypoint nodeIds have already been rewarded.
   // Restored from encrypted storage on startup and updated atomically with persistence.
   private val _rewardedNodeIds = mutableSetOf<String>()
+  private val _completedExpeditionIds = mutableSetOf<String>()
 
   suspend fun initialize() {
     authManager.initialize()
@@ -129,10 +137,22 @@ class DefaultCivicRepository(
         xp = persistedProfile.explorationXp,
         level = persistedProfile.level,
         discoveredWaypointsCount = persistedProfile.discoveredWaypointsCount,
-        rewardedWaypointIds = persistedProfile.rewardedWaypointIds
+        completedExpeditionsCount = persistedProfile.completedExpeditionsCount,
+        rewardedWaypointIds = persistedProfile.rewardedWaypointIds,
+        completedExpeditionIds = persistedProfile.completedExpeditionIds,
+        activeExpeditionId = persistedProfile.activeExpeditionId,
+        activeExpeditionStance = persistedProfile.activeExpeditionStance,
+        completedNodeIds = persistedProfile.completedNodeIds,
+        chronicledSpecimenIds = persistedProfile.chronicledSpecimenIds,
+        mintedStampIds = persistedProfile.mintedStampIds,
+        completedRunIds = persistedProfile.completedRunIds,
+        activeRun = persistedProfile.activeRun
       )
       _rewardedNodeIds.clear()
       _rewardedNodeIds.addAll(persistedProfile.rewardedWaypointIds)
+      _rewardedNodeIds.addAll(persistedProfile.completedNodeIds)
+      _completedExpeditionIds.clear()
+      _completedExpeditionIds.addAll(persistedProfile.completedExpeditionIds)
     }
 
     val persistedRewarded = localDraftStore.getRewardedNodeIds()
@@ -143,6 +163,26 @@ class DefaultCivicRepository(
       refreshRemoteData()
     } else {
       loadSandboxFixtures()
+    }
+
+    val currentActiveRun = _profile.value.activeRun
+    if (currentActiveRun != null) {
+      val baseExp = _expeditions.value.find { it.id == currentActiveRun.expeditionDefinitionId }
+        ?: SeedMissionCatalog.branchingCanopyExpedition.takeIf { it.id == currentActiveRun.expeditionDefinitionId }
+        ?: SeedMissionCatalog.productionFixtureExpedition.takeIf { it.id == currentActiveRun.expeditionDefinitionId }
+      if (baseExp != null) {
+        val restored = restoreExpeditionProgress(baseExp, _rewardedNodeIds)
+        _activeExpedition.value = restored
+        if (_expeditions.value.none { it.id == restored.id }) {
+          _expeditions.value = _expeditions.value + restored
+        }
+      }
+    } else if (_expeditions.value.isNotEmpty()) {
+      _expeditions.value = _expeditions.value.map { restoreExpeditionProgress(it, _rewardedNodeIds) }
+      val activeId = _profile.value.activeExpeditionId
+      if (activeId != null) {
+        _activeExpedition.value = _expeditions.value.find { it.id == activeId }
+      }
     }
   }
 
@@ -231,7 +271,16 @@ class DefaultCivicRepository(
           xp = persistedProfile.explorationXp,
           level = persistedProfile.level,
           discoveredWaypointsCount = persistedProfile.discoveredWaypointsCount,
-          rewardedWaypointIds = persistedProfile.rewardedWaypointIds
+          completedExpeditionsCount = persistedProfile.completedExpeditionsCount,
+          rewardedWaypointIds = persistedProfile.rewardedWaypointIds,
+          completedExpeditionIds = persistedProfile.completedExpeditionIds,
+          activeExpeditionId = persistedProfile.activeExpeditionId,
+          activeExpeditionStance = persistedProfile.activeExpeditionStance,
+          completedNodeIds = persistedProfile.completedNodeIds,
+          chronicledSpecimenIds = persistedProfile.chronicledSpecimenIds,
+          mintedStampIds = persistedProfile.mintedStampIds,
+          completedRunIds = persistedProfile.completedRunIds,
+          activeRun = persistedProfile.activeRun
         )
       }
       val persistedRewarded = localDraftStore.getRewardedNodeIds()
@@ -240,14 +289,19 @@ class DefaultCivicRepository(
         _rewardedNodeIds.addAll(persistedProfile.rewardedWaypointIds)
       }
       _rewardedNodeIds.addAll(persistedRewarded)
+      _completedExpeditionIds.clear()
+      if (persistedProfile?.completedExpeditionIds?.isNotEmpty() == true) {
+        _completedExpeditionIds.addAll(persistedProfile.completedExpeditionIds)
+      }
       refreshRemoteData()
     }
   }
 
   private fun loadSandboxFixtures() {
-    val demoExpeditions = SeedMissionCatalog.generateExpeditions()
+    val demoExpeditions = (listOf(SeedMissionCatalog.branchingCanopyExpedition) + SeedMissionCatalog.generateExpeditions()).map { restoreExpeditionProgress(it, _rewardedNodeIds) }
     _expeditions.value = demoExpeditions
-    _activeExpedition.value = demoExpeditions.firstOrNull()
+    val activeId = _profile.value.activeExpeditionId
+    _activeExpedition.value = demoExpeditions.find { it.id == activeId } ?: demoExpeditions.firstOrNull()
     _tasks.value = SeedMissionCatalog.realTasks
     _milestones.value = SeedMissionCatalog.realMilestones
     _profile.value = SeedMissionCatalog.defaultProfile
@@ -271,7 +325,7 @@ class DefaultCivicRepository(
       is RemoteResult.Failure -> {
         _isLiveConnected.value = false
         if (_tasks.value.isEmpty()) {
-          // Provide clearly labelled self-guided exploration quests so offline users have a playable loop
+          // Provide clearly labelled self-guided exploration quests (no fake coordinates) so offline users have a playable loop
           _tasks.value = SeedMissionCatalog.selfGuidedQuests
         }
         _syncStatusMessage.value = if (taskResult.isOffline) {
@@ -286,14 +340,14 @@ class DefaultCivicRepository(
     when (val expResult = remoteDataSource.fetchInitiatives()) {
       is RemoteResult.Success -> {
         if (expResult.data.isNotEmpty()) {
-          _expeditions.value = expResult.data
-          if (_activeExpedition.value == null || !_expeditions.value.any { it.id == _activeExpedition.value?.id }) {
-            _activeExpedition.value = expResult.data.firstOrNull()
-          }
+          val restored = expResult.data.map { restoreExpeditionProgress(it, _rewardedNodeIds) }
+          _expeditions.value = restored
+          val activeId = _profile.value.activeExpeditionId
+          _activeExpedition.value = restored.find { it.id == activeId } ?: restored.firstOrNull()
         }
       }
       is RemoteResult.Failure -> {
-        // Keep honest empty state or previous cached initiatives
+        // Keep honest empty state or previous cached initiatives; never substitute unverified fixtures in production
       }
     }
 
@@ -338,6 +392,10 @@ class DefaultCivicRepository(
   override suspend fun selectExpedition(expeditionId: String) {
     val exp = _expeditions.value.find { it.id == expeditionId } ?: return
     _activeExpedition.value = exp
+    val currentProf = _profile.value
+    val updatedProfile = currentProf.copy(activeExpeditionId = expeditionId)
+    _profile.value = updatedProfile
+    try { localDraftStore.saveProfile(updatedProfile) } catch (_: Exception) {}
   }
 
   override suspend fun getTask(taskId: String): CivicTask? {
@@ -405,7 +463,7 @@ class DefaultCivicRepository(
       else -> false
     }
 
-    if (isLocalCompletionOnly) {
+    if (isLocalCompletionOnly || !draft.consentToCivicSubmission) {
       val existingLocalSub = _submissions.value.find { it.taskId == draft.taskId && it.status == SubmissionStatus.LOCAL_COMPLETION }
         ?: localDraftStore.getSubmissions().find { it.taskId == draft.taskId && it.status == SubmissionStatus.LOCAL_COMPLETION }
 
@@ -423,7 +481,11 @@ class DefaultCivicRepository(
           submittedAt = System.currentTimeMillis(),
           content = draft.notes,
           status = SubmissionStatus.LOCAL_COMPLETION,
-          feedback = "Self-guided exploration completed locally. Notes and proof secured on-device.",
+          feedback = if (isLocalCompletionOnly) {
+            "Self-guided exploration completed locally. Notes and proof secured on-device."
+          } else {
+            "Personal Field Journal Entry: Stored privately on-device (Civic submission consent unchecked)."
+          },
           scoreAwarded = null, // Civic credits are strictly server-authoritative; zero civic credits for local exploration
           isOfflineOrigin = true,
           isSandboxDemo = false,
@@ -528,7 +590,7 @@ class DefaultCivicRepository(
           localDraftStore.saveSubmission(queuedSub)
           _submissions.value = listOf(queuedSub) + _submissions.value.filterNot { it.id == queuedSub.id }
           if (uploadResult.isNetworkError) {
-            SubmissionSyncWorker.enqueue(context)
+            context?.let { SubmissionSyncWorker.enqueue(it) }
           }
           return queuedSub
         }
@@ -594,7 +656,7 @@ class DefaultCivicRepository(
     )
 
     if (finalSubmission.status == SubmissionStatus.QUEUED_OFFLINE) {
-      SubmissionSyncWorker.enqueue(context)
+      context?.let { SubmissionSyncWorker.enqueue(it) }
     }
 
     // Update active expedition node state
@@ -614,7 +676,7 @@ class DefaultCivicRepository(
   }
 
   override suspend fun retryPendingSubmissions() {
-    SubmissionSyncWorker.enqueue(context)
+    context?.let { SubmissionSyncWorker.enqueue(it) }
     loadLocalStoreData()
   }
 
@@ -676,5 +738,369 @@ class DefaultCivicRepository(
 
     _rewardedNodeIds.add(nodeId)
     _profile.value = updatedProfile
+  }
+
+  override suspend fun completeExpedition(expeditionId: String, bonusXp: Int): Boolean {
+    if (_environmentMode.value == DataSourceMode.SANDBOX_DEMO) return false
+    if (_completedExpeditionIds.contains(expeditionId)) {
+      // Idempotency guard: already rewarded this expedition completion
+      return false
+    }
+
+    val candidateCompleted = _completedExpeditionIds + expeditionId
+    val currentProf = _profile.value
+    val newExplorationXp = currentProf.explorationXp + bonusXp
+    val newCount = currentProf.completedExpeditionsCount + 1
+    val newLevel = 1 + (newExplorationXp / 500)
+    val updatedProfile = currentProf.copy(
+      explorationXp = newExplorationXp,
+      xp = newExplorationXp,
+      level = newLevel,
+      completedExpeditionsCount = newCount,
+      completedExpeditionIds = candidateCompleted
+    )
+
+    localDraftStore.saveProfile(updatedProfile)
+    _completedExpeditionIds.add(expeditionId)
+    _profile.value = updatedProfile
+
+    val currentExp = _activeExpedition.value
+    if (currentExp?.id == expeditionId) {
+      _activeExpedition.value = currentExp.copy(status = ExpeditionStatus.COMPLETED)
+    }
+    _expeditions.value = _expeditions.value.map {
+      if (it.id == expeditionId) it.copy(status = ExpeditionStatus.COMPLETED) else it
+    }
+    return true
+  }
+
+  override suspend fun advanceExpeditionNode(expeditionId: String, completedNodeId: String) {
+    val currentExp = _activeExpedition.value?.takeIf { it.id == expeditionId }
+      ?: _expeditions.value.find { it.id == expeditionId } ?: return
+
+    val completedNode = currentExp.nodes.find { it.id == completedNodeId }
+    val childIds = completedNode?.childNodeIds ?: emptyList()
+
+    val updatedNodes = currentExp.nodes.map { node ->
+      when {
+        node.id == completedNodeId -> node.copy(status = NodeStatus.VALIDATED)
+        childIds.contains(node.id) && node.status == NodeStatus.LOCKED -> node.copy(status = NodeStatus.AVAILABLE)
+        else -> node
+      }
+    }
+
+    val allCompleted = updatedNodes.isNotEmpty() && updatedNodes.all { it.status == NodeStatus.VALIDATED }
+    val updatedExp = currentExp.copy(
+      nodes = updatedNodes,
+      status = if (allCompleted) ExpeditionStatus.COMPLETED else currentExp.status
+    )
+    _activeExpedition.value = updatedExp
+    _expeditions.value = _expeditions.value.map { if (it.id == expeditionId) updatedExp else it }
+
+    // Persist completed node ID and active expedition into local store
+    _rewardedNodeIds.add(completedNodeId)
+    val currentProf = _profile.value
+    val updatedRewarded = currentProf.rewardedWaypointIds + completedNodeId
+    val updatedProfile = currentProf.copy(
+      activeExpeditionId = expeditionId,
+      rewardedWaypointIds = updatedRewarded
+    )
+    _profile.value = updatedProfile
+    try {
+      localDraftStore.saveProfile(updatedProfile)
+      localDraftStore.saveRewardedNodeIds(_rewardedNodeIds)
+    } catch (_: Exception) {}
+
+    if (allCompleted) {
+      completeExpedition(expeditionId, bonusXp = 100)
+    }
+  }
+
+  fun restoreExpeditionProgress(exp: CivicExpedition, rewardedIds: Set<String>): CivicExpedition {
+    val activeRun = _profile.value.activeRun
+    if (activeRun != null && activeRun.expeditionDefinitionId == exp.id) {
+      val validatedIds = activeRun.validatedNodeIds
+      val lockedIds = activeRun.lockedNodeIds
+      val selectedChoices = activeRun.selectedChoices
+
+      var nodes = exp.nodes.map { node ->
+        when {
+          validatedIds.contains(node.id) -> node.copy(
+            status = NodeStatus.VALIDATED,
+            selectedChoiceId = selectedChoices[node.id]
+          )
+          lockedIds.contains(node.id) -> node.copy(status = NodeStatus.LOCKED)
+          node.step == 0 -> node.copy(status = NodeStatus.AVAILABLE)
+          else -> node
+        }
+      }
+
+      val validatedChildIds = nodes.filter { it.status == NodeStatus.VALIDATED }
+        .flatMap { it.childNodeIds }.toSet()
+
+      nodes = nodes.map { node ->
+        if (node.status == NodeStatus.LOCKED && !lockedIds.contains(node.id) && validatedChildIds.contains(node.id)) {
+          node.copy(status = NodeStatus.AVAILABLE)
+        } else {
+          node
+        }
+      }
+
+      val allCompleted = activeRun.status == ExpeditionStatus.COMPLETED
+      return exp.copy(
+        nodes = nodes,
+        status = if (allCompleted) ExpeditionStatus.COMPLETED else exp.status,
+        activeStance = activeRun.stance,
+        activeRunId = activeRun.runInstanceId
+      )
+    }
+
+    var nodes = exp.nodes
+    nodes = nodes.map { node ->
+      if (rewardedIds.contains(node.id)) {
+        node.copy(status = NodeStatus.VALIDATED)
+      } else {
+        node
+      }
+    }
+    val validatedChildIds = nodes.filter { it.status == NodeStatus.VALIDATED }.flatMap { it.childNodeIds }.toSet()
+    nodes = nodes.map { node ->
+      if (node.status == NodeStatus.LOCKED && validatedChildIds.contains(node.id)) {
+        node.copy(status = NodeStatus.AVAILABLE)
+      } else {
+        node
+      }
+    }
+    val allCompleted = nodes.isNotEmpty() && nodes.all { it.status == NodeStatus.VALIDATED }
+    return exp.copy(
+      nodes = nodes,
+      status = if (allCompleted) ExpeditionStatus.COMPLETED else exp.status,
+      activeStance = _profile.value.activeExpeditionStance ?: "TREK"
+    )
+  }
+
+  fun loadTestExpedition(expedition: CivicExpedition) {
+    val restored = restoreExpeditionProgress(expedition, _rewardedNodeIds)
+    _expeditions.value = listOf(restored)
+    _activeExpedition.value = restored
+    val currentProf = _profile.value
+    if (currentProf.activeExpeditionId != expedition.id) {
+      val updatedProf = currentProf.copy(activeExpeditionId = expedition.id)
+      _profile.value = updatedProf
+      try {
+        kotlinx.coroutines.runBlocking { localDraftStore.saveProfile(updatedProf) }
+      } catch (_: Exception) {}
+    }
+  }
+
+  override suspend fun startExpeditionRun(expeditionId: String, stance: String): CivicExpedition {
+    val baseExp = _expeditions.value.find { it.id == expeditionId }
+      ?: SeedMissionCatalog.branchingCanopyExpedition.takeIf { it.id == expeditionId }
+      ?: SeedMissionCatalog.productionFixtureExpedition.takeIf { it.id == expeditionId }
+      ?: throw IllegalArgumentException("Expedition definition not found: $expeditionId")
+
+    val runInstanceId = "run-${expeditionId}-${System.currentTimeMillis()}-${UUID.randomUUID().toString().take(6)}"
+
+    // Root nodes available, children locked
+    val initialNodes = baseExp.nodes.map { node ->
+      if (node.step == 0) {
+        node.copy(status = NodeStatus.AVAILABLE, selectedChoiceId = null)
+      } else {
+        node.copy(status = NodeStatus.LOCKED, selectedChoiceId = null)
+      }
+    }
+
+    val newRun = com.example.contributionos.model.ExpeditionRunState(
+      runInstanceId = runInstanceId,
+      expeditionDefinitionId = expeditionId,
+      seed = baseExp.activeRunSeed,
+      stance = stance,
+      status = ExpeditionStatus.ACTIVE
+    )
+
+    val updatedExp = baseExp.copy(
+      nodes = initialNodes,
+      status = ExpeditionStatus.ACTIVE,
+      activeStance = stance,
+      activeRunId = runInstanceId
+    )
+
+    _activeExpedition.value = updatedExp
+    _expeditions.value = _expeditions.value.map { if (it.id == expeditionId) updatedExp else it }
+
+    val currentProf = _profile.value
+    val updatedProfile = currentProf.copy(
+      activeExpeditionId = expeditionId,
+      activeExpeditionStance = stance,
+      activeRun = newRun
+    )
+    _profile.value = updatedProfile
+    try {
+      localDraftStore.saveProfile(updatedProfile)
+    } catch (_: Exception) {}
+
+    return updatedExp
+  }
+
+  override suspend fun commitToBranch(expeditionId: String, targetNodeId: String): CivicExpedition {
+    val currentExp = _activeExpedition.value?.takeIf { it.id == expeditionId }
+      ?: _expeditions.value.find { it.id == expeditionId }
+      ?: throw IllegalArgumentException("Expedition not found: $expeditionId")
+
+    val targetNode = currentExp.nodes.find { it.id == targetNodeId }
+      ?: throw IllegalArgumentException("Node $targetNodeId not found in expedition $expeditionId")
+
+    if (targetNode.status == NodeStatus.LOCKED) {
+      throw IllegalStateException("Cannot commit to locked branch: $targetNodeId")
+    }
+
+    val competingIds = targetNode.competingNodeIds.toSet()
+    val updatedNodes = currentExp.nodes.map { node ->
+      when {
+        competingIds.contains(node.id) -> node.copy(status = NodeStatus.LOCKED)
+        node.id == targetNodeId && node.status == NodeStatus.AVAILABLE -> node.copy(status = NodeStatus.IN_PROGRESS)
+        else -> node
+      }
+    }
+
+    val currentProf = _profile.value
+    val existingRun = currentProf.activeRun ?: com.example.contributionos.model.ExpeditionRunState(
+      runInstanceId = currentExp.activeRunId ?: "run-$expeditionId",
+      expeditionDefinitionId = expeditionId,
+      seed = currentExp.activeRunSeed,
+      stance = currentExp.activeStance
+    )
+
+    val updatedRun = existingRun.copy(
+      currentNodeId = targetNodeId,
+      committedBranchIds = existingRun.committedBranchIds + targetNodeId,
+      lockedNodeIds = existingRun.lockedNodeIds + competingIds
+    )
+
+    val updatedExp = currentExp.copy(nodes = updatedNodes)
+    _activeExpedition.value = updatedExp
+    _expeditions.value = _expeditions.value.map { if (it.id == expeditionId) updatedExp else it }
+
+    val updatedProfile = currentProf.copy(activeRun = updatedRun)
+    _profile.value = updatedProfile
+    try {
+      localDraftStore.saveProfile(updatedProfile)
+    } catch (_: Exception) {}
+
+    return updatedExp
+  }
+
+  override suspend fun resolveEncounterChoice(expeditionId: String, nodeId: String, choiceId: String): Boolean {
+    val currentExp = _activeExpedition.value?.takeIf { it.id == expeditionId }
+      ?: _expeditions.value.find { it.id == expeditionId }
+      ?: return false
+
+    val node = currentExp.nodes.find { it.id == nodeId } ?: return false
+    if (node.status == NodeStatus.LOCKED) {
+      throw IllegalStateException("Cannot resolve encounter on locked node: $nodeId")
+    }
+
+    val choice = node.choices.find { it.id == choiceId }
+      ?: EncounterChoice(
+        id = choiceId,
+        title = "Exploration Observation",
+        description = "Logged qualitative field observation."
+      )
+
+    val currentProf = _profile.value
+    val existingRun = currentProf.activeRun ?: com.example.contributionos.model.ExpeditionRunState(
+      runInstanceId = currentExp.activeRunId ?: "run-$expeditionId",
+      expeditionDefinitionId = expeditionId,
+      seed = currentExp.activeRunSeed,
+      stance = currentExp.activeStance
+    )
+
+    // Check clue requirement
+    if (choice.requiresClueId != null && !existingRun.discoveredClueIds.contains(choice.requiresClueId)) {
+      throw IllegalStateException("Choice $choiceId requires missing clue: ${choice.requiresClueId}")
+    }
+
+    // Branch locking: ensure competing nodes are locked
+    val competingIds = node.competingNodeIds.toSet()
+    val childIds = node.childNodeIds.toSet()
+
+    val updatedNodes = currentExp.nodes.map { n ->
+      when {
+        n.id == nodeId -> n.copy(status = NodeStatus.VALIDATED, selectedChoiceId = choiceId)
+        competingIds.contains(n.id) -> n.copy(status = NodeStatus.LOCKED)
+        childIds.contains(n.id) && n.status == NodeStatus.LOCKED -> n.copy(status = NodeStatus.AVAILABLE)
+        else -> n
+      }
+    }
+
+    val isLeafNode = node.childNodeIds.isEmpty()
+    val allReachableCompleted = updatedNodes.filter { it.status != NodeStatus.LOCKED }.all { it.status == NodeStatus.VALIDATED }
+    val isRunCompleted = isLeafNode || allReachableCompleted
+
+    val updatedExp = currentExp.copy(
+      nodes = updatedNodes,
+      status = if (isRunCompleted) ExpeditionStatus.COMPLETED else currentExp.status
+    )
+    _activeExpedition.value = updatedExp
+    _expeditions.value = _expeditions.value.map { if (it.id == expeditionId) updatedExp else it }
+
+    // Execute choice consequences
+    val newSpecimens = if (choice.unlocksSpecimenId != null) currentProf.chronicledSpecimenIds + choice.unlocksSpecimenId else currentProf.chronicledSpecimenIds
+    val newStamps = if (choice.awardsStampId != null) currentProf.mintedStampIds + choice.awardsStampId else currentProf.mintedStampIds
+    val newClues = if (choice.awardsClueId != null) existingRun.discoveredClueIds + choice.awardsClueId else existingRun.discoveredClueIds
+
+    // Node XP idempotency
+    val isFirstTimeNode = !currentProf.completedNodeIds.contains(nodeId)
+    val newCompletedNodes = if (isFirstTimeNode) currentProf.completedNodeIds + nodeId else currentProf.completedNodeIds
+    val nodeXp = if (isFirstTimeNode) node.xpReward else 0
+
+    // Run completion bonus idempotency
+    val runInstanceId = existingRun.runInstanceId
+    val isFirstTimeRunInstance = isRunCompleted && !currentProf.completedRunIds.contains(runInstanceId)
+    val newCompletedRuns = if (isFirstTimeRunInstance) currentProf.completedRunIds + runInstanceId else currentProf.completedRunIds
+    val runBonusXp = if (isFirstTimeRunInstance) 100 else 0
+    val newCompletedExpeditionsCount = if (isFirstTimeRunInstance) currentProf.completedExpeditionsCount + 1 else currentProf.completedExpeditionsCount
+
+    val updatedRun = existingRun.copy(
+      status = if (isRunCompleted) ExpeditionStatus.COMPLETED else ExpeditionStatus.ACTIVE,
+      currentNodeId = nodeId,
+      committedBranchIds = existingRun.committedBranchIds + nodeId,
+      lockedNodeIds = existingRun.lockedNodeIds + competingIds,
+      validatedNodeIds = existingRun.validatedNodeIds + nodeId,
+      selectedChoices = existingRun.selectedChoices + (nodeId to choiceId),
+      discoveredClueIds = newClues
+    )
+
+    _rewardedNodeIds.add(nodeId)
+    val updatedProfile = currentProf.copy(
+      explorationXp = currentProf.explorationXp + nodeXp + runBonusXp,
+      completedNodeIds = newCompletedNodes,
+      chronicledSpecimenIds = newSpecimens,
+      mintedStampIds = newStamps,
+      completedRunIds = newCompletedRuns,
+      completedExpeditionsCount = newCompletedExpeditionsCount,
+      rewardedWaypointIds = currentProf.rewardedWaypointIds + nodeId,
+      activeRun = updatedRun
+    )
+    _profile.value = updatedProfile
+
+    try {
+      localDraftStore.saveProfile(updatedProfile)
+      localDraftStore.saveRewardedNodeIds(_rewardedNodeIds)
+    } catch (_: Exception) {}
+
+    return isRunCompleted
+  }
+
+  override suspend fun setExpeditionStance(stance: String) {
+    val currentExp = _activeExpedition.value ?: return
+    val updatedExp = currentExp.copy(activeStance = stance)
+    _activeExpedition.value = updatedExp
+    _expeditions.value = _expeditions.value.map { if (it.id == currentExp.id) updatedExp else it }
+
+    val currentProf = _profile.value
+    val updatedProfile = currentProf.copy(activeExpeditionStance = stance)
+    _profile.value = updatedProfile
+    try { localDraftStore.saveProfile(updatedProfile) } catch (_: Exception) {}
   }
 }

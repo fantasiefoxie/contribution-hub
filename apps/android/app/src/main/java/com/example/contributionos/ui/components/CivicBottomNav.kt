@@ -1,8 +1,6 @@
 package com.example.contributionos.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -19,26 +17,25 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.contributionos.theme.DarkSoilVariant
-import com.example.contributionos.theme.ForestFloor
-import com.example.contributionos.theme.GrassNeon
-import com.example.contributionos.theme.MutedLichen
-import com.example.contributionos.theme.MutedMoss
-import com.example.contributionos.theme.SoilSurfacePanel
-import com.example.contributionos.theme.SunGold
-import com.example.contributionos.theme.WeatheredPaper
+import com.example.contributionos.theme.CardBorder
+import com.example.contributionos.theme.CardCream
+import com.example.contributionos.theme.ClayAccent
+import com.example.contributionos.theme.ForestInk
+import com.example.contributionos.theme.LeafPillContainer
+import com.example.contributionos.theme.MossGreenDark
+import com.example.contributionos.theme.MutedSecondary
+import com.example.contributionos.theme.WarmPaper
 
 enum class AppDestination(val title: String, val icon: ImageVector) {
   HOME("Camp", Icons.Default.Home),
-  MAP("Map", Icons.Default.LocationOn),
-  MISSIONS("Quests", Icons.Default.Menu),
-  IMPACT("Impact", Icons.Default.Star),
+  MAP("World", Icons.Default.LocationOn),
+  MISSIONS("Expeditions", Icons.Default.Menu),
+  JOURNAL("Journal", Icons.Default.Star),
   PROFILE("Profile", Icons.Default.Person)
 }
 
@@ -51,10 +48,10 @@ fun CivicBottomNav(
 ) {
   NavigationBar(
     modifier = modifier
-      .background(ForestFloor)
-      .border(1.dp, MutedMoss),
-    containerColor = ForestFloor,
-    contentColor = WeatheredPaper,
+      .background(CardCream)
+      .topBorder(1.dp, CardBorder),
+    containerColor = CardCream,
+    contentColor = ForestInk,
     tonalElevation = 0.dp
   ) {
     AppDestination.values().forEach { destination ->
@@ -65,13 +62,13 @@ fun CivicBottomNav(
         icon = {
           if (destination == AppDestination.MISSIONS && draftCount > 0) {
             BadgedBox(badge = {
-              Badge(containerColor = SunGold) {
+              Badge(containerColor = ClayAccent) {
                 Text(
                   draftCount.toString(),
                   fontSize = 10.sp,
-                  fontFamily = FontFamily.Monospace,
+                  fontFamily = FontFamily.SansSerif,
                   fontWeight = FontWeight.Bold,
-                  color = ForestFloor
+                  color = CardCream
                 )
               }
             }) {
@@ -93,16 +90,16 @@ fun CivicBottomNav(
           Text(
             text = destination.title,
             fontSize = 11.sp,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
           )
         },
         colors = NavigationBarItemDefaults.colors(
-          selectedIconColor = GrassNeon,
-          selectedTextColor = GrassNeon,
-          indicatorColor = DarkSoilVariant,
-          unselectedIconColor = MutedLichen,
-          unselectedTextColor = MutedLichen
+          selectedIconColor = MossGreenDark,
+          selectedTextColor = MossGreenDark,
+          indicatorColor = LeafPillContainer,
+          unselectedIconColor = MutedSecondary,
+          unselectedTextColor = MutedSecondary
         )
       )
     }

@@ -171,6 +171,54 @@ class CivicViewModel(private val repository: CivicRepository) : ViewModel() {
       repository.recordWaypointDiscovery(nodeId, xpReward)
     }
   }
+
+  fun selectExpedition(expeditionId: String) {
+    viewModelScope.launch {
+      repository.selectExpedition(expeditionId)
+    }
+  }
+
+  fun advanceExpeditionNode(expeditionId: String, completedNodeId: String) {
+    viewModelScope.launch {
+      repository.advanceExpeditionNode(expeditionId, completedNodeId)
+    }
+  }
+
+  fun completeExpedition(expeditionId: String, bonusXp: Int = 100) {
+    viewModelScope.launch {
+      repository.completeExpedition(expeditionId, bonusXp)
+    }
+  }
+
+  fun setExpeditionStance(stance: String) {
+    viewModelScope.launch {
+      repository.setExpeditionStance(stance)
+    }
+  }
+
+  fun startExpeditionRun(expeditionId: String, stance: String = "TREK") {
+    viewModelScope.launch {
+      repository.startExpeditionRun(expeditionId, stance)
+    }
+  }
+
+  fun commitToBranch(expeditionId: String, targetNodeId: String) {
+    viewModelScope.launch {
+      repository.commitToBranch(expeditionId, targetNodeId)
+    }
+  }
+
+  fun resolveEncounterChoice(
+    expeditionId: String,
+    nodeId: String,
+    choiceId: String,
+    onComplete: (Boolean) -> Unit = {}
+  ) {
+    viewModelScope.launch {
+      val isRunCompleted = repository.resolveEncounterChoice(expeditionId, nodeId, choiceId)
+      onComplete(isRunCompleted)
+    }
+  }
 }
 
 internal data class Tuple4<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)

@@ -22,16 +22,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -57,28 +51,31 @@ import com.example.contributionos.model.ExpeditionNode
 import com.example.contributionos.model.MissionDraft
 import com.example.contributionos.model.NodeStatus
 import com.example.contributionos.model.SubmissionStatus
-import com.example.contributionos.theme.CivicAmber
-import com.example.contributionos.theme.CivicCyan
-import com.example.contributionos.theme.DarkSoilVariant
-import com.example.contributionos.theme.ForestFloor
-import com.example.contributionos.theme.GrassNeon
-import com.example.contributionos.theme.MutedLichen
-import com.example.contributionos.theme.MutedMoss
-import com.example.contributionos.theme.NodeAvailable
-import com.example.contributionos.theme.NodeInProgress
-import com.example.contributionos.theme.SoilSurfacePanel
-import com.example.contributionos.theme.SoilVoid
+import com.example.contributionos.theme.CardBorder
+import com.example.contributionos.theme.CardBorderSubtle
+import com.example.contributionos.theme.CardCream
+import com.example.contributionos.theme.CardCreamLow
+import com.example.contributionos.theme.ClayAccent
+import com.example.contributionos.theme.ForestInk
+import com.example.contributionos.theme.ForestInkDark
+import com.example.contributionos.theme.LeafPillContainer
+import com.example.contributionos.theme.LeafPillText
+import com.example.contributionos.theme.MossGreen
+import com.example.contributionos.theme.MossGreenDark
+import com.example.contributionos.theme.MutedSecondary
+import com.example.contributionos.theme.SoftMeadowSand
 import com.example.contributionos.theme.SunGold
-import com.example.contributionos.theme.TextMuted
-import com.example.contributionos.theme.TextPrimary
-import com.example.contributionos.theme.TextSecondary
-import com.example.contributionos.theme.WaypointTeal
-import com.example.contributionos.theme.WeatheredPaper
+import com.example.contributionos.theme.SunGoldContainer
+import com.example.contributionos.theme.SunGoldText
+import com.example.contributionos.theme.TerracottaContainer
+import com.example.contributionos.theme.TerracottaText
+import com.example.contributionos.theme.WarmPaper
+import com.example.contributionos.theme.WaterBlue
+import com.example.contributionos.theme.WaterBlueContainer
+import com.example.contributionos.theme.WaterBlueText
+import com.example.contributionos.ui.components.BotanicalProgressBar
 import com.example.contributionos.ui.components.CivicHeader
-import com.example.contributionos.ui.components.SegmentedProgressBar
 import com.example.contributionos.ui.components.TactileCard
-import com.example.contributionos.ui.components.bottomBorder
-import com.example.contributionos.ui.components.topBorder
 
 @Composable
 fun MissionsScreen(
@@ -102,81 +99,94 @@ fun MissionsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(SoilVoid)
+            .background(WarmPaper)
     ) {
         CivicHeader(
-            districtName = "Side Quest Depot",
+            districtName = "Side Quests",
             seed = 42L,
             isLive = isLive,
             environmentMode = environmentMode,
             onToggleMode = onToggleMode
         )
 
-        // Telemetry Sub-bar
-        Box(
+        // Screen Subtitle & Mode Navigation
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(ForestFloor)
-                .bottomBorder(1.dp, MutedMoss)
-                .padding(horizontal = 16.dp, vertical = 6.dp)
+                .background(CardCream)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "LOC: URBAN_CANOPY_04",
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = TextMuted
-                )
-                Text(
-                    "${drafts.size} DRAFTS • ${tasks.size} AVAILABLE",
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = GrassNeon
-                )
-            }
-        }
+                Column {
+                    Text(
+                        "Side Quests Catalogue",
+                        fontSize = 18.sp,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        color = ForestInkDark
+                    )
+                    Text(
+                        "Micro-adventures just beyond your doorstep",
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.SansSerif,
+                        color = MutedSecondary
+                    )
+                }
 
-        // Tactical Mode Selector Tabs
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(ForestFloor)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            listOf(
-                Triple(0, "Drafts", drafts.size),
-                Triple(1, "Quests", activeNodes.size + tasks.size),
-                Triple(2, "Proof Review", submissions.size)
-            ).forEach { (index, title, count) ->
-                val isSelected = selectedTab == index
                 Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(if (isSelected) DarkSoilVariant else ForestFloor)
-                        .border(
-                            1.dp,
-                            if (isSelected) GrassNeon else MutedMoss,
-                            RoundedCornerShape(6.dp)
-                        )
-                        .clickable { selectedTab = index }
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(LeafPillContainer)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        "$title ($count)",
+                        "${tasks.size} Available",
                         fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) GrassNeon else TextSecondary
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.SemiBold,
+                        color = LeafPillText
                     )
+                }
+            }
+
+            // Mode Selector Tabs (Pill style)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    Triple(0, "Drafts", drafts.size),
+                    Triple(1, "Available", tasks.size),
+                    Triple(2, "Past Logs", submissions.size)
+                ).forEach { (index, title, count) ->
+                    val isSelected = selectedTab == index
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isSelected) MossGreenDark else CardCreamLow)
+                            .border(
+                                1.dp,
+                                if (isSelected) MossGreenDark else CardBorder,
+                                RoundedCornerShape(10.dp)
+                            )
+                            .clickable { selectedTab = index }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "$title ($count)",
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) Color.White else ForestInk
+                        )
+                    }
                 }
             }
         }
@@ -214,7 +224,6 @@ private fun QuestsCatalogTab(
 ) {
     val scrollState = rememberScrollState()
 
-    // Filter tasks by selected biome if applicable
     val filteredTasks = when (selectedBiome) {
         "CANOPY" -> tasks.filter { it.tags.any { t -> t.contains("tree") || t.contains("canopy") } || it.title.contains("Canopy", ignoreCase = true) }
         "WATERWAY" -> tasks.filter { it.tags.any { t -> t.contains("water") || t.contains("swale") } || it.title.contains("Water", ignoreCase = true) }
@@ -225,7 +234,7 @@ private fun QuestsCatalogTab(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         // Biome Filter Chips
@@ -234,238 +243,125 @@ private fun QuestsCatalogTab(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(scrollState),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
-                    Pair("ALL", "[ALL BIOMES]"),
-                    Pair("CANOPY", "CANOPY"),
-                    Pair("WATERWAY", "WATERWAY"),
-                    Pair("ACCESSIBLE", "♿ ACCESSIBLE")
+                    Pair("ALL", "All Trails"),
+                    Pair("CANOPY", "🌿 Urban Canopy"),
+                    Pair("WATERWAY", "💧 Waterway Walk"),
+                    Pair("ACCESSIBLE", "♿ Paved & Window")
                 ).forEach { (key, label) ->
                     val isSelected = selectedBiome == key
                     Box(
                         modifier = Modifier
-                          .clip(RoundedCornerShape(4.dp))
-                          .background(if (isSelected) GrassNeon else DarkSoilVariant)
-                          .border(
-                              1.dp,
-                              if (isSelected) GrassNeon else MutedMoss,
-                              RoundedCornerShape(4.dp)
-                          )
-                          .clickable { onSelectBiome(key) }
-                          .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(if (isSelected) LeafPillContainer else CardCream)
+                            .border(
+                                1.dp,
+                                if (isSelected) MossGreen else CardBorder,
+                                RoundedCornerShape(999.dp)
+                            )
+                            .clickable { onSelectBiome(key) }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
                             label,
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSelected) SoilVoid else TextSecondary
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) LeafPillText else ForestInk
                         )
                     }
                 }
             }
         }
 
-        // Active / Featured Quest Slot
+        // Active Expedition Banner if active
         val activeNode = activeNodes.firstOrNull { it.status == NodeStatus.IN_PROGRESS }
             ?: activeNodes.firstOrNull { it.status == NodeStatus.AVAILABLE }
         val featuredTask = tasks.firstOrNull()
 
         if (activeNode != null || featuredTask != null) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(GrassNeon)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                "[IN-PROGRESS EXPEDITION]",
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = GrassNeon
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(SunGold.copy(alpha = 0.15f))
-                                .border(1.dp, SunGold, RoundedCornerShape(3.dp))
-                                .padding(horizontal = 5.dp, vertical = 1.dp)
+                TactileCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    borderColor = MossGreen.copy(alpha = 0.35f),
+                    backgroundColor = CardCream,
+                    shape = RoundedCornerShape(16.dp),
+                    padding = 16.dp
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                "DEPLOYED",
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = SunGold
-                            )
-                        }
-                    }
-
-                    TactileCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        borderColor = MutedMoss,
-                        backgroundColor = ForestFloor
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            // Specimen Header Visual Well
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(SoilVoid)
-                                    .border(1.dp, MutedMoss, RoundedCornerShape(6.dp))
-                                    .padding(10.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("🌿", fontSize = 22.sp)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Column {
-                                            Text(
-                                                "SPECIMEN // CANOPY SCOUT",
-                                                fontSize = 10.sp,
-                                                fontFamily = FontFamily.Monospace,
-                                                fontWeight = FontWeight.Bold,
-                                                color = SunGold
-                                            )
-                                            Text(
-                                                "Sector 04 Tree Density • Walk or Window",
-                                                fontSize = 10.sp,
-                                                fontFamily = FontFamily.Serif,
-                                                color = TextMuted
-                                            )
-                                        }
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(3.dp))
-                                            .background(DarkSoilVariant)
-                                            .padding(horizontal = 5.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            "SECTOR_04",
-                                            fontSize = 9.sp,
-                                            fontFamily = FontFamily.Monospace,
-                                            color = TextSecondary
-                                        )
-                                    }
-                                }
-                            }
-
-                            val taskTitle = activeNode?.title ?: featuredTask?.title ?: "Canopy Scout"
-                            Text(
-                                taskTitle,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = WeatheredPaper
-                            )
-
-                            // Segmented Progress Meter
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        "EXPEDITION PROGRESS",
-                                        fontSize = 9.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextMuted
-                                    )
-                                    Text(
-                                        "6/10 CHECKPOINTS (60%)",
-                                        fontSize = 9.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Bold,
-                                        color = GrassNeon
-                                    )
-                                }
-                                SegmentedProgressBar(
-                                    progressPercent = 0.6f,
-                                    totalSegments = 10,
-                                    activeColor = GrassNeon,
-                                    inactiveColor = DarkSoilVariant
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(MossGreen)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "Active Field Expedition",
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MossGreenDark
                                 )
                             }
+                            Text(
+                                "In Progress",
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.Medium,
+                                color = MutedSecondary
+                            )
+                        }
 
-                            // 3-Metric Tray
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(DarkSoilVariant)
-                                    .border(1.dp, MutedMoss, RoundedCornerShape(6.dp))
-                                    .padding(vertical = 6.dp),
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("⏱️ 15 MIN", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = WeatheredPaper)
-                                    Text("EST. PACE", fontSize = 8.sp, fontFamily = FontFamily.Monospace, color = TextMuted)
-                                }
-                                Box(modifier = Modifier.width(1.dp).height(20.dp).background(MutedMoss))
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("+${featuredTask?.xpReward ?: 50} XP", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = GrassNeon)
-                                    Text("BOUNTY", fontSize = 8.sp, fontFamily = FontFamily.Monospace, color = TextMuted)
-                                }
-                                Box(modifier = Modifier.width(1.dp).height(20.dp).background(MutedMoss))
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("🔒 ZERO-GPS", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = WaypointTeal)
-                                    Text("PRIVACY-SAFE", fontSize = 8.sp, fontFamily = FontFamily.Monospace, color = TextMuted)
-                                }
-                            }
+                        val taskTitle = activeNode?.title ?: featuredTask?.title ?: "Canopy Scout"
+                        Text(
+                            taskTitle,
+                            fontSize = 16.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            color = ForestInkDark
+                        )
 
-                            // Action Button
+                        BotanicalProgressBar(
+                            progressPercent = 0.6f,
+                            activeColor = MossGreen,
+                            trackColor = CardBorderSubtle,
+                            height = 6.dp
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "⏱ ~15 min • +${featuredTask?.xpReward ?: 50} XP",
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.SansSerif,
+                                color = MutedSecondary
+                            )
+
                             Button(
                                 onClick = {
                                     if (activeNode != null) onSelectNode(activeNode)
                                     else if (featuredTask != null) onSelectTask(featuredTask)
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = GrassNeon,
-                                    contentColor = SoilVoid
+                                    containerColor = MossGreenDark,
+                                    contentColor = Color.White
                                 ),
                                 shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(42.dp)
+                                modifier = Modifier.height(36.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        "Continue Expedition",
-                                        fontSize = 13.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Bold,
-                                        color = SoilVoid
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowForward,
-                                        contentDescription = null,
-                                        tint = SoilVoid,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
+                                Text("Continue Log →", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -473,183 +369,183 @@ private fun QuestsCatalogTab(
             }
         }
 
-        // Section: Local Field Assignments Catalog
+        // Section Title: Available Quests
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "LOCAL FIELD ASSIGNMENTS // AVAILABLE [${filteredTasks.size}]",
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp,
-                    color = WeatheredPaper
-                )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(DarkSoilVariant)
-                        .border(1.dp, MutedMoss, RoundedCornerShape(3.dp))
-                        .padding(horizontal = 5.dp, vertical = 2.dp)
+            Text(
+                "Available Nature Walks (${filteredTasks.size})",
+                fontSize = 15.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                color = ForestInkDark,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        if (filteredTasks.isEmpty()) {
+            item {
+                TactileCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    borderColor = CardBorder,
+                    backgroundColor = CardCream,
+                    shape = RoundedCornerShape(16.dp),
+                    padding = 20.dp
                 ) {
-                    Text(
-                        "SYNCED",
-                        fontSize = 9.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                        color = SunGold
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("🧭", fontSize = 28.sp)
+                        Text(
+                            "No Expeditions or Quests in this Sector",
+                            fontSize = 15.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            color = ForestInkDark
+                        )
+                        Text(
+                            "Verified field initiatives will display here when online. Toggle Sandbox Demo mode in the header to test simulated expeditions.",
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            color = MutedSecondary,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
                 }
             }
         }
 
+        // Quest Cards List
         items(filteredTasks, key = { it.id }) { task ->
             TactileCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onSelectTask(task) },
-                borderColor = MutedMoss,
-                backgroundColor = ForestFloor
+                borderColor = CardBorder,
+                backgroundColor = CardCream,
+                shape = RoundedCornerShape(16.dp),
+                padding = 16.dp
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Header Row with ID, Difficulty Stars, and Accessibility Tag
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Header tags
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                "[${formatTaskDossierId(task.id)}]",
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = GrassNeon
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                "★".repeat(task.difficulty ?: 1) + "☆".repeat((5 - (task.difficulty ?: 1)).coerceAtLeast(0)),
-                                fontSize = 10.sp,
-                                color = SunGold
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(DarkSoilVariant)
-                                .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                "[WALK OR WINDOW]",
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace,
-                                color = TextSecondary
-                            )
-                        }
-                    }
-
-                    // Body Split Layout
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(SoilVoid)
-                                .border(1.dp, MutedMoss, RoundedCornerShape(6.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("🌱", fontSize = 20.sp)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(LeafPillContainer)
+                                    .padding(horizontal = 7.dp, vertical = 3.dp)
+                            ) {
                                 Text(
-                                    "BIO:${(task.tags.firstOrNull() ?: task.district).take(4).uppercase()}",
-                                    fontSize = 7.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    color = MutedLichen
+                                    task.district.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = LeafPillText
                                 )
                             }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "🌱".repeat(task.difficulty ?: 1) + " Easy",
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.SansSerif,
+                                color = MossGreenDark,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
 
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(CardCreamLow)
+                                .padding(horizontal = 7.dp, vertical = 3.dp)
+                        ) {
                             Text(
-                                task.title,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = WeatheredPaper
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                task.description,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Serif,
-                                color = TextMuted,
-                                maxLines = 2,
-                                lineHeight = 14.sp
+                                "♿ Window Friendly",
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.SansSerif,
+                                color = MutedSecondary
                             )
                         }
                     }
 
-                    // Footer Details & Action Button
+                    // Title & Description
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            task.title,
+                            fontSize = 16.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            color = ForestInkDark
+                        )
+                        Text(
+                            task.description,
+                            fontSize = 13.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            color = ForestInk.copy(alpha = 0.8f),
+                            lineHeight = 18.sp
+                        )
+                    }
+
+                    // Footer with XP and Open Briefing button
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .topBorder(1.dp, MutedMoss)
-                            .padding(top = 6.dp),
+                            .padding(top = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                          Box(
+                            modifier = Modifier
+                              .clip(RoundedCornerShape(6.dp))
+                              .background(SunGoldContainer)
+                              .padding(horizontal = 7.dp, vertical = 3.dp)
+                          ) {
                             Text(
-                                "+${task.xpReward} XP",
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = GrassNeon
+                              "+${task.xpReward} XP",
+                              fontSize = 11.sp,
+                              fontFamily = FontFamily.SansSerif,
+                              fontWeight = FontWeight.Bold,
+                              color = SunGoldText
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("•", color = TextMuted, fontSize = 10.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                "⏱️ ~${task.estimatedDurationMinutes}m",
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
-                                color = TextMuted
-                            )
+                          }
+                          Spacer(modifier = Modifier.width(8.dp))
+                          Text(
+                            "⏱ ~${task.estimatedDurationMinutes} min",
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            color = MutedSecondary
+                          )
                         }
 
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(DarkSoilVariant)
-                                .border(1.dp, MutedMoss, RoundedCornerShape(4.dp))
-                                .clickable { onSelectTask(task) }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        Button(
+                            onClick = { onSelectTask(task) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = LeafPillContainer,
+                                contentColor = MossGreenDark
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(34.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    "Open Briefing",
-                                    fontSize = 11.sp,
-                                    fontFamily = FontFamily.Monospace,
+                                    "View Briefing",
+                                    fontSize = 12.sp,
+                                    fontFamily = FontFamily.SansSerif,
                                     fontWeight = FontWeight.Bold,
-                                    color = WeatheredPaper
+                                    color = MossGreenDark
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
                                     imageVector = Icons.Default.ArrowForward,
                                     contentDescription = null,
-                                    tint = GrassNeon,
-                                    modifier = Modifier.size(12.dp)
+                                    tint = MossGreenDark,
+                                    modifier = Modifier.size(13.dp)
                                 )
                             }
                         }
@@ -667,7 +563,7 @@ private fun DraftsTab(
     onDeleteDraft: (String) -> Unit
 ) {
     if (drafts.isEmpty()) {
-        EmptyStateBox(message = "No offline drafts saved. Head outside, record field observations, and store securely without cell signal.")
+        EmptyStateBox(message = "No offline drafts saved. Head outside, record field observations, and they will be safely kept in your local field journal.")
         return
     }
 
@@ -678,25 +574,13 @@ private fun DraftsTab(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "LOCAL ENCRYPTED VAULT // DRAFTS [${drafts.size}]",
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = SunGold
-                )
-                Text(
-                    "AES-256-GCM",
-                    fontSize = 9.sp,
-                    fontFamily = FontFamily.Monospace,
-                    color = MutedLichen
-                )
-            }
+            Text(
+                "Offline Field Journal Drafts (${drafts.size})",
+                fontSize = 14.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                color = ForestInkDark
+            )
         }
 
         items(drafts, key = { it.id }) { draft ->
@@ -704,8 +588,8 @@ private fun DraftsTab(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onResumeDraft(draft) },
-                borderColor = SunGold.copy(alpha = 0.5f),
-                backgroundColor = ForestFloor
+                borderColor = CardBorder,
+                backgroundColor = CardCream
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
@@ -713,46 +597,37 @@ private fun DraftsTab(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(SunGold)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                "LOCAL SPECIMEN LOG",
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                color = SunGold
-                            )
-                        }
+                        Text(
+                            "Field Log Draft",
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            color = MossGreenDark
+                        )
                         IconButton(
                             onClick = { onDeleteDraft(draft.id) },
                             modifier = Modifier.size(24.dp)
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = TextMuted)
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MutedSecondary)
                         }
                     }
 
-                    Text(draft.taskTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WeatheredPaper)
+                    Text(draft.taskTitle, fontSize = 15.sp, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, color = ForestInkDark)
 
                     if (draft.notes.isNotBlank()) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(DarkSoilVariant)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(CardCreamLow)
                                 .padding(8.dp)
                         ) {
                             Text(
                                 "\"${draft.notes}\"",
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 fontFamily = FontFamily.Serif,
                                 fontStyle = FontStyle.Italic,
-                                color = TextSecondary,
+                                color = ForestInk.copy(alpha = 0.85f),
                                 maxLines = 2
                             )
                         }
@@ -764,15 +639,15 @@ private fun DraftsTab(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            if (draft.latitude != null) "📍 Geotagged • 📷 Photo Attached" else "📝 Field Notes (Zero-GPS)",
+                            if (draft.latitude != null) "📍 Geotagged • 📷 Photo Added" else "📝 Note Saved (Zero-GPS)",
                             fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
-                            color = WaypointTeal
+                            fontFamily = FontFamily.SansSerif,
+                            color = MutedSecondary
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = GrassNeon, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = MossGreenDark, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Resume", fontSize = 12.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = GrassNeon)
+                            Text("Resume", fontSize = 12.sp, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = MossGreenDark)
                         }
                     }
                 }
@@ -787,7 +662,7 @@ private fun SubmissionsTab(
     onSelectSubmission: (CivicSubmission) -> Unit
 ) {
     if (submissions.isEmpty()) {
-        EmptyStateBox(message = "No proofs in review. Once proof is logged, local rewards mint immediately and community milestones update.")
+        EmptyStateBox(message = "No completed quest logs yet. Complete a side quest to record your first field specimen log!")
         return
     }
 
@@ -799,44 +674,44 @@ private fun SubmissionsTab(
     ) {
         item {
             Text(
-                "FIELD DISCOVERY ARCHIVE // VALIDATIONS [${submissions.size}]",
-                fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace,
+                "Completed Field Journal Logs (${submissions.size})",
+                fontSize = 14.sp,
+                fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Bold,
-                color = GrassNeon
+                color = ForestInkDark
             )
         }
 
         items(submissions, key = { it.id }) { sub ->
             val statusColor = when (sub.status) {
-                SubmissionStatus.APPROVED, SubmissionStatus.VALIDATED, SubmissionStatus.LOCAL_COMPLETION -> GrassNeon
+                SubmissionStatus.APPROVED, SubmissionStatus.VALIDATED, SubmissionStatus.LOCAL_COMPLETION -> MossGreenDark
                 SubmissionStatus.PENDING_REVIEW, SubmissionStatus.SERVER_ACCEPTED -> SunGold
                 SubmissionStatus.CHANGES_REQUESTED, SubmissionStatus.RETRYABLE_FAILURE -> SunGold
-                SubmissionStatus.UPLOADING -> WaypointTeal
-                SubmissionStatus.REJECTED, SubmissionStatus.PERMANENT_FAILURE -> Color(0xFFFF6B6B)
-                SubmissionStatus.QUEUED_OFFLINE, SubmissionStatus.DRAFT_LOCAL -> WaypointTeal
+                SubmissionStatus.UPLOADING -> WaterBlue
+                SubmissionStatus.REJECTED, SubmissionStatus.PERMANENT_FAILURE -> Color(0xFFBA1A1A)
+                SubmissionStatus.QUEUED_OFFLINE, SubmissionStatus.DRAFT_LOCAL -> WaterBlue
             }
 
             val statusLabel = when (sub.status) {
-                SubmissionStatus.LOCAL_COMPLETION -> "LOCAL EXPLORATION COMPLETE"
-                SubmissionStatus.APPROVED, SubmissionStatus.VALIDATED -> "VERIFIED & LOGGED"
-                SubmissionStatus.SERVER_ACCEPTED -> "ACCEPTED BY REGISTRY"
-                SubmissionStatus.PENDING_REVIEW -> "IN STEWARD QUEUE"
-                SubmissionStatus.CHANGES_REQUESTED -> "CLARIFICATION NEEDED"
-                SubmissionStatus.UPLOADING -> "UPLOADING PROOF"
-                SubmissionStatus.RETRYABLE_FAILURE -> "RETRY PENDING (OFFLINE)"
-                SubmissionStatus.PERMANENT_FAILURE -> "VALIDATION REJECTED"
-                SubmissionStatus.REJECTED -> "REJECTED"
-                SubmissionStatus.QUEUED_OFFLINE -> "QUEUED OFFLINE"
-                SubmissionStatus.DRAFT_LOCAL -> "SAVED LOCAL DRAFT"
+                SubmissionStatus.LOCAL_COMPLETION -> "Completed Locally"
+                SubmissionStatus.APPROVED, SubmissionStatus.VALIDATED -> "Verified & Logged"
+                SubmissionStatus.SERVER_ACCEPTED -> "Synced Online"
+                SubmissionStatus.PENDING_REVIEW -> "Pending Review"
+                SubmissionStatus.CHANGES_REQUESTED -> "Clarification Needed"
+                SubmissionStatus.UPLOADING -> "Syncing Proof"
+                SubmissionStatus.RETRYABLE_FAILURE -> "Sync Pending (Offline)"
+                SubmissionStatus.PERMANENT_FAILURE -> "Validation Rejected"
+                SubmissionStatus.REJECTED -> "Rejected"
+                SubmissionStatus.QUEUED_OFFLINE -> "Queued Offline"
+                SubmissionStatus.DRAFT_LOCAL -> "Local Draft"
             }
 
             TactileCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onSelectSubmission(sub) },
-                borderColor = statusColor.copy(alpha = 0.6f),
-                backgroundColor = ForestFloor
+                borderColor = CardBorder,
+                backgroundColor = CardCream
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
@@ -847,75 +722,66 @@ private fun SubmissionsTab(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
-                                    .size(7.dp)
+                                    .size(6.dp)
                                     .clip(CircleShape)
                                     .background(statusColor)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 statusLabel,
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.SansSerif,
+                                fontWeight = FontWeight.SemiBold,
                                 color = statusColor
                             )
                         }
 
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(DarkSoilVariant)
-                                .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                if (sub.status == SubmissionStatus.LOCAL_COMPLETION) "Local Vault" else "Verified",
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace,
-                                color = WeatheredPaper
-                            )
-                        }
+                        Text(
+                            if (sub.status == SubmissionStatus.LOCAL_COMPLETION) "Field Log" else "Verified",
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            color = MutedSecondary
+                        )
                     }
 
                     Text(
                         sub.taskTitle.ifBlank { "Botanical Field Observation" },
                         fontSize = 15.sp,
+                        fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Bold,
-                        color = WeatheredPaper
+                        color = ForestInkDark
                     )
 
+                    val formattedDate = remember(sub.submittedAt) {
+                        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(sub.submittedAt))
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "ID: ${sub.id.take(8)}",
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
-                            color = TextMuted
+                            formattedDate,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            color = MutedSecondary
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                "View Log",
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
+                                "View Entry",
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.SansSerif,
                                 fontWeight = FontWeight.Bold,
-                                color = GrassNeon
+                                color = MossGreenDark
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Icon(Icons.Default.ArrowForward, contentDescription = null, tint = GrassNeon, modifier = Modifier.size(12.dp))
+                            Icon(Icons.Default.ArrowForward, contentDescription = null, tint = MossGreenDark, modifier = Modifier.size(13.dp))
                         }
                     }
                 }
             }
         }
     }
-}
-
-private fun formatTaskDossierId(id: String): String {
-    val digits = id.filter { it.isDigit() }
-    return if (digits.isNotEmpty()) "SQ-${digits.takeLast(2).padStart(2, '0')}" else "SQ-01"
 }
 
 @Composable
@@ -935,7 +801,7 @@ private fun EmptyStateBox(message: String) {
                 message,
                 fontSize = 13.sp,
                 fontFamily = FontFamily.Serif,
-                color = TextSecondary,
+                color = MutedSecondary,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 lineHeight = 18.sp
             )

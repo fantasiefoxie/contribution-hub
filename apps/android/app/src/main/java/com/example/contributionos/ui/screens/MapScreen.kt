@@ -61,6 +61,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -76,34 +77,32 @@ import com.example.contributionos.model.DataSourceMode
 import com.example.contributionos.model.ExpeditionNode
 import com.example.contributionos.model.MapWaypoint
 import com.example.contributionos.model.NodeStatus
-import com.example.contributionos.theme.CivicAmber
-import com.example.contributionos.theme.CivicBorderActive
-import com.example.contributionos.theme.CivicBorderSubtle
-import com.example.contributionos.theme.CivicCyan
-import com.example.contributionos.theme.CivicEmerald
-import com.example.contributionos.theme.CivicForestDark
-import com.example.contributionos.theme.CivicMidnightNavy
-import com.example.contributionos.theme.CivicSurfaceCard
-import com.example.contributionos.theme.CivicSurfaceDark
-import com.example.contributionos.theme.CivicSurfacePanel
-import com.example.contributionos.theme.DarkSoilVariant
-import com.example.contributionos.theme.ForestFloor
-import com.example.contributionos.theme.GrassNeon
-import com.example.contributionos.theme.MutedMoss
-import com.example.contributionos.theme.NodeAvailable
-import com.example.contributionos.theme.NodeInProgress
-import com.example.contributionos.theme.NodeLocked
-import com.example.contributionos.theme.NodeValidated
-import com.example.contributionos.theme.SoilSurfacePanel
-import com.example.contributionos.theme.SoilVoid
+import com.example.contributionos.theme.CardBorder
+import com.example.contributionos.theme.CardBorderSubtle
+import com.example.contributionos.theme.CardCream
+import com.example.contributionos.theme.CardCreamLow
+import com.example.contributionos.theme.ClayAccent
+import com.example.contributionos.theme.ForestInk
+import com.example.contributionos.theme.ForestInkDark
+import com.example.contributionos.theme.LeafPillContainer
+import com.example.contributionos.theme.LeafPillText
+import com.example.contributionos.theme.MossGreen
+import com.example.contributionos.theme.MossGreenDark
+import com.example.contributionos.theme.MutedSecondary
+import com.example.contributionos.theme.NewLeafGreen
+import com.example.contributionos.theme.SoftMeadowSand
 import com.example.contributionos.theme.SunGold
-import com.example.contributionos.theme.TextMuted
-import com.example.contributionos.theme.TextPrimary
-import com.example.contributionos.theme.TextSecondary
-import com.example.contributionos.theme.WaypointTeal
+import com.example.contributionos.theme.SunGoldContainer
+import com.example.contributionos.theme.SunGoldText
+import com.example.contributionos.theme.TerracottaContainer
+import com.example.contributionos.theme.TerracottaText
+import com.example.contributionos.theme.WarmPaper
+import com.example.contributionos.theme.WaterBlue
+import com.example.contributionos.theme.WaterBlueContainer
+import com.example.contributionos.theme.WaterBlueText
 import com.example.contributionos.ui.components.CivicHeader
 import com.example.contributionos.ui.components.IsometricWorldCanvas
-import com.example.contributionos.ui.components.LayeredPanel
+import com.example.contributionos.ui.components.TactileCard
 import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.MarkerOptions
 import org.maplibre.android.camera.CameraPosition
@@ -121,16 +120,26 @@ enum class MapViewTab {
 fun MapScreen(
   expedition: CivicExpedition?,
   rewardedWaypointIds: Set<String> = emptySet(),
-  waypoints: List<MapWaypoint> = SeedMissionCatalog.testWaypoints,
+  customWaypoints: List<MapWaypoint> = emptyList(),
   isLive: Boolean,
   environmentMode: DataSourceMode = DataSourceMode.PRODUCTION,
   onToggleMode: () -> Unit = {},
   onNodeSelected: (ExpeditionNode) -> Unit,
   onSelectQuest: (String) -> Unit = {},
   onRecordDiscovery: (String, Int) -> Unit = { _, _ -> },
+  onTriggerEncounter: (String, String) -> Unit = { _, _ -> },
+  onToggleStance: ((String) -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
+  val waypoints = if (customWaypoints.isNotEmpty()) {
+    customWaypoints
+  } else if (environmentMode == DataSourceMode.SANDBOX_DEMO || expedition?.isSandboxDemo == true) {
+    SeedMissionCatalog.testWaypoints
+  } else {
+    emptyList()
+  }
+  val isStationary = expedition?.activeStance == "STATIONARY"
   var activeTab by remember { mutableStateOf(MapViewTab.GEOGRAPHIC_MAP) }
   var selectedWaypoint by remember { mutableStateOf<MapWaypoint?>(waypoints.firstOrNull()) }
   var selectedExpeditionNode by remember {
@@ -139,18 +148,16 @@ fun MapScreen(
   var gpsStatusMessage by remember { mutableStateOf<String?>(null) }
   var mapLoadFailed by remember { mutableStateOf(false) }
 
-  // Foreground location permission launcher: ONLY requested after explicit user tap
   val locationPermissionLauncher = rememberLauncherForActivityResult(
     contract = ActivityResultContracts.RequestPermission()
   ) { isGranted ->
     if (isGranted) {
       checkProximity(context, selectedWaypoint) { msg -> gpsStatusMessage = msg }
     } else {
-      gpsStatusMessage = "Location permission declined. Manual discovery mode is fully operational."
+      gpsStatusMessage = "Location permission declined. Stationary mode remains available."
     }
   }
 
-  // Animation for waypoint radar beacon in tactical view
   val transition = rememberInfiniteTransition(label = "waypoint_pulse")
   val pulseRadius by transition.animateFloat(
     initialValue = 0.9f,
@@ -165,127 +172,231 @@ fun MapScreen(
   Box(
     modifier = modifier
       .fillMaxSize()
-      .background(CivicForestDark)
+      .background(WarmPaper)
   ) {
     Column(modifier = Modifier.fillMaxSize()) {
       CivicHeader(
-        districtName = "Local Neighborhood Biome",
+        districtName = "Nature Biome Map",
         seed = expedition?.activeRunSeed ?: 42L,
         isLive = isLive,
         environmentMode = environmentMode,
         onToggleMode = onToggleMode
       )
 
-      // Sub-Navigation Tabs: Real Geographic Map vs Tactical Grid vs Roguelite Run Tree
-      Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .background(CivicSurfaceDark)
-          .padding(horizontal = 12.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-      ) {
-        // Tab 1: Real Map (MapLibre Online Prototype)
-        Box(
-          modifier = Modifier
-            .weight(1.15f)
-            .clip(RoundedCornerShape(6.dp))
-            .background(if (activeTab == MapViewTab.GEOGRAPHIC_MAP) GrassNeon.copy(alpha = 0.2f) else CivicSurfacePanel)
-            .border(1.dp, if (activeTab == MapViewTab.GEOGRAPHIC_MAP) GrassNeon else CivicBorderSubtle, RoundedCornerShape(6.dp))
-            .clickable { activeTab = MapViewTab.GEOGRAPHIC_MAP }
-            .padding(vertical = 7.dp),
-          contentAlignment = Alignment.Center
-        ) {
-          Text(
-            text = "🌍 Real Map (Online)",
-            fontSize = 10.sp,
-            fontWeight = if (activeTab == MapViewTab.GEOGRAPHIC_MAP) FontWeight.Bold else FontWeight.Medium,
-            color = if (activeTab == MapViewTab.GEOGRAPHIC_MAP) GrassNeon else TextSecondary
-          )
-        }
+      // Active Expedition In-Field HUD (Stitch 08)
+      val activeNode = expedition?.nodes?.firstOrNull { it.status == NodeStatus.AVAILABLE }
+      if (expedition != null && activeNode != null && expedition.status == com.example.contributionos.model.ExpeditionStatus.ACTIVE) {
+        val targetWp = waypoints.find { it.linkedTaskId == activeNode.taskId || it.id == activeNode.id || it.title.contains(activeNode.title) } ?: selectedWaypoint
+        val arrivalCheck = evaluateGpsArrival(context, targetWp)
+        val canTriggerEncounter = isStationary || arrivalCheck.isEligible
 
-        // Tab 2: Tactical Grid (100% Offline Fallback)
         Box(
           modifier = Modifier
-            .weight(1.15f)
-            .clip(RoundedCornerShape(6.dp))
-            .background(if (activeTab == MapViewTab.TACTICAL_GRID) GrassNeon.copy(alpha = 0.2f) else CivicSurfacePanel)
-            .border(1.dp, if (activeTab == MapViewTab.TACTICAL_GRID) GrassNeon else CivicBorderSubtle, RoundedCornerShape(6.dp))
-            .clickable { activeTab = MapViewTab.TACTICAL_GRID }
-            .padding(vertical = 7.dp),
-          contentAlignment = Alignment.Center
+            .fillMaxWidth()
+            .background(CardCream)
+            .border(1.dp, CardBorderSubtle)
+            .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-          Text(
-            text = "🗺️ Tactical (Offline)",
-            fontSize = 10.sp,
-            fontWeight = if (activeTab == MapViewTab.TACTICAL_GRID) FontWeight.Bold else FontWeight.Medium,
-            color = if (activeTab == MapViewTab.TACTICAL_GRID) GrassNeon else TextSecondary
-          )
-        }
+          Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Mode toggle row (Trekking vs Stationary)
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Box(
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (!isStationary) MossGreenDark else CardCreamLow)
+                    .border(1.dp, if (!isStationary) MossGreenDark else CardBorderSubtle, RoundedCornerShape(8.dp))
+                    .clickable { onToggleStance?.invoke("TREK") }
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                  Text(
+                    "🚶 Trek (≤30m GPS)",
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = if (!isStationary) FontWeight.Bold else FontWeight.Medium,
+                    color = if (!isStationary) Color.White else ForestInk
+                  )
+                }
+                Box(
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isStationary) MossGreenDark else CardCreamLow)
+                    .border(1.dp, if (isStationary) MossGreenDark else CardBorderSubtle, RoundedCornerShape(8.dp))
+                    .clickable { onToggleStance?.invoke("STATIONARY") }
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                  Text(
+                    "🪑 Stationary (Observe)",
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = if (isStationary) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isStationary) Color.White else ForestInk
+                  )
+                }
+              }
 
-        // Tab 3: Roguelite Run Tree
-        Box(
-          modifier = Modifier
-            .weight(1f)
-            .clip(RoundedCornerShape(6.dp))
-            .background(if (activeTab == MapViewTab.EXPEDITION_TREE) GrassNeon.copy(alpha = 0.2f) else CivicSurfacePanel)
-            .border(1.dp, if (activeTab == MapViewTab.EXPEDITION_TREE) GrassNeon else CivicBorderSubtle, RoundedCornerShape(6.dp))
-            .clickable { activeTab = MapViewTab.EXPEDITION_TREE }
-            .padding(vertical = 7.dp),
-          contentAlignment = Alignment.Center
-        ) {
-          Text(
-            text = "🧭 Run Tree",
-            fontSize = 11.sp,
-            fontWeight = if (activeTab == MapViewTab.EXPEDITION_TREE) FontWeight.Bold else FontWeight.Medium,
-            color = if (activeTab == MapViewTab.EXPEDITION_TREE) GrassNeon else TextSecondary
-          )
+              if (!isStationary) {
+                Text(
+                  text = arrivalCheck.message,
+                  fontSize = 10.sp,
+                  fontFamily = FontFamily.SansSerif,
+                  color = if (arrivalCheck.isEligible) MossGreenDark else ClayAccent,
+                  fontWeight = FontWeight.Medium
+                )
+              }
+            }
+
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Column(modifier = Modifier.weight(1f)) {
+                Text(
+                  text = "${expedition.title.removePrefix("[FIXTURE] ")} • Step ${activeNode.step + 1} of ${expedition.totalNodes}",
+                  fontSize = 11.sp,
+                  fontFamily = FontFamily.SansSerif,
+                  fontWeight = FontWeight.Bold,
+                  color = MossGreenDark
+                )
+                Text(
+                  text = activeNode.title.removePrefix("[FIXTURE] "),
+                  fontSize = 13.sp,
+                  fontFamily = FontFamily.Serif,
+                  fontWeight = FontWeight.Bold,
+                  color = ForestInkDark
+                )
+              }
+
+              Button(
+                onClick = { onTriggerEncounter(expedition.id, activeNode.id) },
+                enabled = canTriggerEncounter,
+                colors = ButtonDefaults.buttonColors(
+                  containerColor = if (canTriggerEncounter) ClayAccent else CardBorderSubtle,
+                  contentColor = if (canTriggerEncounter) CardCream else MutedSecondary,
+                  disabledContainerColor = CardBorderSubtle,
+                  disabledContentColor = MutedSecondary
+                ),
+                shape = RoundedCornerShape(9999.dp),
+                modifier = Modifier.height(34.dp)
+              ) {
+                Text(
+                  text = if (isStationary) {
+                    "Observe • Encounter 🪑"
+                  } else if (arrivalCheck.isEligible) {
+                    "Arrived • Encounter 🧭"
+                  } else if (arrivalCheck.distanceMeters != null) {
+                    "Walk Closer (${arrivalCheck.distanceMeters}m)"
+                  } else {
+                    "GPS Lock Needed (≤30m)"
+                  },
+                  fontSize = 11.sp,
+                  fontFamily = FontFamily.SansSerif,
+                  fontWeight = FontWeight.Bold
+                )
+              }
+            }
+          }
         }
       }
 
-      // Waypoint Quick Selector Strip
+      // Sub-Navigation Tabs (Clean pill style)
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .background(CardCream)
+          .padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        listOf(
+          Pair(MapViewTab.GEOGRAPHIC_MAP, "🌍 Live Map"),
+          Pair(MapViewTab.TACTICAL_GRID, "🗺️ Offline Topo"),
+          Pair(MapViewTab.EXPEDITION_TREE, "🧭 Trail Tree")
+        ).forEach { (tab, label) ->
+          val isSelected = activeTab == tab
+          Box(
+            modifier = Modifier
+              .weight(1f)
+              .clip(RoundedCornerShape(10.dp))
+              .background(if (isSelected) MossGreenDark else CardCreamLow)
+              .border(
+                1.dp,
+                if (isSelected) MossGreenDark else CardBorder,
+                RoundedCornerShape(10.dp)
+              )
+              .clickable { activeTab = tab }
+              .padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              text = label,
+              fontSize = 11.sp,
+              fontFamily = FontFamily.SansSerif,
+              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+              color = if (isSelected) Color.White else ForestInk
+            )
+          }
+        }
+      }
+
+      // Checkpoints Quick Selector Strip
       if (activeTab != MapViewTab.EXPEDITION_TREE) {
         Row(
           modifier = Modifier
             .fillMaxWidth()
-            .background(CivicMidnightNavy.copy(alpha = 0.95f))
+            .background(CardCreamLow)
             .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
           horizontalArrangement = Arrangement.spacedBy(8.dp),
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Text("CHECKPOINTS:", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextMuted)
+          Text(
+            "Checkpoints:",
+            fontSize = 11.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.SemiBold,
+            color = MutedSecondary
+          )
           waypoints.forEach { wp ->
             val isRewarded = rewardedWaypointIds.contains(wp.id)
             val isSelected = selectedWaypoint?.id == wp.id
             Box(
               modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(999.dp))
                 .background(
-                  if (isSelected) GrassNeon.copy(alpha = 0.25f)
-                  else if (isRewarded) CivicForestDark
-                  else CivicSurfacePanel
+                  if (isSelected) LeafPillContainer
+                  else if (isRewarded) SoftMeadowSand
+                  else CardCream
                 )
                 .border(
                   1.dp,
-                  if (isSelected) GrassNeon else if (isRewarded) CivicEmerald else CivicBorderSubtle,
-                  RoundedCornerShape(6.dp)
+                  if (isSelected) MossGreen else CardBorder,
+                  RoundedCornerShape(999.dp)
                 )
                 .clickable {
                   selectedWaypoint = wp
                   gpsStatusMessage = null
                 }
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
-              Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(getCategoryIcon(wp.category), fontSize = 11.sp)
+              Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(getCategoryIcon(wp.category), fontSize = 12.sp)
                 Text(
                   text = wp.title.removePrefix("[TEST] ").take(16),
                   fontSize = 11.sp,
+                  fontFamily = FontFamily.SansSerif,
                   fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                  color = if (isSelected) GrassNeon else if (isRewarded) CivicEmerald else TextPrimary
+                  color = if (isSelected) LeafPillText else ForestInk
                 )
                 if (isRewarded) {
-                  Icon(Icons.Default.Check, contentDescription = "Discovered", tint = GrassNeon, modifier = Modifier.size(12.dp))
+                  Icon(Icons.Default.Check, contentDescription = "Discovered", tint = MossGreenDark, modifier = Modifier.size(13.dp))
                 }
               }
             }
@@ -293,7 +404,7 @@ fun MapScreen(
         }
       }
 
-      // Main Content Area
+      // Main Viewport
       when (activeTab) {
         MapViewTab.GEOGRAPHIC_MAP -> {
           Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -307,34 +418,40 @@ fun MapScreen(
               onError = { mapLoadFailed = true }
             )
 
-            // Attribution & Status Overlay
+            // Attribution Overlay
             Box(
               modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 8.dp, end = 8.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(CivicMidnightNavy.copy(alpha = 0.85f))
-                .padding(horizontal = 6.dp, vertical = 2.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(CardCream.copy(alpha = 0.9f))
+                .padding(horizontal = 6.dp, vertical = 3.dp)
             ) {
               Text(
-                "Map data © OpenStreetMap contributors | MapLibre",
-                fontSize = 8.sp,
-                color = TextMuted
+                "Map data © OpenStreetMap | MapLibre",
+                fontSize = 9.sp,
+                fontFamily = FontFamily.SansSerif,
+                color = MutedSecondary
               )
             }
 
-            // Fallback Banner if Map Loading has trouble
             if (mapLoadFailed) {
               Box(
                 modifier = Modifier
                   .align(Alignment.TopCenter)
-                  .padding(8.dp)
-                  .clip(RoundedCornerShape(6.dp))
-                  .background(CivicAmber.copy(alpha = 0.9f))
+                  .padding(10.dp)
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(SunGoldContainer)
+                  .border(1.dp, SunGold.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                   .clickable { activeTab = MapViewTab.TACTICAL_GRID }
-                  .padding(horizontal = 10.dp, vertical = 4.dp)
+                  .padding(horizontal = 12.dp, vertical = 6.dp)
               ) {
-                Text("Map tile network unreachable. Tap for Tactical Grid fallback.", fontSize = 10.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(
+                  "Tiles unreachable offline. Tap for Offline Topo fallback.",
+                  fontSize = 11.sp,
+                  color = SunGoldText,
+                  fontWeight = FontWeight.Bold
+                )
               }
             }
           }
@@ -353,19 +470,29 @@ fun MapScreen(
               }
             )
 
-            // Tactical Grid Overlay HUD
             Box(
               modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(12.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(CivicSurfaceDark.copy(alpha = 0.85f))
-                .border(1.dp, CivicBorderSubtle, RoundedCornerShape(6.dp))
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(CardCream.copy(alpha = 0.92f))
+                .border(1.dp, CardBorder, RoundedCornerShape(8.dp))
+                .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
               Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("GRID: 12.972° N, 77.594° E", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = GrassNeon)
-                Text("TACTICAL OFFLINE FALLBACK", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = CivicAmber)
+                Text(
+                  "Neighborhood Topo Grid",
+                  fontSize = 11.sp,
+                  fontFamily = FontFamily.Serif,
+                  fontWeight = FontWeight.Bold,
+                  color = ForestInkDark
+                )
+                Text(
+                  "100% Offline Topographic Mode",
+                  fontSize = 10.sp,
+                  fontFamily = FontFamily.SansSerif,
+                  color = MossGreenDark
+                )
               }
             }
           }
@@ -377,23 +504,24 @@ fun MapScreen(
               modifier = Modifier.fillMaxSize().padding(24.dp),
               contentAlignment = Alignment.Center
             ) {
-              LayeredPanel(modifier = Modifier.fillMaxWidth()) {
+              TactileCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                  modifier = Modifier.fillMaxWidth().padding(10.dp),
+                  modifier = Modifier.fillMaxWidth().padding(12.dp),
                   horizontalAlignment = Alignment.CenterHorizontally,
                   verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                  Icon(Icons.Default.Info, contentDescription = null, tint = CivicCyan, modifier = Modifier.size(36.dp))
-                  Text("NO EXPEDITIONS IN PRODUCTION BIOME", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                  Text("🧭", fontSize = 32.sp)
+                  Text("No Multi-Station Expeditions", fontSize = 16.sp, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, color = ForestInkDark)
                   Text(
-                    "There are no active multi-station initiatives configured on the Supabase backend. Switch to Astroturf (Sandbox) to test the branching run tree.",
+                    "You are currently in Single Side Quest mode. Switch to Sandbox Demo mode to test the branching multi-checkpoint expedition trail.",
                     fontSize = 12.sp,
-                    color = TextSecondary,
+                    fontFamily = FontFamily.SansSerif,
+                    color = MutedSecondary,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    lineHeight = 16.sp
+                    lineHeight = 17.sp
                   )
-                  Button(onClick = onToggleMode, colors = ButtonDefaults.buttonColors(containerColor = GrassNeon), shape = RoundedCornerShape(8.dp)) {
-                    Text("Launch Astroturf Mode", color = Color.Black, fontWeight = FontWeight.Bold)
+                  Button(onClick = onToggleMode, colors = ButtonDefaults.buttonColors(containerColor = MossGreenDark), shape = RoundedCornerShape(10.dp)) {
+                    Text("Switch to Sandbox Mode", color = Color.White, fontWeight = FontWeight.Bold)
                   }
                 }
               }
@@ -412,7 +540,7 @@ fun MapScreen(
       }
     }
 
-    // Waypoint Inspector Sheet (Visible in both Geographic and Tactical modes)
+    // Waypoint Inspector Sheet (Smooth organic card)
     AnimatedVisibility(
       visible = activeTab != MapViewTab.EXPEDITION_TREE && selectedWaypoint != null,
       enter = slideInVertically(initialOffsetY = { it }),
@@ -421,13 +549,16 @@ fun MapScreen(
     ) {
       selectedWaypoint?.let { wp ->
         val isRewarded = rewardedWaypointIds.contains(wp.id)
-        LayeredPanel(
+        TactileCard(
           modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp),
-          borderColor = if (isRewarded) GrassNeon else SunGold
+            .padding(14.dp),
+          borderColor = CardBorder,
+          backgroundColor = CardCream,
+          shape = RoundedCornerShape(20.dp),
+          padding = 18.dp
         ) {
-          Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             // Header Row
             Row(
               modifier = Modifier.fillMaxWidth(),
@@ -437,53 +568,59 @@ fun MapScreen(
               Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Box(
                   modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(SunGold.copy(alpha = 0.15f))
-                    .border(1.dp, SunGold, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                  Text(
-                    "[TEST CHECKPOINT - SANDBOX]",
-                    fontSize = 9.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = SunGold
-                  )
-                }
-
-                Box(
-                  modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(com.example.contributionos.theme.DarkSoilVariant)
-                    .border(1.dp, com.example.contributionos.theme.MutedMoss, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(LeafPillContainer)
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                   Text(
                     wp.category,
-                    fontSize = 9.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = TextMuted
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold,
+                    color = LeafPillText
                   )
+                }
+
+                if (isRewarded) {
+                  Box(
+                    modifier = Modifier
+                      .clip(RoundedCornerShape(8.dp))
+                      .background(SoftMeadowSand)
+                      .padding(horizontal = 8.dp, vertical = 3.dp)
+                  ) {
+                    Text(
+                      "✓ Discovered",
+                      fontSize = 11.sp,
+                      fontFamily = FontFamily.SansSerif,
+                      fontWeight = FontWeight.SemiBold,
+                      color = MossGreenDark
+                    )
+                  }
                 }
               }
 
               IconButton(onClick = { selectedWaypoint = null }, modifier = Modifier.size(24.dp)) {
-                Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = MutedSecondary)
               }
             }
 
-            // Waypoint Title & Description
-            Text(wp.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            // Title & Description
+            Text(
+              wp.title.removePrefix("[TEST] "),
+              fontSize = 17.sp,
+              fontFamily = FontFamily.Serif,
+              fontWeight = FontWeight.Bold,
+              color = ForestInkDark
+            )
             Text(
               wp.description,
-              fontSize = 12.sp,
-              fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
-              color = TextSecondary,
-              lineHeight = 16.sp
+              fontSize = 13.sp,
+              fontFamily = FontFamily.SansSerif,
+              color = ForestInk.copy(alpha = 0.85f),
+              lineHeight = 18.sp
             )
 
-            // Coordinates & Status Bar
+            // Reward & Coordinates
             Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
@@ -491,16 +628,16 @@ fun MapScreen(
             ) {
               Text(
                 "Coords: %.4f° N, %.4f° E".format(wp.latitude, wp.longitude),
-                fontSize = 10.sp,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                color = TextMuted
+                fontSize = 11.sp,
+                fontFamily = FontFamily.SansSerif,
+                color = MutedSecondary
               )
               Text(
-                if (isRewarded) "✓ DISCOVERED (+${wp.xpReward} XP)" else "+${wp.xpReward} Exploration XP Available",
-                fontSize = 11.sp,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                "+${wp.xpReward} Exploration XP",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Bold,
-                color = if (isRewarded) GrassNeon else SunGold
+                color = MossGreenDark
               )
             }
 
@@ -509,53 +646,51 @@ fun MapScreen(
               Box(
                 modifier = Modifier
                   .fillMaxWidth()
-                  .clip(RoundedCornerShape(4.dp))
-                  .background(com.example.contributionos.theme.DarkSoilVariant)
-                  .border(1.dp, com.example.contributionos.theme.WaypointTeal, RoundedCornerShape(4.dp))
-                  .padding(8.dp)
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(CardCreamLow)
+                  .border(1.dp, CardBorderSubtle, RoundedCornerShape(8.dp))
+                  .padding(10.dp)
               ) {
                 Text(
                   gpsStatusMessage!!,
                   fontSize = 11.sp,
-                  fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                  color = com.example.contributionos.theme.WaypointTeal,
-                  lineHeight = 14.sp
+                  fontFamily = FontFamily.SansSerif,
+                  color = ForestInk,
+                  lineHeight = 15.sp
                 )
               }
             }
 
-            // Action Buttons
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-              // Linked Quest Button (if applicable)
+            // Actions
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
               if (wp.linkedTaskId != null) {
                 val isQuestCompleted = rewardedWaypointIds.contains("quest-reward-${wp.linkedTaskId}")
                 Button(
                   onClick = { onSelectQuest(wp.linkedTaskId) },
-                  colors = ButtonDefaults.buttonColors(containerColor = com.example.contributionos.theme.DarkSoilVariant),
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, com.example.contributionos.theme.MutedMoss, RoundedCornerShape(6.dp)),
-                  shape = RoundedCornerShape(6.dp)
+                  colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isQuestCompleted) SoftMeadowSand else LeafPillContainer,
+                    contentColor = MossGreenDark
+                  ),
+                  shape = RoundedCornerShape(10.dp),
+                  modifier = Modifier.fillMaxWidth().height(42.dp)
                 ) {
                   Icon(
                     if (isQuestCompleted) Icons.Default.Check else Icons.Default.PlayArrow,
                     contentDescription = null,
-                    tint = if (isQuestCompleted) GrassNeon else GrassNeon,
+                    tint = MossGreenDark,
                     modifier = Modifier.size(16.dp)
                   )
                   Spacer(modifier = Modifier.width(6.dp))
                   Text(
-                    if (isQuestCompleted) "View Linked Quest: [COMPLETED ✓]" else "View Linked Quest: [SELF-GUIDED]",
+                    if (isQuestCompleted) "View Completed Quest (SQ-01)" else "Explore Linked Quest (SQ-01) →",
                     fontSize = 12.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isQuestCompleted) GrassNeon else TextPrimary
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Bold
                   )
                 }
               }
 
               Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Foreground GPS Test Button
                 Button(
                   onClick = {
                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -564,23 +699,15 @@ fun MapScreen(
                       locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                     }
                   },
-                  colors = ButtonDefaults.buttonColors(containerColor = com.example.contributionos.theme.DarkSoilVariant),
-                  modifier = Modifier
-                    .weight(1f)
-                    .border(1.dp, com.example.contributionos.theme.MutedMoss, RoundedCornerShape(6.dp)),
-                  shape = RoundedCornerShape(6.dp)
+                  colors = ButtonDefaults.buttonColors(containerColor = CardCreamLow, contentColor = ForestInk),
+                  modifier = Modifier.weight(1f).height(40.dp),
+                  shape = RoundedCornerShape(10.dp)
                 ) {
-                  Icon(Icons.Default.LocationOn, contentDescription = null, tint = com.example.contributionos.theme.WaypointTeal, modifier = Modifier.size(14.dp))
+                  Icon(Icons.Default.LocationOn, contentDescription = null, tint = MossGreenDark, modifier = Modifier.size(14.dp))
                   Spacer(modifier = Modifier.width(4.dp))
-                  Text(
-                    "Check GPS",
-                    fontSize = 11.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    color = TextPrimary
-                  )
+                  Text("Check GPS", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 }
 
-                // Manual Test Discovery Button
                 Button(
                   onClick = {
                     if (!isRewarded) {
@@ -588,35 +715,21 @@ fun MapScreen(
                     }
                   },
                   colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRewarded) com.example.contributionos.theme.DarkSoilVariant else GrassNeon
+                    containerColor = if (isRewarded) SoftMeadowSand else MossGreenDark,
+                    contentColor = if (isRewarded) MutedSecondary else Color.White
                   ),
-                  modifier = Modifier
-                    .weight(1.3f)
-                    .border(
-                      1.dp,
-                      if (isRewarded) com.example.contributionos.theme.MutedMoss else GrassNeon,
-                      RoundedCornerShape(6.dp)
-                    ),
-                  shape = RoundedCornerShape(6.dp),
+                  modifier = Modifier.weight(1.3f).height(40.dp),
+                  shape = RoundedCornerShape(10.dp),
                   enabled = !isRewarded
                 ) {
                   Text(
                     text = if (isRewarded) "✓ Discovered" else "Log Discovery (+${wp.xpReward} XP)",
                     fontSize = 11.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isRewarded) TextMuted else com.example.contributionos.theme.SoilVoid
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Bold
                   )
                 }
               }
-
-              Text(
-                "Manual test discovery operates independently of GPS verification. Awards Sandbox Exploration XP only (0 Civic Credits).",
-                fontSize = 9.sp,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
-                color = TextMuted,
-                lineHeight = 12.sp
-              )
             }
           }
         }
@@ -636,7 +749,6 @@ private fun MapLibreGeographicView(
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
 
-  // Safe lazy instantiation of MapView with native library check
   val mapView = remember {
     try {
       MapLibre.getInstance(context)
@@ -653,7 +765,6 @@ private fun MapLibreGeographicView(
     return
   }
 
-  // Manage native MapView lifecycle
   DisposableEffect(lifecycleOwner, mapView) {
     var isDestroyed = false
 
@@ -679,7 +790,6 @@ private fun MapLibreGeographicView(
     }
     lifecycleOwner.lifecycle.addObserver(observer)
 
-    // Match current lifecycle state upon entering composition
     when (lifecycleOwner.lifecycle.currentState) {
       Lifecycle.State.STARTED -> mapView.onStart()
       Lifecycle.State.RESUMED -> {
@@ -709,20 +819,15 @@ private fun MapLibreGeographicView(
     factory = {
       mapView.apply {
         getMapAsync { mapLibreMap ->
-          // Use MapLibre public development demo style or CARTO style
           val styleUrl = "https://demotiles.maplibre.org/style.json"
-          mapLibreMap.setStyle(styleUrl) { style ->
-            // Clear existing markers before re-adding to prevent marker duplication on reload
+          mapLibreMap.setStyle(styleUrl) {
             mapLibreMap.clear()
-
-            // Initial camera position centered on deterministic Bangalore test sector
             val camera = CameraPosition.Builder()
               .target(LatLng(12.9720, 77.5940))
               .zoom(13.8)
               .build()
             mapLibreMap.moveCamera(CameraUpdateFactory.newCameraPosition(camera))
 
-            // Add deterministic test waypoints as geographic markers
             waypoints.forEach { wp ->
               mapLibreMap.addMarker(
                 MarkerOptions()
@@ -732,7 +837,6 @@ private fun MapLibreGeographicView(
               )
             }
 
-            // Marker click handler: maps to existing waypoint inspector
             mapLibreMap.setOnMarkerClickListener { marker ->
               val matched = waypoints.find { it.title == marker.title }
               if (matched != null) {
@@ -761,18 +865,16 @@ private fun TacticalCanvasView(
   val latRange = 0.016
   val lngRange = 0.016
 
-  BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+  BoxWithConstraints(modifier = Modifier.fillMaxSize().background(WarmPaper)) {
     val widthPx = constraints.maxWidth.toFloat()
     val heightPx = constraints.maxHeight.toFloat()
 
-    // 1. Tactical Vector Canvas (Grid, concentric distance rings, axes)
     Canvas(modifier = Modifier.fillMaxSize()) {
-      // Grid lines
       val gridSpacing = 60.dp.toPx()
       var x = 0f
       while (x <= size.width) {
         drawLine(
-          color = CivicBorderSubtle.copy(alpha = 0.45f),
+          color = CardBorder.copy(alpha = 0.5f),
           start = Offset(x, 0f),
           end = Offset(x, size.height),
           strokeWidth = 1f
@@ -782,7 +884,7 @@ private fun TacticalCanvasView(
       var y = 0f
       while (y <= size.height) {
         drawLine(
-          color = CivicBorderSubtle.copy(alpha = 0.45f),
+          color = CardBorder.copy(alpha = 0.5f),
           start = Offset(0f, y),
           end = Offset(size.width, y),
           strokeWidth = 1f
@@ -790,20 +892,54 @@ private fun TacticalCanvasView(
         y += gridSpacing
       }
 
-      // Center crosshairs
       val centerX = size.width / 2f
       val centerY = size.height / 2f
-      drawLine(color = GrassNeon.copy(alpha = 0.6f), start = Offset(centerX - 24f, centerY), end = Offset(centerX + 24f, centerY), strokeWidth = 2f)
-      drawLine(color = GrassNeon.copy(alpha = 0.6f), start = Offset(centerX, centerY - 24f), end = Offset(centerX, centerY + 24f), strokeWidth = 2f)
+      drawLine(color = MossGreen.copy(alpha = 0.4f), start = Offset(centerX - 20f, centerY), end = Offset(centerX + 20f, centerY), strokeWidth = 2f)
+      drawLine(color = MossGreen.copy(alpha = 0.4f), start = Offset(centerX, centerY - 20f), end = Offset(centerX, centerY + 20f), strokeWidth = 2f)
 
-      // Range Rings (150m, 350m, 600m)
-      val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-      drawCircle(color = CivicCyan.copy(alpha = 0.25f), radius = 100.dp.toPx(), center = Offset(centerX, centerY), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f, pathEffect = dashEffect))
-      drawCircle(color = CivicCyan.copy(alpha = 0.20f), radius = 190.dp.toPx(), center = Offset(centerX, centerY), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f, pathEffect = dashEffect))
-      drawCircle(color = CivicCyan.copy(alpha = 0.15f), radius = 280.dp.toPx(), center = Offset(centerX, centerY), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f, pathEffect = dashEffect))
+      val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
+      drawCircle(color = MossGreen.copy(alpha = 0.20f), radius = 100.dp.toPx(), center = Offset(centerX, centerY), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f, pathEffect = dashEffect))
+      drawCircle(color = MossGreen.copy(alpha = 0.15f), radius = 190.dp.toPx(), center = Offset(centerX, centerY), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f, pathEffect = dashEffect))
+      drawCircle(color = MossGreen.copy(alpha = 0.10f), radius = 280.dp.toPx(), center = Offset(centerX, centerY), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f, pathEffect = dashEffect))
     }
 
-    // 2. Waypoint Beacon Composables
+    if (waypoints.isEmpty()) {
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .padding(32.dp),
+        contentAlignment = Alignment.Center
+      ) {
+        TactileCard(
+          backgroundColor = CardCream,
+          borderColor = CardBorder,
+          shape = RoundedCornerShape(16.dp),
+          padding = 16.dp
+        ) {
+          Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Text("🧭", fontSize = 28.sp)
+            Text(
+              "No Active Sector Checkpoints",
+              fontSize = 14.sp,
+              fontFamily = FontFamily.Serif,
+              fontWeight = FontWeight.Bold,
+              color = ForestInkDark
+            )
+            Text(
+              "Verified field initiatives will display here when published. Toggle Sandbox Demo mode in the header to simulate checkpoints.",
+              fontSize = 11.sp,
+              fontFamily = FontFamily.SansSerif,
+              color = MutedSecondary,
+              textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+          }
+        }
+      }
+    }
+
     waypoints.forEach { wp ->
       val isRewarded = rewardedWaypointIds.contains(wp.id)
       val isSelected = selectedWaypoint?.id == wp.id
@@ -815,45 +951,40 @@ private fun TacticalCanvasView(
 
       Box(
         modifier = Modifier
-          .offset { IntOffset(pinX - 40, pinY - 40) }
-          .size(80.dp),
+          .offset { IntOffset(pinX - 35, pinY - 35) }
+          .size(70.dp),
         contentAlignment = Alignment.Center
       ) {
-        // Radar Pulse Circle for undiscovered waypoints
         if (!isRewarded) {
           Box(
             modifier = Modifier
-              .size((44 * pulseRadius).dp)
+              .size((36 * pulseRadius).dp)
               .clip(CircleShape)
-              .background(GrassNeon.copy(alpha = 0.25f / pulseRadius))
+              .background(NewLeafGreen.copy(alpha = 0.35f / pulseRadius))
           )
         }
 
-        // Selected halo
         if (isSelected) {
           Box(
             modifier = Modifier
-              .size(52.dp)
+              .size(46.dp)
               .clip(CircleShape)
-              .border(2.dp, CivicAmber, CircleShape)
+              .border(2.dp, ClayAccent, CircleShape)
           )
         }
 
-        // Waypoint Pin Button
         Box(
           modifier = Modifier
-            .size(38.dp)
+            .size(34.dp)
             .clip(CircleShape)
-            .background(if (isRewarded) CivicForestDark else CivicMidnightNavy)
-            .border(2.dp, if (isRewarded) CivicEmerald else if (isSelected) CivicAmber else GrassNeon, CircleShape)
+            .background(if (isRewarded) LeafPillContainer else CardCream)
+            .border(1.5.dp, if (isRewarded) MossGreen else if (isSelected) ClayAccent else CardBorder, CircleShape)
             .clickable { onSelectWaypoint(wp) },
           contentAlignment = Alignment.Center
         ) {
           Text(
             text = if (isRewarded) "✓" else getCategoryIcon(wp.category),
-            fontSize = if (isRewarded) 15.sp else 13.sp,
-            color = if (isRewarded) GrassNeon else TextPrimary,
-            fontWeight = FontWeight.Bold
+            fontSize = 13.sp
           )
         }
       }
@@ -871,43 +1002,47 @@ private fun getCategoryIcon(category: String): String {
   }
 }
 
-const val CHECKPOINT_PROXIMITY_THRESHOLD_METERS = 50
-const val MAX_STALE_FIX_AGE_MS = 15 * 60 * 1000L // 15 minutes
-const val MAX_ACCEPTABLE_ACCURACY_METERS = 65f
+const val CHECKPOINT_PROXIMITY_THRESHOLD_METERS = 30
+const val MAX_STALE_FIX_AGE_MS = 60 * 1000L // 1 minute fresh fix required
+const val MAX_ACCEPTABLE_ACCURACY_METERS = 50f // Accuracy <= 50m
 
-private fun checkProximity(context: Context, waypoint: MapWaypoint?, onResult: (String) -> Unit) {
-  if (waypoint == null) return
+data class GpsArrivalCheck(
+  val isEligible: Boolean,
+  val distanceMeters: Int? = null,
+  val accuracyMeters: Float? = null,
+  val isStale: Boolean = false,
+  val message: String = ""
+)
+
+fun evaluateGpsArrival(context: Context, waypoint: MapWaypoint?): GpsArrivalCheck {
+  if (waypoint == null) return GpsArrivalCheck(false, message = "No target waypoint coordinates.")
   try {
     val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-    if (locationManager == null) {
-      onResult("LocationManager service unavailable.")
-      return
-    }
+      ?: return GpsArrivalCheck(false, message = "Location service unavailable.")
 
     if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-      onResult("Location permission not granted. Manual test discovery is fully available without GPS.")
-      return
+      return GpsArrivalCheck(false, message = "Location permission needed.")
     }
 
     val isGpsEnabled = try { locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) } catch (_: Exception) { false }
     val isNetworkEnabled = try { locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } catch (_: Exception) { false }
     if (!isGpsEnabled && !isNetworkEnabled) {
-      onResult("Location services are disabled on device. Enable GPS in Settings, or use Manual Discovery.")
-      return
+      return GpsArrivalCheck(false, message = "GPS disabled on device.")
     }
 
     val gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
       ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-
-    if (gpsLocation == null) {
-      onResult("Awaiting GPS satellite fix. No recent location fix available on device.")
-      return
-    }
+      ?: return GpsArrivalCheck(false, message = "Awaiting satellite fix...")
 
     val fixAgeMs = System.currentTimeMillis() - gpsLocation.time
-    val isStale = fixAgeMs > MAX_STALE_FIX_AGE_MS
+    if (fixAgeMs > MAX_STALE_FIX_AGE_MS) {
+      return GpsArrivalCheck(false, isStale = true, message = "GPS fix stale (>1m old). Walk into open sky.")
+    }
+
     val accuracy = if (gpsLocation.hasAccuracy()) gpsLocation.accuracy else Float.MAX_VALUE
-    val isInaccurate = accuracy > MAX_ACCEPTABLE_ACCURACY_METERS
+    if (accuracy > MAX_ACCEPTABLE_ACCURACY_METERS) {
+      return GpsArrivalCheck(false, accuracyMeters = accuracy, message = "Low accuracy (±${accuracy.toInt()}m).")
+    }
 
     val distResults = FloatArray(1)
     Location.distanceBetween(
@@ -918,17 +1053,20 @@ private fun checkProximity(context: Context, waypoint: MapWaypoint?, onResult: (
       distResults
     )
     val distanceMeters = distResults[0].toInt()
+    val isWithinProximity = distanceMeters <= CHECKPOINT_PROXIMITY_THRESHOLD_METERS
 
-    if (isStale) {
-      onResult("GPS fix is stale (${fixAgeMs / 60000}m old, ~%d m away). Proximity unconfirmed until fresh satellite lock. Manual test discovery remains active.".format(distanceMeters))
-    } else if (isInaccurate) {
-      onResult("GPS accuracy is low (±%d m, ~%d m away). Proximity unconfirmed. Manual test discovery is available.".format(accuracy.toInt(), distanceMeters))
-    } else if (distanceMeters <= CHECKPOINT_PROXIMITY_THRESHOLD_METERS) {
-      onResult("✓ GPS PROXIMITY CONFIRMED: ~%d m from checkpoint (Threshold: ≤%d m, accuracy ±%d m).".format(distanceMeters, CHECKPOINT_PROXIMITY_THRESHOLD_METERS, accuracy.toInt()))
-    } else {
-      onResult("GPS Fix acquired: ~%d m away. Outside proximity threshold (≤%d m). Proximity not confirmed. Manual test discovery remains active.".format(distanceMeters, CHECKPOINT_PROXIMITY_THRESHOLD_METERS))
-    }
+    return GpsArrivalCheck(
+      isEligible = isWithinProximity,
+      distanceMeters = distanceMeters,
+      accuracyMeters = accuracy,
+      message = if (isWithinProximity) "✓ Arrived within ≤30m (~${distanceMeters}m)." else "~${distanceMeters}m away (≤30m needed)."
+    )
   } catch (e: Exception) {
-    onResult("GPS reading exception: ${e.message}")
+    return GpsArrivalCheck(false, message = "GPS check error: ${e.message}")
   }
+}
+
+private fun checkProximity(context: Context, waypoint: MapWaypoint?, onResult: (String) -> Unit) {
+  val check = evaluateGpsArrival(context, waypoint)
+  onResult(check.message)
 }

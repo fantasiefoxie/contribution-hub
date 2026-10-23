@@ -14,14 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -38,30 +34,31 @@ import com.example.contributionos.model.CivicSubmission
 import com.example.contributionos.model.CommunityMilestone
 import com.example.contributionos.model.DataSourceMode
 import com.example.contributionos.model.SubmissionStatus
-import com.example.contributionos.theme.CivicAmber
-import com.example.contributionos.theme.CivicBorderActive
-import com.example.contributionos.theme.CivicBorderSubtle
-import com.example.contributionos.theme.CivicCyan
-import com.example.contributionos.theme.CivicEmerald
-import com.example.contributionos.theme.CivicForestDark
-import com.example.contributionos.theme.CivicMidnightNavy
-import com.example.contributionos.theme.CivicSurfaceCard
-import com.example.contributionos.theme.CivicSurfaceDark
-import com.example.contributionos.theme.CivicSurfacePanel
-import com.example.contributionos.theme.DarkSoilVariant
-import com.example.contributionos.theme.ForestFloor
-import com.example.contributionos.theme.GrassNeon
-import com.example.contributionos.theme.MutedMoss
-import com.example.contributionos.theme.SoilVoid
+import com.example.contributionos.theme.CardBorder
+import com.example.contributionos.theme.CardBorderSubtle
+import com.example.contributionos.theme.CardCream
+import com.example.contributionos.theme.CardCreamLow
+import com.example.contributionos.theme.ClayAccent
+import com.example.contributionos.theme.ForestInk
+import com.example.contributionos.theme.ForestInkDark
+import com.example.contributionos.theme.LeafPillContainer
+import com.example.contributionos.theme.LeafPillText
+import com.example.contributionos.theme.MossGreen
+import com.example.contributionos.theme.MossGreenDark
+import com.example.contributionos.theme.MutedSecondary
+import com.example.contributionos.theme.SoftMeadowSand
 import com.example.contributionos.theme.SunGold
-import com.example.contributionos.theme.TextMuted
-import com.example.contributionos.theme.TextPrimary
-import com.example.contributionos.theme.TextSecondary
-import com.example.contributionos.theme.WaypointTeal
-import com.example.contributionos.theme.WeatheredPaper
+import com.example.contributionos.theme.SunGoldContainer
+import com.example.contributionos.theme.SunGoldText
+import com.example.contributionos.theme.TerracottaContainer
+import com.example.contributionos.theme.TerracottaText
+import com.example.contributionos.theme.WarmPaper
+import com.example.contributionos.theme.WaterBlue
+import com.example.contributionos.theme.WaterBlueContainer
+import com.example.contributionos.theme.WaterBlueText
+import com.example.contributionos.ui.components.BotanicalProgressBar
 import com.example.contributionos.ui.components.CivicHeader
-import com.example.contributionos.ui.components.LayeredPanel
-import com.example.contributionos.ui.components.SegmentedProgressBar
+import com.example.contributionos.ui.components.TactileCard
 
 @Composable
 fun ImpactScreen(
@@ -78,10 +75,10 @@ fun ImpactScreen(
   Column(
     modifier = modifier
       .fillMaxSize()
-      .background(SoilVoid)
+      .background(WarmPaper)
   ) {
     CivicHeader(
-      districtName = "CIVIC IMPACT // PUBLIC LEDGER",
+      districtName = "Community & Civic Impact",
       seed = 42L,
       isLive = isLive,
       environmentMode = environmentMode,
@@ -95,77 +92,113 @@ fun ImpactScreen(
         .padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-      // Critical Dual-Ledger Separation Plate
-      LayeredPanel(
+      // Dual-Ledger Separation Principle Card
+      TactileCard(
         modifier = Modifier.fillMaxWidth(),
-        borderColor = SunGold.copy(alpha = 0.5f)
+        borderColor = CardBorder,
+        backgroundColor = CardCream
       ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
             Box(
               modifier = Modifier
-                .clip(RoundedCornerShape(3.dp))
-                .background(SunGold.copy(alpha = 0.2f))
-                .padding(horizontal = 6.dp, vertical = 2.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(TerracottaContainer)
+                .padding(horizontal = 8.dp, vertical = 3.dp)
             ) {
               Text(
                 "DUAL-LEDGER SEPARATION",
-                fontSize = 9.sp,
-                fontFamily = FontFamily.Monospace,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
-                color = SunGold
+                letterSpacing = 0.5.sp,
+                color = TerracottaText
               )
             }
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-              "Exploration XP ≠ Civic Credits",
-              fontSize = 13.sp,
-              fontFamily = FontFamily.Monospace,
-              fontWeight = FontWeight.Bold,
-              color = WeatheredPaper
-            )
           }
 
           Text(
-            "Exploration XP measures your personal outdoor nature adventures. Civic Credits represent cryptographically verified public contributions (e.g. municipal tree canopy audits, trail maintenance, water catchment reporting).",
-            fontSize = 12.sp,
+            "Exploration XP ≠ Civic Credits",
+            fontSize = 18.sp,
             fontFamily = FontFamily.Serif,
-            color = TextSecondary,
-            lineHeight = 17.sp
+            fontWeight = FontWeight.Bold,
+            color = ForestInkDark
+          )
+
+          Text(
+            "Exploration XP measures your personal outdoor nature adventures and local route mastery. Civic Credits represent cryptographically verified public contributions (such as municipal tree audits, trail maintenance, and water catchment surveys) reviewed by community stewards.",
+            fontSize = 13.sp,
+            color = ForestInk,
+            lineHeight = 18.sp
           )
 
           // Side-by-Side Comparison Counters
           Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
           ) {
             Box(
               modifier = Modifier
                 .weight(1f)
-                .clip(RoundedCornerShape(6.dp))
-                .background(DarkSoilVariant)
-                .border(1.dp, MutedMoss, RoundedCornerShape(6.dp))
-                .padding(10.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(CardCreamLow)
+                .border(1.dp, MossGreen.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                .padding(12.dp)
             ) {
-              Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("PERSONAL ADVENTURE", fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = TextMuted)
-                Text("Exploration XP", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GrassNeon)
-                Text("Local on-device leveling", fontSize = 10.sp, fontFamily = FontFamily.Serif, color = TextSecondary)
+              Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                  "PERSONAL PROGRESSION",
+                  fontSize = 9.sp,
+                  fontWeight = FontWeight.Bold,
+                  letterSpacing = 0.5.sp,
+                  color = MossGreenDark
+                )
+                Text(
+                  "Exploration XP",
+                  fontSize = 14.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = ForestInkDark
+                )
+                Text(
+                  "Local on-device leveling and route mastery.",
+                  fontSize = 11.sp,
+                  color = MutedSecondary,
+                  lineHeight = 14.sp
+                )
               }
             }
 
             Box(
               modifier = Modifier
                 .weight(1f)
-                .clip(RoundedCornerShape(6.dp))
-                .background(DarkSoilVariant)
-                .border(1.dp, WaypointTeal.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                .padding(10.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(CardCreamLow)
+                .border(1.dp, WaterBlue.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                .padding(12.dp)
             ) {
-              Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("PUBLIC CIVIC PROOF", fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = WaypointTeal)
-                Text("0 Civic Credits", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WaypointTeal)
-                Text("Accredited community audit", fontSize = 10.sp, fontFamily = FontFamily.Serif, color = TextSecondary)
+              Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                  "PUBLIC RECOGNITION",
+                  fontSize = 9.sp,
+                  fontWeight = FontWeight.Bold,
+                  letterSpacing = 0.5.sp,
+                  color = WaterBlue
+                )
+                Text(
+                  "Civic Credits",
+                  fontSize = 14.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = ForestInkDark
+                )
+                Text(
+                  "Accredited community and municipal audit.",
+                  fontSize = 11.sp,
+                  color = MutedSecondary,
+                  lineHeight = 14.sp
+                )
               }
             }
           }
@@ -174,77 +207,108 @@ fun ImpactScreen(
 
       // Community Milestone Goals
       Text(
-        "COLLECTIVE BIOME MILESTONES",
-        fontSize = 11.sp,
-        fontFamily = FontFamily.Monospace,
+        "Collective Community Milestones",
+        fontSize = 16.sp,
+        fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
-        letterSpacing = 1.sp,
-        color = TextMuted
+        color = ForestInkDark
       )
 
       if (milestones.isEmpty()) {
-        LayeredPanel(modifier = Modifier.fillMaxWidth()) {
+        TactileCard(
+          modifier = Modifier.fillMaxWidth(),
+          borderColor = CardBorder,
+          backgroundColor = CardCream
+        ) {
           Text(
             "No collective civic milestones currently loaded from the registry. Active initiative goals will appear here as community actions are aggregated.",
             fontSize = 13.sp,
-            fontFamily = FontFamily.Serif,
-            color = TextMuted,
+            color = MutedSecondary,
             lineHeight = 18.sp
           )
         }
       } else {
         milestones.forEach { milestone ->
-          Card(
+          TactileCard(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = ForestFloor),
-            shape = RoundedCornerShape(8.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MutedMoss)
+            borderColor = CardBorder,
+            backgroundColor = CardCream
           ) {
-            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Box(
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(LeafPillContainer)
+                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                ) {
+                  Text(
+                    milestone.category.replaceFirstChar { it.uppercase() },
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = LeafPillText
+                  )
+                }
+                Text(
+                  "${milestone.currentValue} / ${milestone.targetValue} ${milestone.unit}",
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = MutedSecondary
+                )
+              }
+
+              Text(
+                milestone.title,
+                fontSize = 16.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                color = ForestInkDark
+              )
+              Text(
+                milestone.description,
+                fontSize = 12.sp,
+                color = MutedSecondary,
+                lineHeight = 16.sp
+              )
+
+              BotanicalProgressBar(
+                progressPercent = milestone.percent,
+                activeColor = if (milestone.isAchieved) MossGreen else WaterBlue,
+                trackColor = CardBorderSubtle,
+                height = 8.dp
+              )
+
               Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
               ) {
                 Text(
-                  milestone.category.uppercase(),
-                  fontSize = 10.sp,
-                  fontFamily = FontFamily.Monospace,
-                  fontWeight = FontWeight.Bold,
-                  color = GrassNeon
-                )
-                Text(
-                  "${milestone.currentValue} / ${milestone.targetValue} ${milestone.unit}",
-                  fontSize = 11.sp,
-                  fontFamily = FontFamily.Monospace,
-                  fontWeight = FontWeight.Bold,
-                  color = TextSecondary
-                )
-              }
-
-              Text(milestone.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = WeatheredPaper)
-              Text(milestone.description, fontSize = 12.sp, fontFamily = FontFamily.Serif, color = TextMuted)
-
-              SegmentedProgressBar(
-                progressPercent = milestone.percent,
-                totalSegments = 10,
-                activeColor = if (milestone.isAchieved) GrassNeon else WaypointTeal,
-                inactiveColor = DarkSoilVariant
-              )
-
-              Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-              ) {
-                Text(
-                  "${(milestone.percent * 100).toInt()}% Met",
-                  fontSize = 11.sp,
-                  fontFamily = FontFamily.Monospace,
-                  fontWeight = FontWeight.Bold,
-                  color = WaypointTeal
+                  "${(milestone.percent * 100).toInt()}% Achieved",
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.SemiBold,
+                  color = if (milestone.isAchieved) MossGreenDark else WaterBlue
                 )
                 if (milestone.isAchieved) {
-                  Text("✓ Lore Milestone Achieved", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = GrassNeon)
+                  Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                      Icons.Default.CheckCircle,
+                      contentDescription = null,
+                      tint = MossGreen,
+                      modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                      "Milestone Achieved",
+                      fontSize = 11.sp,
+                      fontWeight = FontWeight.SemiBold,
+                      color = MossGreenDark
+                    )
+                  }
                 }
               }
             }
@@ -254,60 +318,85 @@ fun ImpactScreen(
 
       // Permanent Contributor History
       Text(
-        "MY PERMANENT PROOF LEDGER",
-        fontSize = 11.sp,
-        fontFamily = FontFamily.Monospace,
+        "Permanent Proof Ledger",
+        fontSize = 16.sp,
+        fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
-        letterSpacing = 1.sp,
-        color = TextMuted
+        color = ForestInkDark
       )
 
       if (verifiedSubmissions.isEmpty()) {
-        LayeredPanel(modifier = Modifier.fillMaxWidth()) {
+        TactileCard(
+          modifier = Modifier.fillMaxWidth(),
+          borderColor = CardBorder,
+          backgroundColor = CardCream
+        ) {
           Text(
             "No verified contributions recorded yet. Submit field evidence for an open side quest to receive community approval.",
             fontSize = 13.sp,
-            fontFamily = FontFamily.Serif,
-            color = TextMuted,
+            color = MutedSecondary,
             lineHeight = 18.sp
           )
         }
       } else {
         verifiedSubmissions.forEach { sub ->
-          Card(
+          TactileCard(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = ForestFloor),
-            shape = RoundedCornerShape(8.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MutedMoss)
+            borderColor = CardBorder,
+            backgroundColor = CardCream
           ) {
             Row(
-              modifier = Modifier
-                .padding(14.dp)
-                .fillMaxWidth(),
+              modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically
             ) {
               Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                  Icon(Icons.Default.CheckCircle, contentDescription = null, tint = GrassNeon, modifier = Modifier.size(16.dp))
+                  Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MossGreen,
+                    modifier = Modifier.size(15.dp)
+                  )
                   Spacer(modifier = Modifier.width(6.dp))
-                  Text("🌱 VERIFIED CITIZEN LORE", fontSize = 10.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = GrassNeon)
+                  Text(
+                    "Verified Community Lore",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MossGreenDark
+                  )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(sub.taskTitle, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WeatheredPaper)
+                Text(
+                  sub.taskTitle,
+                  fontSize = 14.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = ForestInkDark
+                )
                 if (sub.feedback != null) {
-                  Text(sub.feedback, fontSize = 11.sp, fontFamily = FontFamily.Serif, color = TextMuted)
+                  Text(
+                    sub.feedback,
+                    fontSize = 12.sp,
+                    color = MutedSecondary,
+                    lineHeight = 16.sp
+                  )
                 }
               }
 
               if (sub.scoreAwarded != null) {
-                Text(
-                  "+${sub.scoreAwarded} XP",
-                  fontSize = 13.sp,
-                  fontFamily = FontFamily.Monospace,
-                  fontWeight = FontWeight.Bold,
-                  color = SunGold
-                )
+                Box(
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(SunGoldContainer)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                  Text(
+                    "+${sub.scoreAwarded} XP",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SunGoldText
+                  )
+                }
               }
             }
           }

@@ -1,29 +1,31 @@
 package com.example.contributionos.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val TouchGrassColorScheme = darkColorScheme(
-  primary = GrassNeon,
-  onPrimary = SoilVoid,
-  primaryContainer = ForestFloor,
-  onPrimaryContainer = GrassNeon,
-  secondary = SunGold,
-  onSecondary = SoilVoid,
-  secondaryContainer = SoilSurfacePanel,
-  onSecondaryContainer = WeatheredPaper,
-  tertiary = WaypointTeal,
-  onTertiary = SoilVoid,
-  background = SoilVoid,
-  onBackground = WeatheredPaper,
-  surface = ForestFloor,
-  onSurface = WeatheredPaper,
-  surfaceVariant = SoilSurfacePanel,
-  onSurfaceVariant = FieldFog,
-  outline = MutedMoss,
-  outlineVariant = GrassNeon
+private val TouchGrassColorScheme = lightColorScheme(
+  primary = MossGreenDark,
+  onPrimary = Color.White,
+  primaryContainer = LeafPillContainer,
+  onPrimaryContainer = LeafPillText,
+  secondary = ClayAccent,
+  onSecondary = Color.White,
+  secondaryContainer = TerracottaContainer,
+  onSecondaryContainer = TerracottaText,
+  tertiary = WaterBlue,
+  onTertiary = Color.White,
+  tertiaryContainer = WaterBlueContainer,
+  onTertiaryContainer = WaterBlueText,
+  background = WarmPaper,
+  onBackground = ForestInk,
+  surface = CardCream,
+  onSurface = ForestInk,
+  surfaceVariant = CardCreamLow,
+  onSurfaceVariant = MutedSecondary,
+  outline = BoundaryLine,
+  outlineVariant = CardBorder
 )
 
 @Composable

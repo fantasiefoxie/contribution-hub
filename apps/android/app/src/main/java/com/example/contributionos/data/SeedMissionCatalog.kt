@@ -1,10 +1,12 @@
 package com.example.contributionos.data
 
+import com.example.contributionos.model.CatalogSpecimen
 import com.example.contributionos.model.CivicBadge
 import com.example.contributionos.model.CivicExpedition
 import com.example.contributionos.model.CivicProfile
 import com.example.contributionos.model.CivicTask
 import com.example.contributionos.model.CommunityMilestone
+import com.example.contributionos.model.EncounterChoice
 import com.example.contributionos.model.ExpeditionNode
 import com.example.contributionos.model.ExpeditionStatus
 import com.example.contributionos.model.MapWaypoint
@@ -174,7 +176,8 @@ This is a self-guided exploration activity. It completes locally on your device.
   val selfGuidedQuest: CivicTask get() = selfGuidedStarterQuest
 
   fun findTask(taskId: String): CivicTask? {
-    return selfGuidedQuests.find { it.id == taskId }
+    return fixtureTasks.find { it.id == taskId }
+      ?: selfGuidedQuests.find { it.id == taskId }
       ?: realTasks.find { it.id == taskId }
   }
 
@@ -477,4 +480,361 @@ This is a self-guided exploration activity. It completes locally on your device.
 
     return listOf(exp1, exp2)
   }
+
+  // --- Production Development Fixtures (Unverified Landmarks) ---
+  // Notice: These coordinates and routes are test fixtures for development and safety validation.
+  // They are NOT certified real-world locations.
+
+  val fixtureTasks = listOf(
+    CivicTask(
+      id = "task-fixture-banyan-1",
+      title = "[FIXTURE] Grove Entrance Arch",
+      description = "Inspect the natural vaulted arch formed by descending prop roots at the grove entrance. Examine bark texture and note sapling vigour.",
+      difficulty = 1,
+      status = "open",
+      tags = listOf("canopy", "roots", "field-test"),
+      district = "Field Test Sector B",
+      locationLabel = "Sector B Entrance (Development Fixture)",
+      evidenceRequirements = "Sensory confirmation of root girth or optional photo",
+      estimatedDurationMinutes = 5,
+      isSandboxDemo = false,
+      isLocalCompletionOnly = true,
+      xpReward = 50
+    ),
+    CivicTask(
+      id = "task-fixture-banyan-2",
+      title = "[FIXTURE] The Whispering Culm Stand",
+      description = "Locate the hollow culm bamboo stand. Listen for wind resonance and identify micro-moss clusters along the lower nodal rings.",
+      difficulty = 2,
+      status = "open",
+      tags = listOf("bioacoustics", "moss", "field-test"),
+      district = "Field Test Sector B",
+      locationLabel = "Culm Stand Waypoint (Development Fixture)",
+      evidenceRequirements = "Auditory confirmation of bamboo creaks or optional photo",
+      estimatedDurationMinutes = 8,
+      isSandboxDemo = false,
+      isLocalCompletionOnly = true,
+      xpReward = 50
+    ),
+    CivicTask(
+      id = "task-fixture-banyan-3",
+      title = "[FIXTURE] Central Matriarch Trunk",
+      description = "Document the central convergence of historic aerial pillars. Chronicle canopy density and observe upper epiphytic growth.",
+      difficulty = 3,
+      status = "open",
+      tags = listOf("heritage", "flora", "field-test"),
+      district = "Field Test Sector B",
+      locationLabel = "Matriarch Convergence (Development Fixture)",
+      evidenceRequirements = "Canopy density check or optional photo",
+      estimatedDurationMinutes = 10,
+      isSandboxDemo = false,
+      isLocalCompletionOnly = true,
+      xpReward = 50
+    )
+  )
+
+  val fixtureWaypoints = listOf(
+    MapWaypoint(
+      id = "wp-fixture-banyan-1",
+      title = "[FIXTURE] Grove Entrance Arch",
+      description = "Natural vaulted arch formed by descending prop roots. (Development Fixture)",
+      category = "Tree Canopy",
+      latitude = 12.9716,
+      longitude = 77.5946,
+      xpReward = 50,
+      linkedTaskId = "task-fixture-banyan-1",
+      isSandboxTest = false
+    ),
+    MapWaypoint(
+      id = "wp-fixture-banyan-2",
+      title = "[FIXTURE] The Whispering Culm Stand",
+      description = "Hollow culm bamboo stand producing subtle wind acoustics. (Development Fixture)",
+      category = "Bioacoustics",
+      latitude = 12.9725,
+      longitude = 77.5955,
+      xpReward = 50,
+      linkedTaskId = "task-fixture-banyan-2",
+      isSandboxTest = false
+    ),
+    MapWaypoint(
+      id = "wp-fixture-banyan-3",
+      title = "[FIXTURE] Central Matriarch Trunk",
+      description = "Monumental primary banyan trunk with mature aerial pillar network. (Development Fixture)",
+      category = "Ancient Flora",
+      latitude = 12.9735,
+      longitude = 77.5965,
+      xpReward = 50,
+      linkedTaskId = "task-fixture-banyan-3",
+      isSandboxTest = false
+    )
+  )
+
+  val fixtureBanyanNodes = listOf(
+    ExpeditionNode(
+      id = "node-fixture-banyan-1",
+      taskId = "task-fixture-banyan-1",
+      step = 0,
+      branchIndex = 0,
+      title = "[FIXTURE] Grove Entrance Arch",
+      category = "Canopy",
+      difficulty = 1,
+      xpReward = 50,
+      status = NodeStatus.AVAILABLE,
+      isoX = 0.2f,
+      isoY = 0.8f,
+      childNodeIds = listOf("node-fixture-banyan-2"),
+      isSandboxDemo = false
+    ),
+    ExpeditionNode(
+      id = "node-fixture-banyan-2",
+      taskId = "task-fixture-banyan-2",
+      step = 1,
+      branchIndex = 0,
+      title = "[FIXTURE] Whispering Culm Stand",
+      category = "Bioacoustics",
+      difficulty = 2,
+      xpReward = 50,
+      status = NodeStatus.LOCKED,
+      isoX = 0.5f,
+      isoY = 0.5f,
+      childNodeIds = listOf("node-fixture-banyan-3"),
+      isSandboxDemo = false
+    ),
+    ExpeditionNode(
+      id = "node-fixture-banyan-3",
+      taskId = "task-fixture-banyan-3",
+      step = 2,
+      branchIndex = 0,
+      title = "[FIXTURE] Central Matriarch Trunk",
+      category = "Heritage",
+      difficulty = 3,
+      xpReward = 50,
+      status = NodeStatus.LOCKED,
+      isoX = 0.8f,
+      isoY = 0.2f,
+      childNodeIds = emptyList(),
+      isSandboxDemo = false
+    )
+  )
+
+  val productionFixtureExpedition = CivicExpedition(
+    id = "exp-fixture-banyan-1",
+    title = "[FIXTURE] Ancient Banyan Prop Roots",
+    theme = "Ancient Canopy Architecture",
+    lore = "Chronicle century-old Ficus benghalensis aerial roots through a 3-stage botanical route. (Unverified development fixture).",
+    district = "Field Test Sector B",
+    targetMilestone = "3 canopy waypoints chronicled",
+    nodes = fixtureBanyanNodes,
+    activeRunSeed = 1001L,
+    status = ExpeditionStatus.ACTIVE,
+    isSandboxDemo = false,
+    activeStance = "TREK"
+  )
+
+  val branchingCanopyNodes = listOf(
+    ExpeditionNode(
+      id = "node-canopy-1",
+      taskId = "task-canopy-1",
+      step = 0,
+      branchIndex = 0,
+      title = "Grove Threshold Arch",
+      category = "Canopy Entrance",
+      difficulty = 1,
+      xpReward = 50,
+      status = NodeStatus.AVAILABLE,
+      isoX = 0.2f,
+      isoY = 0.8f,
+      childNodeIds = listOf("node-canopy-2A", "node-canopy-2B"),
+      competingNodeIds = emptyList(),
+      encounterLore = "An ancient vaulted archway where descending banyan roots meet stone masonry. Moisture collects in the shaded ground litter.",
+      encounterType = "BOTANICAL_DISCOVERY",
+      choices = listOf(
+        EncounterChoice(
+          id = "c-leaf-litter",
+          title = "Examine moist leaf litter",
+          description = "Check soil moisture and decaying organic layer beneath the arch.",
+          consequenceSnippet = "Discovered soil moisture reading for bamboo groves.",
+          awardsClueId = "clue-bamboo-resonance"
+        ),
+        EncounterChoice(
+          id = "c-archway-moss",
+          title = "Inspect archway moss orientation",
+          description = "Evaluate solar angle and velvet moss thickness along the vertical stonework.",
+          consequenceSnippet = "Calculated solar exposure angle for canopy epiphytes.",
+          awardsClueId = "clue-solar-cavity"
+        )
+      ),
+      isSandboxDemo = true
+    ),
+    ExpeditionNode(
+      id = "node-canopy-2A",
+      taskId = "task-canopy-2A",
+      step = 1,
+      branchIndex = 0,
+      title = "The Whispering Culm Stand",
+      category = "Bioacoustics",
+      difficulty = 2,
+      xpReward = 50,
+      status = NodeStatus.LOCKED,
+      isoX = 0.4f,
+      isoY = 0.5f,
+      childNodeIds = listOf("node-canopy-3"),
+      competingNodeIds = listOf("node-canopy-2B"),
+      encounterLore = "A shaded bamboo culm stand where hollow stalks resonate gently in the morning air currents.",
+      encounterType = "HABITAT_MYSTERY",
+      choices = listOf(
+        EncounterChoice(
+          id = "c-measure-rings",
+          title = "Measure nodal ring compression",
+          description = "Chronicling compressed nodal rings on mature Golden Bamboo culms.",
+          consequenceSnippet = "Permanently chronicled Golden Fishpole Bamboo in Herbarium.",
+          unlocksSpecimenId = "sp-phyllostachys-aurea"
+        ),
+        EncounterChoice(
+          id = "c-audio-wind",
+          title = "Record wind acoustic resonance",
+          description = "Tune into the pitch and timbre of hollow cane vibrations.",
+          consequenceSnippet = "Minted Bioacoustic Wind Listener stamp into Stamp Cabinet.",
+          awardsStampId = "stamp-bioacoustic-wind"
+        ),
+        EncounterChoice(
+          id = "c-bamboo-flute",
+          title = "Trace sub-surface moisture to resonant culm",
+          description = "Use the soil moisture reading from Grove Threshold to find the singing culm.",
+          consequenceSnippet = "Master Naturalist Discovery: Chronicled Golden Bamboo and earned Resonance Master Stamp!",
+          unlocksSpecimenId = "sp-phyllostachys-aurea",
+          awardsStampId = "stamp-resonance-master",
+          requiresClueId = "clue-bamboo-resonance"
+        )
+      ),
+      isSandboxDemo = true
+    ),
+    ExpeditionNode(
+      id = "node-canopy-2B",
+      taskId = "task-canopy-2B",
+      step = 1,
+      branchIndex = 1,
+      title = "The Sunlit Canopy Verge",
+      category = "Microclimate",
+      difficulty = 2,
+      xpReward = 50,
+      status = NodeStatus.LOCKED,
+      isoX = 0.6f,
+      isoY = 0.5f,
+      childNodeIds = listOf("node-canopy-3"),
+      competingNodeIds = listOf("node-canopy-2A"),
+      encounterLore = "An elevated solar verge where direct sunlight fuels climbing fig vines and tree-perched lichens.",
+      encounterType = "MICROCLIMATE_SIGHTING",
+      choices = listOf(
+        EncounterChoice(
+          id = "c-climb-roots",
+          title = "Trace clinging aerial roots",
+          description = "Examine network of clinging root tendrils wrapping host bark.",
+          consequenceSnippet = "Permanently chronicled Strangler Fig in Herbarium.",
+          unlocksSpecimenId = "sp-ficus-microcarpa"
+        ),
+        EncounterChoice(
+          id = "c-avian-perch",
+          title = "Scan for bird perches & hollows",
+          description = "Observe songbird perching activity in the high solar branch forks.",
+          consequenceSnippet = "Minted Sunlit Canopy Perch stamp into Stamp Cabinet.",
+          awardsStampId = "stamp-avian-canopy"
+        ),
+        EncounterChoice(
+          id = "c-hidden-epiphyte",
+          title = "Use solar angle to spot shaded orchid pocket",
+          description = "Use the solar calculation from Grove Threshold to discover a hidden epiphyte.",
+          consequenceSnippet = "Master Naturalist Discovery: Chronicled Strangler Fig and earned Epiphyte Master Stamp!",
+          unlocksSpecimenId = "sp-ficus-microcarpa",
+          awardsStampId = "stamp-epiphyte-master",
+          requiresClueId = "clue-solar-cavity"
+        )
+      ),
+      isSandboxDemo = true
+    ),
+    ExpeditionNode(
+      id = "node-canopy-3",
+      taskId = "task-canopy-3",
+      step = 2,
+      branchIndex = 0,
+      title = "The Ancient Matriarch Banyan",
+      category = "Heritage Summit",
+      difficulty = 3,
+      xpReward = 50,
+      status = NodeStatus.LOCKED,
+      isoX = 0.8f,
+      isoY = 0.2f,
+      childNodeIds = emptyList(),
+      competingNodeIds = emptyList(),
+      encounterLore = "The central matriarch Ficus benghalensis tree. Monumental aerial roots form a natural cathedral.",
+      encounterType = "CLIMAX_CHRONICLE",
+      choices = listOf(
+        EncounterChoice(
+          id = "c-matriarch-chronicle",
+          title = "Chronicle central trunk & complete expedition",
+          description = "Mint the final botanical record of the matriarch canopy.",
+          consequenceSnippet = "Expedition Complete! Chronicled Indian Banyan and minted Matriarch Canopy Seal.",
+          unlocksSpecimenId = "sp-ficus-benghalensis",
+          awardsStampId = "stamp-matriarch-seal"
+        )
+      ),
+      isSandboxDemo = true
+    )
+  )
+
+  val branchingCanopyExpedition = CivicExpedition(
+    id = "demo-expedition-emerald-canopy",
+    title = "[DEMO] The Whispering Canopy Trail",
+    theme = "Branching Botanical Exploration",
+    lore = "Explore the grove threshold, choose between the bamboo culms and solar canopy, and chronicle the ancient banyan.",
+    district = "Greenway District (Sandbox)",
+    targetMilestone = "3 canopy tiers chronicled",
+    nodes = branchingCanopyNodes,
+    activeRunSeed = 1001L,
+    status = ExpeditionStatus.ACTIVE,
+    isSandboxDemo = true
+  )
+
+  val catalogSpecimens = listOf(
+    CatalogSpecimen(
+      id = "sp-ficus-benghalensis",
+      name = "Indian Banyan",
+      linnaeanName = "Ficus benghalensis L.",
+      category = "Flora",
+      description = "Monumental living architecture rooted in historical soil. Aerial roots descend from high horizontal branches, forming natural Gothic arches.",
+      linkedWaypointId = "wp-fixture-banyan-1",
+      illustrationGlyph = "🌳",
+      loreHint = "Scout the ancient grove entrance arch."
+    ),
+    CatalogSpecimen(
+      id = "sp-phyllostachys-aurea",
+      name = "Golden Fishpole Bamboo",
+      linnaeanName = "Phyllostachys aurea",
+      category = "Flora",
+      description = "Compressed nodal rings documented along the shaded walk. Hollow culms resonate gently with morning park breezes.",
+      linkedWaypointId = "wp-fixture-banyan-2",
+      illustrationGlyph = "🎋",
+      loreHint = "Listen near the whispering culm stand."
+    ),
+    CatalogSpecimen(
+      id = "sp-ficus-religiosa",
+      name = "Sacred Peepal Fig",
+      linnaeanName = "Ficus religiosa L.",
+      category = "Flora",
+      description = "Distinct cordate leaves with prolonged drip tips. Revered canopy tree supporting vibrant avian and insect micro-ecosystems.",
+      linkedWaypointId = "wp-fixture-banyan-3",
+      illustrationGlyph = "🍃",
+      loreHint = "Examine the central matriarch canopy."
+    ),
+    CatalogSpecimen(
+      id = "sp-ficus-microcarpa",
+      name = "Indian Laurel Fig",
+      linnaeanName = "Ficus microcarpa L.f.",
+      category = "Flora",
+      description = "Clinging epiphyte spreading across canopy limbs with dense aerial tendrils and leathery leaves.",
+      linkedWaypointId = "node-canopy-2B",
+      illustrationGlyph = "🌿",
+      loreHint = "Scout the Sunlit Canopy Verge on an alternate trail branch."
+    )
+  )
 }

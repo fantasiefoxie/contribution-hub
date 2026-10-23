@@ -64,6 +64,18 @@ data class CivicTask(
 )
 
 @Serializable
+data class EncounterChoice(
+  val id: String,
+  val title: String,
+  val description: String,
+  val consequenceSnippet: String = "",
+  val unlocksSpecimenId: String? = null,
+  val awardsStampId: String? = null,
+  val awardsClueId: String? = null,
+  val requiresClueId: String? = null
+)
+
+@Serializable
 data class ExpeditionNode(
   val id: String,
   val taskId: String,
@@ -72,12 +84,32 @@ data class ExpeditionNode(
   val title: String,
   val category: String,
   val difficulty: Int,
-  val xpReward: Int,
+  val xpReward: Int = 50,
   val status: NodeStatus,
   val isoX: Float,
   val isoY: Float,
   val childNodeIds: List<String> = emptyList(),
+  val competingNodeIds: List<String> = emptyList(),
+  val choices: List<EncounterChoice> = emptyList(),
+  val selectedChoiceId: String? = null,
+  val encounterLore: String = "",
+  val encounterType: String = "BOTANICAL_DISCOVERY",
   val isSandboxDemo: Boolean = false
+)
+
+@Serializable
+data class ExpeditionRunState(
+  val runInstanceId: String,
+  val expeditionDefinitionId: String,
+  val seed: Long,
+  val stance: String = "TREK",
+  val status: ExpeditionStatus = ExpeditionStatus.ACTIVE,
+  val currentNodeId: String? = null,
+  val committedBranchIds: Set<String> = emptySet(),
+  val lockedNodeIds: Set<String> = emptySet(),
+  val validatedNodeIds: Set<String> = emptySet(),
+  val selectedChoices: Map<String, String> = emptyMap(),
+  val discoveredClueIds: Set<String> = emptySet()
 )
 
 @Serializable
@@ -91,12 +123,26 @@ data class CivicExpedition(
   val nodes: List<ExpeditionNode>,
   val activeRunSeed: Long,
   val status: ExpeditionStatus = ExpeditionStatus.ACTIVE,
-  val isSandboxDemo: Boolean = false
+  val isSandboxDemo: Boolean = false,
+  val activeStance: String = "TREK",
+  val activeRunId: String? = null
 ) {
   val completedNodes: Int get() = nodes.count { it.status == NodeStatus.VALIDATED }
   val totalNodes: Int get() = nodes.size
   val progressPercent: Float get() = if (totalNodes == 0) 0f else completedNodes.toFloat() / totalNodes.toFloat()
 }
+
+@Serializable
+data class CatalogSpecimen(
+  val id: String,
+  val name: String,
+  val linnaeanName: String,
+  val category: String = "Flora",
+  val description: String,
+  val linkedWaypointId: String,
+  val illustrationGlyph: String = "🌿",
+  val loreHint: String = "Scout the designated trail coordinates to chronicle this specimen."
+)
 
 @Serializable
 data class MapWaypoint(
@@ -122,7 +168,8 @@ data class MissionDraft(
   val longitude: Double? = null,
   val timestamp: Long = System.currentTimeMillis(),
   val isOfflinePending: Boolean = false,
-  val isSandboxDemo: Boolean = false
+  val isSandboxDemo: Boolean = false,
+  val consentToCivicSubmission: Boolean = false
 )
 
 @Serializable
@@ -210,5 +257,14 @@ data class CivicProfile(
   // Unique waypoint node IDs and quest reward IDs that have granted exploration XP.
   // Persisted atomically within the encrypted profile to guarantee that XP gains
   // and reward eligibility cannot desynchronize on crashes, power loss, or retries.
-  val rewardedWaypointIds: Set<String> = emptySet()
+  val rewardedWaypointIds: Set<String> = emptySet(),
+  val completedExpeditionIds: Set<String> = emptySet(),
+  val activeExpeditionId: String? = null,
+  val activeExpeditionStance: String? = "TREK",
+  // DISTINCT PROGRESSION IDENTITIES:
+  val completedNodeIds: Set<String> = emptySet(),
+  val chronicledSpecimenIds: Set<String> = emptySet(),
+  val mintedStampIds: Set<String> = emptySet(),
+  val completedRunIds: Set<String> = emptySet(),
+  val activeRun: ExpeditionRunState? = null
 )

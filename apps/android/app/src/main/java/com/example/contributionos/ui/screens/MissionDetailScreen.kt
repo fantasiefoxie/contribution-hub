@@ -21,13 +21,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,23 +37,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.contributionos.model.CivicTask
 import com.example.contributionos.model.ExpeditionNode
-import com.example.contributionos.theme.CivicAmber
-import com.example.contributionos.theme.DarkSoilVariant
-import com.example.contributionos.theme.ForestFloor
-import com.example.contributionos.theme.GrassNeon
-import com.example.contributionos.theme.MutedLichen
-import com.example.contributionos.theme.MutedMoss
-import com.example.contributionos.theme.SoilSurfacePanel
-import com.example.contributionos.theme.SoilVoid
+import com.example.contributionos.theme.CardBorder
+import com.example.contributionos.theme.CardBorderSubtle
+import com.example.contributionos.theme.CardCream
+import com.example.contributionos.theme.CardCreamLow
+import com.example.contributionos.theme.ClayAccent
+import com.example.contributionos.theme.ForestInk
+import com.example.contributionos.theme.ForestInkDark
+import com.example.contributionos.theme.LeafPillContainer
+import com.example.contributionos.theme.LeafPillText
+import com.example.contributionos.theme.MossGreen
+import com.example.contributionos.theme.MossGreenDark
+import com.example.contributionos.theme.MutedSecondary
+import com.example.contributionos.theme.SoftMeadowSand
 import com.example.contributionos.theme.SunGold
-import com.example.contributionos.theme.TextMuted
-import com.example.contributionos.theme.TextPrimary
-import com.example.contributionos.theme.TextSecondary
-import com.example.contributionos.theme.WaypointTeal
-import com.example.contributionos.theme.WeatheredPaper
+import com.example.contributionos.theme.SunGoldContainer
+import com.example.contributionos.theme.SunGoldText
+import com.example.contributionos.theme.TerracottaContainer
+import com.example.contributionos.theme.TerracottaText
+import com.example.contributionos.theme.WarmPaper
+import com.example.contributionos.theme.WaterBlue
+import com.example.contributionos.theme.WaterBlueContainer
+import com.example.contributionos.theme.WaterBlueText
 import com.example.contributionos.ui.components.TactileCard
 import com.example.contributionos.ui.components.bottomBorder
-import com.example.contributionos.ui.components.topBorder
 
 fun formatDossierId(taskId: String): String {
   val digits = taskId.filter { it.isDigit() }
@@ -78,15 +81,15 @@ fun MissionDetailScreen(
   Column(
     modifier = modifier
       .fillMaxSize()
-      .background(SoilVoid)
+      .background(WarmPaper)
   ) {
-    // 1. Top Bar / App Header
+    // Top Bar
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .background(ForestFloor)
-        .bottomBorder(1.dp, MutedMoss)
-        .padding(horizontal = 12.dp, vertical = 8.dp)
+        .background(CardCream)
+        .bottomBorder(1.dp, CardBorder)
+        .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -100,421 +103,330 @@ fun MissionDetailScreen(
           Icon(
             imageVector = Icons.Default.ArrowBack,
             contentDescription = "Back",
-            tint = WeatheredPaper,
+            tint = ForestInk,
             modifier = Modifier.size(20.dp)
           )
           Spacer(modifier = Modifier.width(6.dp))
           Text(
-            text = "CAMP / MAP",
-            fontSize = 11.sp,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            color = WeatheredPaper
+            text = "Back to Board",
+            fontSize = 13.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.SemiBold,
+            color = ForestInk
           )
         }
-
-        Text(
-          text = "[EXPEDITION DOSSIER // ${formatDossierId(task.id)}]",
-          fontSize = 11.sp,
-          fontFamily = FontFamily.Monospace,
-          fontWeight = FontWeight.Bold,
-          color = GrassNeon
-        )
 
         Box(
           modifier = Modifier
-            .clip(RoundedCornerShape(3.dp))
-            .background(SunGold.copy(alpha = 0.15f))
-            .border(1.dp, SunGold, RoundedCornerShape(3.dp))
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(LeafPillContainer)
+            .padding(horizontal = 8.dp, vertical = 3.dp)
         ) {
           Text(
-            "ACTIVE DOSSIER",
-            fontSize = 9.sp,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            color = SunGold
+            text = "Adventure Briefing",
+            fontSize = 11.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.SemiBold,
+            color = LeafPillText
           )
         }
       }
     }
 
-    // Sub-header Diagnostics Bar
-    Box(
-      modifier = Modifier
-        .fillMaxWidth()
-        .background(DarkSoilVariant)
-        .bottomBorder(1.dp, MutedMoss.copy(alpha = 0.6f))
-        .padding(horizontal = 16.dp, vertical = 4.dp)
-    ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Text(
-          "LOC: ${task.district.uppercase()} // ${task.locationLabel.uppercase()}",
-          fontSize = 9.sp,
-          fontFamily = FontFamily.Monospace,
-          color = TextMuted
-        )
-        Text(
-          "SIGNAL: OFF-GRID PERSISTENT",
-          fontSize = 9.sp,
-          fontFamily = FontFamily.Monospace,
-          fontWeight = FontWeight.Bold,
-          color = SunGold
-        )
-      }
-    }
-
-    // Main Scrollable Dossier Canvas
+    // Scrollable Content
     Column(
       modifier = Modifier
         .fillMaxSize()
         .verticalScroll(scrollState)
-        .padding(horizontal = 16.dp, vertical = 12.dp),
-      verticalArrangement = Arrangement.spacedBy(14.dp)
+        .padding(horizontal = 16.dp, vertical = 16.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-      // 2. Quest Specimen Header Card
-      TactileCard(
-        modifier = Modifier.fillMaxWidth(),
-        borderColor = MutedMoss,
-        backgroundColor = ForestFloor
-      ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-          // Meta Classification
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+      // 1. ADVENTURE TITLE & REWARD STRIP
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+          text = task.title,
+          fontSize = 24.sp,
+          fontFamily = FontFamily.Serif,
+          fontWeight = FontWeight.Bold,
+          color = ForestInkDark
+        )
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(8.dp))
+              .background(LeafPillContainer)
+              .padding(horizontal = 8.dp, vertical = 4.dp)
           ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Text("🌿", fontSize = 12.sp)
-              Spacer(modifier = Modifier.width(4.dp))
-              Text(
-                "Botanical Scouting • Self-Guided",
-                fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = SunGold
-              )
-            }
             Text(
-              "SEED #8841-B",
-              fontSize = 9.sp,
-              fontFamily = FontFamily.Monospace,
-              color = MutedLichen
+              "✨ +${task.xpReward} Exploration XP",
+              fontSize = 12.sp,
+              fontFamily = FontFamily.SansSerif,
+              fontWeight = FontWeight.Bold,
+              color = MossGreenDark
             )
           }
 
-          // Quest Title
-          Text(
-            text = task.title,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.5).sp,
-            color = WeatheredPaper
-          )
-
-          // Biome Metadata Badges
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(8.dp))
+              .background(CardCream)
+              .border(1.dp, CardBorder, RoundedCornerShape(8.dp))
+              .padding(horizontal = 8.dp, vertical = 4.dp)
           ) {
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(3.dp))
-                .background(DarkSoilVariant)
-                .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
-                .padding(horizontal = 6.dp, vertical = 3.dp)
-            ) {
-              Text(
-                "Tier ${task.difficulty} Common",
-                fontSize = 9.sp,
-                fontFamily = FontFamily.Monospace,
-                color = GrassNeon
-              )
-            }
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(3.dp))
-                .background(DarkSoilVariant)
-                .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
-                .padding(horizontal = 6.dp, vertical = 3.dp)
-            ) {
-              Text(
-                task.locationLabel,
-                fontSize = 9.sp,
-                fontFamily = FontFamily.Monospace,
-                color = TextSecondary
-              )
-            }
+            Text(
+              "⏱ ~${task.estimatedDurationMinutes} min",
+              fontSize = 11.sp,
+              fontFamily = FontFamily.SansSerif,
+              color = MutedSecondary
+            )
           }
 
-          // Specimen Narrative Study Well
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(8.dp))
+              .background(CardCream)
+              .border(1.dp, CardBorder, RoundedCornerShape(8.dp))
+              .padding(horizontal = 8.dp, vertical = 4.dp)
+          ) {
+            Text(
+              task.district.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+              fontSize = 11.sp,
+              fontFamily = FontFamily.SansSerif,
+              color = ForestInk
+            )
+          }
+        }
+      }
+
+      // 2. THE ADVENTURE PREMISE CARD
+      TactileCard(
+        modifier = Modifier.fillMaxWidth(),
+        borderColor = CardBorder,
+        backgroundColor = CardCream,
+        shape = RoundedCornerShape(18.dp),
+        padding = 18.dp
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+          Text(
+            "The Adventure Ahead",
+            fontSize = 15.sp,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
+            color = ForestInkDark
+          )
+
+          Text(
+            text = task.description,
+            fontSize = 14.sp,
+            fontFamily = FontFamily.SansSerif,
+            color = ForestInk.copy(alpha = 0.85f),
+            lineHeight = 20.sp
+          )
+        }
+      }
+
+      // 3. TWO EQUAL ADVENTURE PATHS
+      TactileCard(
+        modifier = Modifier.fillMaxWidth(),
+        borderColor = CardBorder,
+        backgroundColor = CardCream,
+        shape = RoundedCornerShape(18.dp),
+        padding = 18.dp
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+          Text(
+            "Choose Your Exploration Path",
+            fontSize = 15.sp,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
+            color = ForestInkDark
+          )
+
+          // Path A
           Box(
             modifier = Modifier
               .fillMaxWidth()
-              .clip(RoundedCornerShape(6.dp))
-              .background(SoilVoid)
-              .border(1.dp, MutedMoss, RoundedCornerShape(6.dp))
-              .padding(10.dp)
+              .clip(RoundedCornerShape(12.dp))
+              .background(LeafPillContainer)
+              .padding(12.dp)
           ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-              Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-              ) {
-                Box(
-                  modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(DarkSoilVariant)
-                    .border(1.dp, MutedMoss, RoundedCornerShape(6.dp)),
-                  contentAlignment = Alignment.Center
-                ) {
-                  Text("🔬", fontSize = 22.sp)
-                }
-                Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                  Text(
-                    "\"${task.description}\"",
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Serif,
-                    fontStyle = FontStyle.Italic,
-                    color = WeatheredPaper,
-                    lineHeight = 16.sp
-                  )
-                }
-              }
-
-              Row(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .topBorder(0.5.dp, MutedMoss.copy(alpha = 0.6f))
-                  .padding(top = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-              ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🥾", fontSize = 16.sp)
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                  "CLASSIFICATION: Non-Vascular Cryptogam",
-                  fontSize = 8.sp,
-                  fontFamily = FontFamily.Monospace,
-                  color = MutedLichen
-                )
-                Text(
-                  "[EXPEDITION READY]",
-                  fontSize = 8.sp,
-                  fontFamily = FontFamily.Monospace,
+                  "Path A — The Footpath Explorer",
+                  fontSize = 13.sp,
+                  fontFamily = FontFamily.SansSerif,
                   fontWeight = FontWeight.Bold,
-                  color = SunGold
+                  color = MossGreenDark
                 )
               }
+              Text(
+                "Step outside into the district. Locate micro-habitats along brick edges, courtyard trees, or bioswales. Log a field note of living textures.",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.SansSerif,
+                color = ForestInk,
+                lineHeight = 16.sp
+              )
+            }
+          }
+
+          // Path B
+          Box(
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(12.dp))
+              .background(TerracottaContainer)
+              .padding(12.dp)
+          ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("♿", fontSize = 16.sp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                  "Path B — The Window & Balcony Naturalist",
+                  fontSize = 13.sp,
+                  fontFamily = FontFamily.SansSerif,
+                  fontWeight = FontWeight.Bold,
+                  color = TerracottaText
+                )
+              }
+              Text(
+                "Observe nature from a window, balcony, or quiet bench. Inspect potted flora, sky bird flight, or weather light. Zero penalty; awards identical rewards.",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.SansSerif,
+                color = ForestInk,
+                lineHeight = 16.sp
+              )
             }
           }
         }
       }
 
-      // 3. Quest Objectives & Completion Criteria
+      // 4. ADVENTURE REWARDS UNLOCKED ON COMPLETION
       TactileCard(
         modifier = Modifier.fillMaxWidth(),
-        borderColor = MutedMoss,
-        backgroundColor = ForestFloor
+        borderColor = SunGold.copy(alpha = 0.4f),
+        backgroundColor = CardCream,
+        shape = RoundedCornerShape(18.dp),
+        padding = 18.dp
       ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
           Text(
-            "FIELD PROTOCOLS // COMPLETION CRITERIA",
-            fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 1.sp,
-            color = WeatheredPaper
+            "Upon Completion Yields",
+            fontSize = 14.sp,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
+            color = ForestInkDark
           )
 
-          Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-              Text("01.", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = GrassNeon)
-              Spacer(modifier = Modifier.width(8.dp))
-              Text(
-                "Locate the specimen outdoors or view from a window/stoop vantage.",
-                fontSize = 12.sp,
-                fontFamily = FontFamily.Serif,
-                color = TextSecondary,
-                lineHeight = 16.sp
-              )
-            }
-            Row(verticalAlignment = Alignment.Top) {
-              Text("02.", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = GrassNeon)
-              Spacer(modifier = Modifier.width(8.dp))
-              Text(
-                "Inspect details: surface texture, sunlight, moisture, and surrounding greenery.",
-                fontSize = 12.sp,
-                fontFamily = FontFamily.Serif,
-                color = TextSecondary,
-                lineHeight = 16.sp
-              )
-            }
-            Row(verticalAlignment = Alignment.Top) {
-              Text("03.", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = GrassNeon)
-              Spacer(modifier = Modifier.width(8.dp))
-              Text(
-                "Record a brief field note (10+ characters). Photos and GPS remain 100% optional.",
-                fontSize = 12.sp,
-                fontFamily = FontFamily.Serif,
-                color = TextSecondary,
-                lineHeight = 16.sp
-              )
-            }
-          }
-
-          // Reward Telemetry Strip
           Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .clip(RoundedCornerShape(6.dp))
-              .background(DarkSoilVariant)
-              .border(1.dp, MutedMoss, RoundedCornerShape(6.dp))
-              .padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
           ) {
-            Text(
-              "+${task.xpReward} Exploration XP Available",
-              fontSize = 10.sp,
-              fontFamily = FontFamily.Monospace,
-              fontWeight = FontWeight.Bold,
-              color = GrassNeon
-            )
-            Text(
-              "0 Civic Credits • Self-Guided",
-              fontSize = 9.sp,
-              fontFamily = FontFamily.Monospace,
-              color = TextMuted
-            )
-          }
-        }
-      }
-
-      // 4. Dedicated Stationary / Remote Alternative Section
-      TactileCard(
-        modifier = Modifier.fillMaxWidth(),
-        borderColor = SunGold.copy(alpha = 0.5f),
-        backgroundColor = ForestFloor
-      ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
               modifier = Modifier
-                .clip(RoundedCornerShape(3.dp))
-                .background(SunGold.copy(alpha = 0.15f))
-                .border(1.dp, SunGold, RoundedCornerShape(3.dp))
-                .padding(horizontal = 6.dp, vertical = 2.dp)
+                .weight(1f)
+                .clip(RoundedCornerShape(10.dp))
+                .background(SunGoldContainer)
+                .padding(10.dp)
             ) {
-              Text(
-                "♿ LOW-BARRIER ALTERNATIVE // STATIONARY SCOUT",
-                fontSize = 9.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = SunGold
-              )
+              Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text("+${task.xpReward} XP", fontSize = 16.sp, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, color = SunGoldText)
+                Text("Exploration Progress", fontSize = 10.sp, color = MutedSecondary)
+              }
+            }
+
+            Box(
+              modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(10.dp))
+                .background(LeafPillContainer)
+                .padding(10.dp)
+            ) {
+              Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text("Field Stamp", fontSize = 14.sp, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, color = LeafPillText)
+                Text("Minted to Journal", fontSize = 10.sp, color = MutedSecondary)
+              }
             }
           }
-
-          Text(
-            "Window or Balcony Botanical Survey: Inspect a houseplant, balcony container, or window garden for leaf moisture, soil condition, or new growth.",
-            fontSize = 12.sp,
-            fontFamily = FontFamily.Serif,
-            color = WeatheredPaper,
-            lineHeight = 16.sp
-          )
-
-          Text(
-            "• 100% equally valid completion for rainy days, recovery, or limited mobility.\n• Full XP awarded identically to outdoor walking scouts without penalty.",
-            fontSize = 11.sp,
-            fontFamily = FontFamily.Serif,
-            color = TextMuted,
-            lineHeight = 15.sp
-          )
         }
       }
 
-      // 5. Safety & Courtesy First
+      // 5. SAFETY & RESPECT
       TactileCard(
         modifier = Modifier.fillMaxWidth(),
-        borderColor = MutedMoss.copy(alpha = 0.6f),
-        backgroundColor = DarkSoilVariant
+        borderColor = CardBorderSubtle,
+        backgroundColor = CardCreamLow,
+        shape = RoundedCornerShape(14.dp),
+        padding = 14.dp
       ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
           Text(
-            "🛡️ SAFETY & COURTESY FIRST",
-            fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace,
+            "Outdoor Etiquette & Safety",
+            fontSize = 13.sp,
+            fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.Bold,
-            color = TextSecondary
+            color = ForestInkDark
           )
           Text(
             task.safetyNotice,
-            fontSize = 11.sp,
-            fontFamily = FontFamily.Serif,
-            color = TextMuted,
-            lineHeight = 15.sp
+            fontSize = 12.sp,
+            fontFamily = FontFamily.SansSerif,
+            color = MutedSecondary,
+            lineHeight = 16.sp
           )
           Text(
-            "• Stay on public walkways; respect private boundaries.\n• Maintain awareness near traffic.\n• Anti-grind rule: No rush, no timers, hydrate and rest.",
-            fontSize = 10.sp,
-            fontFamily = FontFamily.Serif,
-            color = TextMuted,
-            lineHeight = 14.sp
+            "• Leave plants undisturbed — look and appreciate without damaging fragile colonies.",
+            fontSize = 11.sp,
+            fontFamily = FontFamily.SansSerif,
+            color = MutedSecondary
           )
         }
       }
 
-      // 6. Action Button & Privacy Assurance
+      // 6. ACTION CTA BUTTON
       Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(bottom = 12.dp)
+        modifier = Modifier.padding(bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         Button(
           onClick = onCaptureEvidence,
           modifier = Modifier
             .fillMaxWidth()
-            .height(46.dp),
+            .height(52.dp),
           colors = ButtonDefaults.buttonColors(
-            containerColor = GrassNeon,
-            contentColor = SoilVoid
+            containerColor = MossGreenDark,
+            contentColor = Color.White
           ),
-          shape = RoundedCornerShape(8.dp)
+          shape = RoundedCornerShape(14.dp)
         ) {
           Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
           ) {
             Text(
-              "🌱 Begin Field Logging",
-              color = SoilVoid,
-              fontFamily = FontFamily.Monospace,
+              "Embark on Adventure 🌿",
+              color = Color.White,
+              fontFamily = FontFamily.SansSerif,
               fontWeight = FontWeight.Bold,
-              fontSize = 13.sp
+              fontSize = 15.sp
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Icon(
               imageVector = Icons.Default.ArrowForward,
               contentDescription = null,
-              tint = SoilVoid,
+              tint = Color.White,
               modifier = Modifier.size(16.dp)
             )
           }
         }
-
-        Text(
-          "Zero-GPS tracking required • Off-grid local encrypted vault • Touch grass at your own pace",
-          fontSize = 9.sp,
-          fontFamily = FontFamily.Serif,
-          color = TextMuted,
-          textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-          modifier = Modifier.fillMaxWidth()
-        )
       }
     }
   }

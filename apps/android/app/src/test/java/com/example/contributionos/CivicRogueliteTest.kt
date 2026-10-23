@@ -158,9 +158,9 @@ class CivicRogueliteTest {
     val destinations = com.example.contributionos.ui.components.AppDestination.values()
     assertEquals(5, destinations.size)
     assertEquals("Camp", com.example.contributionos.ui.components.AppDestination.HOME.title)
-    assertEquals("Map", com.example.contributionos.ui.components.AppDestination.MAP.title)
-    assertEquals("Quests", com.example.contributionos.ui.components.AppDestination.MISSIONS.title)
-    assertEquals("Impact", com.example.contributionos.ui.components.AppDestination.IMPACT.title)
+    assertEquals("World", com.example.contributionos.ui.components.AppDestination.MAP.title)
+    assertEquals("Expeditions", com.example.contributionos.ui.components.AppDestination.MISSIONS.title)
+    assertEquals("Journal", com.example.contributionos.ui.components.AppDestination.JOURNAL.title)
     assertEquals("Profile", com.example.contributionos.ui.components.AppDestination.PROFILE.title)
   }
 

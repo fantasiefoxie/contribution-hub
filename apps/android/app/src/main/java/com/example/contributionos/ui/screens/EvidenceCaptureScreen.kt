@@ -34,18 +34,16 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -72,21 +70,28 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.example.contributionos.model.CivicTask
 import com.example.contributionos.model.MissionDraft
-import com.example.contributionos.theme.CivicAmber
-import com.example.contributionos.theme.CivicCyan
-import com.example.contributionos.theme.DarkSoilVariant
-import com.example.contributionos.theme.ForestFloor
-import com.example.contributionos.theme.GrassNeon
-import com.example.contributionos.theme.MutedLichen
-import com.example.contributionos.theme.MutedMoss
-import com.example.contributionos.theme.SoilSurfacePanel
-import com.example.contributionos.theme.SoilVoid
+import com.example.contributionos.theme.CardBorder
+import com.example.contributionos.theme.CardBorderSubtle
+import com.example.contributionos.theme.CardCream
+import com.example.contributionos.theme.CardCreamLow
+import com.example.contributionos.theme.ClayAccent
+import com.example.contributionos.theme.ForestInk
+import com.example.contributionos.theme.ForestInkDark
+import com.example.contributionos.theme.LeafPillContainer
+import com.example.contributionos.theme.LeafPillText
+import com.example.contributionos.theme.MossGreen
+import com.example.contributionos.theme.MossGreenDark
+import com.example.contributionos.theme.MutedSecondary
+import com.example.contributionos.theme.SoftMeadowSand
 import com.example.contributionos.theme.SunGold
-import com.example.contributionos.theme.TextMuted
-import com.example.contributionos.theme.TextPrimary
-import com.example.contributionos.theme.TextSecondary
-import com.example.contributionos.theme.WaypointTeal
-import com.example.contributionos.theme.WeatheredPaper
+import com.example.contributionos.theme.SunGoldContainer
+import com.example.contributionos.theme.SunGoldText
+import com.example.contributionos.theme.TerracottaContainer
+import com.example.contributionos.theme.TerracottaText
+import com.example.contributionos.theme.WarmPaper
+import com.example.contributionos.theme.WaterBlue
+import com.example.contributionos.theme.WaterBlueContainer
+import com.example.contributionos.theme.WaterBlueText
 import com.example.contributionos.ui.components.TactileCard
 import com.example.contributionos.ui.components.bottomBorder
 import java.io.File
@@ -111,10 +116,10 @@ fun EvidenceCaptureScreen(
   var photoUriString by remember { mutableStateOf(existingDraft?.photoUri) }
   var currentLatitude by remember { mutableStateOf(existingDraft?.latitude) }
   var currentLongitude by remember { mutableStateOf(existingDraft?.longitude) }
+  var consentToCivicSubmission by remember { mutableStateOf(existingDraft?.consentToCivicSubmission ?: false) }
   var isLocating by remember { mutableStateOf(false) }
   var isSubmitting by remember { mutableStateOf(false) }
 
-  // Pending camera target file URI
   var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
   val takePictureLauncher = rememberLauncherForActivityResult(
@@ -122,7 +127,7 @@ fun EvidenceCaptureScreen(
   ) { success ->
     if (success && tempCameraUri != null) {
       photoUriString = tempCameraUri.toString()
-      Toast.makeText(context, "Field evidence photo captured and attached", Toast.LENGTH_SHORT).show()
+      Toast.makeText(context, "Specimen photo attached", Toast.LENGTH_SHORT).show()
     }
   }
 
@@ -131,7 +136,7 @@ fun EvidenceCaptureScreen(
   ) { uri ->
     if (uri != null) {
       photoUriString = uri.toString()
-      Toast.makeText(context, "Field evidence image attached from gallery", Toast.LENGTH_SHORT).show()
+      Toast.makeText(context, "Specimen photo selected from gallery", Toast.LENGTH_SHORT).show()
     }
   }
 
@@ -147,10 +152,10 @@ fun EvidenceCaptureScreen(
         tempCameraUri = uri
         takePictureLauncher.launch(uri)
       } catch (e: Exception) {
-        Toast.makeText(context, "Error opening camera storage: ${e.message}", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Error opening camera: ${e.message}", Toast.LENGTH_SHORT).show()
       }
     } else {
-      Toast.makeText(context, "Camera permission denied. You can select an image from gallery.", Toast.LENGTH_LONG).show()
+      Toast.makeText(context, "Camera permission denied. You can select an image from your gallery.", Toast.LENGTH_LONG).show()
     }
   }
 
@@ -173,7 +178,7 @@ fun EvidenceCaptureScreen(
       val isNetEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 
       if (!isGpsEnabled && !isNetEnabled) {
-        Toast.makeText(context, "GPS/Location is turned off in device settings", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "GPS is turned off in settings", Toast.LENGTH_LONG).show()
         isLocating = false
         return
       }
@@ -189,12 +194,12 @@ fun EvidenceCaptureScreen(
       if (bestLocation != null) {
         currentLatitude = bestLocation.latitude
         currentLongitude = bestLocation.longitude
-        Toast.makeText(context, "Verified GPS waypoint acquired", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Field coordinates recorded", Toast.LENGTH_SHORT).show()
       } else {
-        Toast.makeText(context, "No recent GPS lock. Head outdoors or wait for satellite fix.", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "Searching for satellite lock. Geotagging is optional.", Toast.LENGTH_LONG).show()
       }
     } catch (e: SecurityException) {
-      Toast.makeText(context, "GPS permission error: ${e.message}", Toast.LENGTH_SHORT).show()
+      Toast.makeText(context, "Location error: ${e.message}", Toast.LENGTH_SHORT).show()
     } finally {
       isLocating = false
     }
@@ -229,15 +234,15 @@ fun EvidenceCaptureScreen(
   Column(
     modifier = modifier
       .fillMaxSize()
-      .background(SoilVoid)
+      .background(WarmPaper)
   ) {
     // Top Bar
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .background(ForestFloor)
-        .bottomBorder(1.dp, MutedMoss)
-        .padding(horizontal = 12.dp, vertical = 8.dp)
+        .background(CardCream)
+        .bottomBorder(1.dp, CardBorder)
+        .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -248,47 +253,37 @@ fun EvidenceCaptureScreen(
           verticalAlignment = Alignment.CenterVertically,
           modifier = Modifier.clickable { onBack() }
         ) {
-          Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = WeatheredPaper, modifier = Modifier.size(20.dp))
+          Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = ForestInk, modifier = Modifier.size(20.dp))
           Spacer(modifier = Modifier.width(6.dp))
-          Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Box(
-                modifier = Modifier
-                  .size(6.dp)
-                  .clip(CircleShape)
-                  .background(GrassNeon)
-              )
-              Spacer(modifier = Modifier.width(5.dp))
-              Text(
-                "SPECIMEN LOGGING",
-                fontSize = 11.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = GrassNeon
-              )
-            }
-            Text(
-              "// ${formatDossierId(task.id)} RECONNAISSANCE",
-              fontSize = 9.sp,
-              fontFamily = FontFamily.Monospace,
-              color = TextMuted
-            )
-          }
+          Text(
+            "Cancel",
+            fontSize = 13.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.SemiBold,
+            color = ForestInk
+          )
         }
+
+        Text(
+          "Field Notebook Entry",
+          fontSize = 14.sp,
+          fontFamily = FontFamily.Serif,
+          fontWeight = FontWeight.Bold,
+          color = ForestInkDark
+        )
 
         Box(
           modifier = Modifier
-            .clip(RoundedCornerShape(3.dp))
-            .background(DarkSoilVariant)
-            .border(1.dp, MutedMoss, RoundedCornerShape(3.dp))
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(LeafPillContainer)
+            .padding(horizontal = 8.dp, vertical = 3.dp)
         ) {
           Text(
-            "SEED #4092",
-            fontSize = 9.sp,
-            fontFamily = FontFamily.Monospace,
+            "+${task.xpReward} XP",
+            fontSize = 11.sp,
+            fontFamily = FontFamily.SansSerif,
             fontWeight = FontWeight.Bold,
-            color = SunGold
+            color = MossGreenDark
           )
         }
       }
@@ -299,158 +294,72 @@ fun EvidenceCaptureScreen(
         .fillMaxSize()
         .verticalScroll(scrollState)
         .imePadding()
-        .padding(horizontal = 16.dp, vertical = 12.dp),
-      verticalArrangement = Arrangement.spacedBy(14.dp)
+        .padding(horizontal = 16.dp, vertical = 16.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-      // 1. QUEST SPECIMEN HEADER CARD
+      // 1. QUEST CONTEXT CARD
       TactileCard(
         modifier = Modifier.fillMaxWidth(),
-        borderColor = MutedMoss,
-        backgroundColor = ForestFloor
+        borderColor = CardBorder,
+        backgroundColor = CardCream,
+        shape = RoundedCornerShape(16.dp),
+        padding = 16.dp
       ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(3.dp))
-                .background(DarkSoilVariant)
-                .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
-                .padding(horizontal = 6.dp, vertical = 2.dp)
-            ) {
-              Text(
-                "INDEX // [${formatDossierId(task.id)}]",
-                fontSize = 9.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = SunGold
-              )
-            }
-            Text(
-              "Tier ${task.difficulty} Scout",
-              fontSize = 9.sp,
-              fontFamily = FontFamily.Monospace,
-              color = GrassNeon
-            )
-          }
-
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+          Text(
+            "Logging for Adventure",
+            fontSize = 11.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.Medium,
+            color = MutedSecondary
+          )
           Text(
             text = task.title,
             fontSize = 17.sp,
+            fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.Bold,
-            color = WeatheredPaper
+            color = ForestInkDark
           )
-
           Text(
-            text = "DISTRICT: ${task.district.uppercase()} // ${task.locationLabel.uppercase()}",
-            fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace,
-            color = TextSecondary
+            text = "District: ${task.district.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }}",
+            fontSize = 12.sp,
+            fontFamily = FontFamily.SansSerif,
+            color = MutedSecondary
           )
-
-          // Reward Telemetry Tray
-          Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .clip(RoundedCornerShape(6.dp))
-              .background(SoilVoid)
-              .border(1.dp, MutedMoss, RoundedCornerShape(6.dp))
-              .padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Text(
-              "+${task.xpReward} Exploration XP",
-              fontSize = 10.sp,
-              fontFamily = FontFamily.Monospace,
-              fontWeight = FontWeight.Bold,
-              color = GrassNeon
-            )
-            Text(
-              "0 Civic Credits",
-              fontSize = 9.sp,
-              fontFamily = FontFamily.Monospace,
-              color = TextMuted
-            )
-            Text(
-              "STEP 2/3",
-              fontSize = 9.sp,
-              fontFamily = FontFamily.Monospace,
-              fontWeight = FontWeight.Bold,
-              color = SunGold
-            )
-          }
         }
       }
 
-      // Existing draft notice if resuming
-      if (existingDraft != null) {
-        TactileCard(
-          modifier = Modifier.fillMaxWidth(),
-          borderColor = SunGold.copy(alpha = 0.5f),
-          backgroundColor = DarkSoilVariant
-        ) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Info, contentDescription = null, tint = SunGold, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-              Text(
-                "EDITING EXISTING OFFLINE DRAFT",
-                fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = SunGold
-              )
-              Text(
-                "Saving updates this draft in encrypted storage without duplicating records.",
-                fontSize = 10.sp,
-                fontFamily = FontFamily.Serif,
-                color = TextSecondary
-              )
-            }
-          }
-        }
-      }
-
-      // 2. SPECIMEN PHOTO BOX (Viewfinder & Specimen Capture)
+      // 2. SPECIMEN PHOTO BOX (OPTIONAL)
       TactileCard(
         modifier = Modifier.fillMaxWidth(),
-        borderColor = MutedMoss,
-        backgroundColor = ForestFloor
+        borderColor = CardBorder,
+        backgroundColor = CardCream,
+        shape = RoundedCornerShape(16.dp),
+        padding = 16.dp
       ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-              Text("📷", fontSize = 14.sp)
+              Text("📷", fontSize = 16.sp)
               Spacer(modifier = Modifier.width(6.dp))
               Text(
-                "Specimen Photographic Proof",
-                fontSize = 12.sp,
+                "Specimen Photo",
+                fontSize = 14.sp,
+                fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Bold,
-                color = WeatheredPaper
+                color = ForestInkDark
               )
             }
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(3.dp))
-                .background(DarkSoilVariant)
-                .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
-                .padding(horizontal = 5.dp, vertical = 1.dp)
-            ) {
-              Text(
-                "OPTIONAL",
-                fontSize = 8.sp,
-                fontFamily = FontFamily.Monospace,
-                color = TextMuted
-              )
-            }
+            Text(
+              "Optional",
+              fontSize = 11.sp,
+              fontFamily = FontFamily.SansSerif,
+              color = MutedSecondary
+            )
           }
 
           if (previewBitmap != null) {
@@ -458,105 +367,86 @@ fun EvidenceCaptureScreen(
               modifier = Modifier
                 .fillMaxWidth()
                 .height(180.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .border(1.dp, GrassNeon, RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.dp, CardBorder, RoundedCornerShape(12.dp))
             ) {
               Image(
                 bitmap = previewBitmap.asImageBitmap(),
-                contentDescription = "Attached Field Evidence",
+                contentDescription = "Specimen Photo",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
               )
-              Box(
-                modifier = Modifier
-                  .align(Alignment.BottomStart)
-                  .background(SoilVoid.copy(alpha = 0.85f))
-                  .padding(horizontal = 8.dp, vertical = 4.dp)
-              ) {
-                Text("Specimen Photo Attached", fontSize = 10.sp, color = GrassNeon, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-              }
               IconButton(
                 onClick = { photoUriString = null },
-                modifier = Modifier.align(Alignment.TopEnd)
+                modifier = Modifier
+                  .align(Alignment.TopEnd)
+                  .padding(4.dp)
+                  .background(CardCream.copy(alpha = 0.85f), CircleShape)
               ) {
-                Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.Red)
+                Icon(Icons.Default.Close, contentDescription = "Remove", tint = ForestInk, modifier = Modifier.size(18.dp))
               }
             }
           } else {
-            // Viewfinder Inset Well
             Box(
               modifier = Modifier
                 .fillMaxWidth()
-                .height(110.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(SoilVoid)
-                .border(1.dp, MutedMoss, RoundedCornerShape(6.dp)),
+                .clip(RoundedCornerShape(12.dp))
+                .background(CardCreamLow)
+                .border(1.dp, CardBorderSubtle, RoundedCornerShape(12.dp))
+                .padding(16.dp),
               contentAlignment = Alignment.Center
             ) {
               Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
               ) {
-                Text("🎯", fontSize = 22.sp)
+                Text("🌿", fontSize = 24.sp)
                 Text(
-                  "Viewfinder Standby • Optional",
-                  fontSize = 11.sp,
-                  fontFamily = FontFamily.Monospace,
-                  color = TextMuted
-                )
-                Text(
-                  "Field notes alone are 100% sufficient to complete this quest.",
-                  fontSize = 10.sp,
-                  fontFamily = FontFamily.Serif,
-                  color = TextSecondary
+                  "Snap a close-up of leaf texture, stem, or canopy",
+                  fontSize = 12.sp,
+                  fontFamily = FontFamily.SansSerif,
+                  color = MutedSecondary
                 )
               }
             }
           }
 
-          // Camera & Gallery action buttons
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
             Button(
               onClick = {
-                val hasCam = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                if (hasCam) {
-                  val evidenceDir = File(context.cacheDir, "evidence")
-                  if (!evidenceDir.exists()) evidenceDir.mkdirs()
-                  val photoFile = File(evidenceDir, "evidence_${System.currentTimeMillis()}.jpg")
-                  val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
-                  tempCameraUri = uri
-                  takePictureLauncher.launch(uri)
-                } else {
-                  cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                }
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
               },
-              colors = ButtonDefaults.buttonColors(containerColor = DarkSoilVariant),
+              colors = ButtonDefaults.buttonColors(containerColor = LeafPillContainer, contentColor = MossGreenDark),
               modifier = Modifier.weight(1f),
-              shape = RoundedCornerShape(6.dp)
+              shape = RoundedCornerShape(10.dp)
             ) {
-              Text("📷 Take Photo", color = WeatheredPaper, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+              Text("Take Photo", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
 
             Button(
-              onClick = { pickImageLauncher.launch("image/*") },
-              colors = ButtonDefaults.buttonColors(containerColor = DarkSoilVariant),
+              onClick = {
+                pickImageLauncher.launch("image/*")
+              },
+              colors = ButtonDefaults.buttonColors(containerColor = CardCreamLow, contentColor = ForestInk),
               modifier = Modifier.weight(1f),
-              shape = RoundedCornerShape(6.dp)
+              shape = RoundedCornerShape(10.dp)
             ) {
-              Text("🖼 Gallery", color = WeatheredPaper, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+              Text("From Gallery", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             }
           }
         }
       }
 
-      // 3. Geotagging Section (Optional)
+      // 3. LOCATION CONSENT & GEOTAGGING (OPTIONAL)
       TactileCard(
         modifier = Modifier.fillMaxWidth(),
-        borderColor = MutedMoss,
-        backgroundColor = ForestFloor
+        borderColor = CardBorder,
+        backgroundColor = CardCream,
+        shape = RoundedCornerShape(16.dp),
+        padding = 16.dp
       ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
           Row(
@@ -565,226 +455,299 @@ fun EvidenceCaptureScreen(
             verticalAlignment = Alignment.CenterVertically
           ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-              Text("📍", fontSize = 14.sp)
+              Text("📍", fontSize = 16.sp)
               Spacer(modifier = Modifier.width(6.dp))
-              Text("Geotag Waypoint", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WeatheredPaper)
+              Text(
+                "Field Coordinates",
+                fontSize = 14.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                color = ForestInkDark
+              )
             }
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(3.dp))
-                .background(DarkSoilVariant)
-                .border(0.75.dp, MutedMoss, RoundedCornerShape(3.dp))
-                .padding(horizontal = 5.dp, vertical = 1.dp)
-            ) {
-              Text("OPTIONAL", fontSize = 8.sp, fontFamily = FontFamily.Monospace, color = TextMuted)
-            }
+            Text(
+              if (currentLatitude != null) "Recorded" else "Optional",
+              fontSize = 11.sp,
+              fontFamily = FontFamily.SansSerif,
+              fontWeight = FontWeight.SemiBold,
+              color = if (currentLatitude != null) MossGreenDark else MutedSecondary
+            )
           }
 
-          if (currentLatitude != null && currentLongitude != null) {
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(6.dp))
-                .background(SoilVoid)
-                .border(1.dp, GrassNeon, RoundedCornerShape(6.dp))
-                .padding(8.dp),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
+          Text(
+            "GPS coordinates are stored only on your local device to verify exploration territory. Background tracking is never used.",
+            fontSize = 12.sp,
+            fontFamily = FontFamily.SansSerif,
+            color = MutedSecondary,
+            lineHeight = 16.sp
+          )
+
+          Button(
+            onClick = {
+              locationPermissionLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+              )
+            },
+            colors = ButtonDefaults.buttonColors(
+              containerColor = if (currentLatitude != null) LeafPillContainer else CardCreamLow,
+              contentColor = if (currentLatitude != null) MossGreenDark else ForestInk
+            ),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp))
+              Spacer(modifier = Modifier.width(6.dp))
               Text(
-                "GPS: %.4f°, %.4f°".format(currentLatitude, currentLongitude),
-                fontSize = 11.sp,
-                fontFamily = FontFamily.Monospace,
-                color = GrassNeon,
+                text = if (isLocating) "Acquiring satellites..." else if (currentLatitude != null) "Coordinates Attached" else "Acquire GPS Coordinates",
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
               )
+            }
+          }
+        }
+      }
+
+      // 4. FIELD OBSERVATIONS NOTE (REQUIRED)
+      TactileCard(
+        modifier = Modifier.fillMaxWidth(),
+        borderColor = CardBorder,
+        backgroundColor = CardCream,
+        shape = RoundedCornerShape(16.dp),
+        padding = 16.dp
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text("📝", fontSize = 16.sp)
+              Spacer(modifier = Modifier.width(6.dp))
               Text(
-                "Clear",
-                fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace,
-                color = Color(0xFFFF6B6B),
-                modifier = Modifier
-                  .clickable {
-                    currentLatitude = null
-                    currentLongitude = null
-                  }
-                  .padding(4.dp)
+                "Field Observations",
+                fontSize = 14.sp,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                color = ForestInkDark
               )
             }
-          } else {
-            Button(
-              onClick = {
-                val fineGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                val coarseGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            Text(
+              "${notes.length} characters (10+ required)",
+              fontSize = 11.sp,
+              fontFamily = FontFamily.SansSerif,
+              color = if (notes.length >= 10) MossGreenDark else MutedSecondary
+            )
+          }
 
-                if (fineGranted || coarseGranted) {
-                  requestRealLocation()
-                } else {
-                  locationPermissionLauncher.launch(
-                    arrayOf(
-                      Manifest.permission.ACCESS_FINE_LOCATION,
-                      Manifest.permission.ACCESS_COARSE_LOCATION
+          OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            placeholder = {
+              Text(
+                "What did you notice today? Describe colors, scents, temperature, moss softness, passing breeze, or tree canopy...",
+                fontSize = 13.sp,
+                fontFamily = FontFamily.SansSerif,
+                color = MutedSecondary
+              )
+            },
+            modifier = Modifier
+              .fillMaxWidth()
+              .height(130.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+              focusedContainerColor = CardCreamLow,
+              unfocusedContainerColor = CardCreamLow,
+              focusedBorderColor = MossGreen,
+              unfocusedBorderColor = CardBorderSubtle,
+              focusedTextColor = ForestInkDark,
+              unfocusedTextColor = ForestInkDark
+            ),
+            shape = RoundedCornerShape(12.dp),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+          )
+
+          // Offline vault assurance
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Text("🔒", fontSize = 12.sp)
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              "Encrypted locally on this device (AES-256-GCM). Works 100% offline.",
+              fontSize = 11.sp,
+              fontFamily = FontFamily.SansSerif,
+              color = MutedSecondary
+            )
+          }
+
+          // Civic Integrity & Separation Notice
+          if (task.isLocalCompletionOnly) {
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(CardCreamLow)
+                .border(1.dp, CardBorderSubtle, RoundedCornerShape(10.dp))
+                .padding(10.dp)
+            ) {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🌱", fontSize = 14.sp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                  text = "Personal Exploration Proof: Stored in your local Field Journal. Does not create a public civic docket.",
+                  fontSize = 11.sp,
+                  fontFamily = FontFamily.SansSerif,
+                  color = ForestInk,
+                  lineHeight = 15.sp
+                )
+              }
+            }
+          } else {
+            // Civic-eligible task: Explicit, un-checked by default opt-in toggle
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (consentToCivicSubmission) WaterBlueContainer.copy(alpha = 0.25f) else CardCreamLow)
+                .border(1.dp, if (consentToCivicSubmission) WaterBlue.copy(alpha = 0.5f) else CardBorderSubtle, RoundedCornerShape(12.dp))
+                .clickable { consentToCivicSubmission = !consentToCivicSubmission }
+                .padding(12.dp)
+            ) {
+              Row(verticalAlignment = Alignment.Top) {
+                Checkbox(
+                  checked = consentToCivicSubmission,
+                  onCheckedChange = { consentToCivicSubmission = it },
+                  colors = CheckboxDefaults.colors(
+                    checkedColor = MossGreenDark,
+                    uncheckedColor = MutedSecondary
+                  )
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                  Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🏛️", fontSize = 13.sp)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                      text = "Submit for Municipal Review & Civic Credits",
+                      fontSize = 12.sp,
+                      fontFamily = FontFamily.SansSerif,
+                      fontWeight = FontWeight.Bold,
+                      color = if (consentToCivicSubmission) ForestInkDark else ForestInk
                     )
+                  }
+                  Spacer(modifier = Modifier.height(2.dp))
+                  Text(
+                    text = if (consentToCivicSubmission) {
+                      "Explicit consent active: Photos and notes will be submitted to municipal forestry registry for arborist audit and Civic Credit accreditation."
+                    } else {
+                      "Unchecked (Private): Personal photos and notes stay on this device only. You earn exploration XP without creating a public civic record."
+                    },
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.SansSerif,
+                    color = if (consentToCivicSubmission) ForestInk else MutedSecondary,
+                    lineHeight = 15.sp
                   )
                 }
-              },
-              colors = ButtonDefaults.buttonColors(containerColor = DarkSoilVariant),
-              modifier = Modifier.fillMaxWidth(),
-              shape = RoundedCornerShape(6.dp),
-              enabled = !isLocating
-            ) {
-              if (isLocating) {
-                CircularProgressIndicator(modifier = Modifier.size(14.dp), color = GrassNeon)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Acquiring GPS...", color = WeatheredPaper, fontSize = 11.sp)
-              } else {
-                Text("📍 Capture Real Coordinates (Single-Tap)", color = WeatheredPaper, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 11.sp)
               }
             }
           }
         }
       }
 
-      // 4. Field Notes Section
-      TactileCard(
-        modifier = Modifier.fillMaxWidth(),
-        borderColor = MutedMoss,
-        backgroundColor = ForestFloor
+      // 5. ACTION BUTTONS
+      Column(
+        modifier = Modifier.padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
       ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Text("FIELD OBSERVATIONS & SPECIMEN LOG", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = WeatheredPaper)
-            Text("REQUIRED", fontSize = 8.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = GrassNeon)
-          }
-
-          OutlinedTextField(
-            value = notes,
-            onValueChange = { notes = it },
-            placeholder = { Text("Record specimen color, weather, leaf density, or personal reflections...", fontSize = 12.sp, color = TextMuted) },
-            singleLine = false,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-            modifier = Modifier
-              .fillMaxWidth()
-              .height(120.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-              focusedBorderColor = GrassNeon,
-              unfocusedBorderColor = MutedMoss,
-              focusedTextColor = WeatheredPaper,
-              unfocusedTextColor = WeatheredPaper,
-              focusedContainerColor = SoilVoid,
-              unfocusedContainerColor = SoilVoid
-            ),
-            shape = RoundedCornerShape(6.dp)
-          )
-        }
-      }
-
-      // Vault Assurance Tag
-      Box(
-        modifier = Modifier
-          .fillMaxWidth()
-          .clip(RoundedCornerShape(6.dp))
-          .background(DarkSoilVariant)
-          .border(0.75.dp, MutedMoss, RoundedCornerShape(6.dp))
-          .padding(horizontal = 10.dp, vertical = 6.dp)
-      ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          Icon(Icons.Default.Lock, contentDescription = null, tint = WaypointTeal, modifier = Modifier.size(13.dp))
-          Spacer(modifier = Modifier.width(6.dp))
-          Text(
-            "Encrypted Locally (AES-256-GCM) • Zero telemetry leaves device without consent",
-            fontSize = 9.sp,
-            fontFamily = FontFamily.Monospace,
-            color = WaypointTeal
-          )
-        }
-      }
-
-      // Actions: Save Draft vs Complete
-      Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(bottom = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-      ) {
-        Button(
-          onClick = {
-            val draft = MissionDraft(
-              id = existingDraft?.id ?: ("draft-" + UUID.randomUUID().toString().take(6)),
-              taskId = task.id,
-              taskTitle = task.title,
-              notes = notes,
-              photoUri = photoUriString,
-              latitude = currentLatitude,
-              longitude = currentLongitude,
-              isOfflinePending = true,
-              isSandboxDemo = task.isSandboxDemo
-            )
-            onSaveDraft(draft)
-            Toast.makeText(context, "Offline draft saved in encrypted storage", Toast.LENGTH_SHORT).show()
-            onBack()
-          },
-          colors = ButtonDefaults.buttonColors(containerColor = SoilSurfacePanel),
-          modifier = Modifier.weight(1f),
-          shape = RoundedCornerShape(8.dp)
-        ) {
-          Text(
-            "Save Draft",
-            color = WeatheredPaper,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp
-          )
-        }
+        val canComplete = notes.length >= 10
 
         Button(
           onClick = {
-            if (notes.isBlank()) {
-              Toast.makeText(context, "Please enter notes before completing", Toast.LENGTH_SHORT).show()
+            if (!canComplete) {
+              Toast.makeText(context, "Please write at least 10 characters in your field note.", Toast.LENGTH_SHORT).show()
               return@Button
             }
             isSubmitting = true
-            val draft = MissionDraft(
-              id = existingDraft?.id ?: ("draft-" + UUID.randomUUID().toString().take(6)),
+            val draft = existingDraft?.copy(
+              notes = notes,
+              photoUri = photoUriString,
+              latitude = currentLatitude,
+              longitude = currentLongitude,
+              consentToCivicSubmission = consentToCivicSubmission
+            ) ?: MissionDraft(
+              id = UUID.randomUUID().toString(),
               taskId = task.id,
               taskTitle = task.title,
               notes = notes,
               photoUri = photoUriString,
               latitude = currentLatitude,
               longitude = currentLongitude,
-              isOfflinePending = false,
-              isSandboxDemo = task.isSandboxDemo
+              timestamp = System.currentTimeMillis(),
+              consentToCivicSubmission = consentToCivicSubmission
             )
             onSubmit(draft)
           },
+          enabled = canComplete && !isSubmitting,
           colors = ButtonDefaults.buttonColors(
-            containerColor = GrassNeon,
-            contentColor = SoilVoid
+            containerColor = MossGreenDark,
+            contentColor = Color.White,
+            disabledContainerColor = CardBorderSubtle,
+            disabledContentColor = MutedSecondary
           ),
-          modifier = Modifier.weight(1f),
-          shape = RoundedCornerShape(8.dp),
-          enabled = !isSubmitting
+          shape = RoundedCornerShape(12.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
         ) {
-          if (isSubmitting) {
-            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = SoilVoid)
-          } else {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Text(
-                "Complete Quest",
-                color = SoilVoid,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
-              )
-              Spacer(modifier = Modifier.width(4.dp))
-              Icon(Icons.Default.ArrowForward, contentDescription = null, tint = SoilVoid, modifier = Modifier.size(14.dp))
-            }
-          }
+          Text(
+            if (isSubmitting) "Logging Observation..."
+            else if (!task.isLocalCompletionOnly && consentToCivicSubmission) "Submit for Civic Review & Claim XP 🏛️"
+            else "Save to Field Journal & Harvest XP 🌿",
+            fontSize = 14.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.Bold
+          )
+        }
+
+        OutlinedButton(
+          onClick = {
+            val draft = existingDraft?.copy(
+              notes = notes,
+              photoUri = photoUriString,
+              latitude = currentLatitude,
+              longitude = currentLongitude,
+              consentToCivicSubmission = consentToCivicSubmission
+            ) ?: MissionDraft(
+              id = UUID.randomUUID().toString(),
+              taskId = task.id,
+              taskTitle = task.title,
+              notes = notes,
+              photoUri = photoUriString,
+              latitude = currentLatitude,
+              longitude = currentLongitude,
+              timestamp = System.currentTimeMillis(),
+              consentToCivicSubmission = consentToCivicSubmission
+            )
+            onSaveDraft(draft)
+            Toast.makeText(context, "Field draft saved offline", Toast.LENGTH_SHORT).show()
+            onBack()
+          },
+          shape = RoundedCornerShape(12.dp),
+          border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+        ) {
+          Text(
+            "Save Draft for Later",
+            fontSize = 13.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.SemiBold,
+            color = ForestInk
+          )
         }
       }
     }
